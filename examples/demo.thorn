@@ -1,0 +1,15 @@
+class Person {
+    $ init(name, age) {
+        this.name = name;
+        this.age = age;
+    }
+
+    $ greet() {
+        return "Hello, I'm " + this.name + " and I'm " + this.age + " years old.";
+    }
+
+    $ birthday() {
+        this.age = this.age + 1;
+        return "Happy birthday! " + this.name + " is now " + this.age;
+    }
+}

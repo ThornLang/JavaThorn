@@ -1,0 +1,11 @@
+// Test mutable variables
+x = 10;
+print("x initially: " + x);
+
+// This should work fine
+x = 20;
+print("x after reassignment: " + x);
+
+// Test immutable
+@immut PI = 3.14159;
+print("PI: " + PI);

@@ -1,0 +1,5 @@
+@immut PI = 3.14159;
+print("PI = " + PI);
+
+// This should cause an error
+PI = 2.7;

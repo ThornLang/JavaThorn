@@ -1,0 +1,10 @@
+// Simple AST test
+x = 5 + 3;
+@immut y = 10;
+
+$ add(a, b) {
+    return a + b;
+}
+
+result = add(x, y);
+print(result);

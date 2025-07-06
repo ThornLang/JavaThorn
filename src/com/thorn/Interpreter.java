@@ -8,6 +8,10 @@ import java.util.Map;
 class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     final Environment globals = new Environment();
     private Environment environment = globals;
+    
+    // Return value optimization - avoid exceptions
+    Object returnValue = null;
+    boolean hasReturned = false;
 
     Interpreter() {
         // Add built-in print function
@@ -19,6 +23,20 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             public Object call(Interpreter interpreter, List<Object> arguments) {
                 System.out.println(stringify(arguments.get(0)));
                 return null;
+            }
+
+            @Override
+            public String toString() { return "<native fn>"; }
+        }, false);
+
+        // Add built-in clock function for benchmarking
+        globals.define("clock", new ThornCallable() {
+            @Override
+            public int arity() { return 0; }
+
+            @Override
+            public Object call(Interpreter interpreter, List<Object> arguments) {
+                return (double) System.currentTimeMillis();
             }
 
             @Override
@@ -43,47 +61,89 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
         switch (expr.operator.type) {
             case MINUS:
+                if (left instanceof Double && right instanceof Double) {
+                    return getNumber(left) - getNumber(right);
+                }
                 checkNumberOperands(expr.operator, left, right);
-                return (double)left - (double)right;
+                return getNumber(left) - getNumber(right);
             case SLASH:
+                if (left instanceof Double && right instanceof Double) {
+                    double rightVal = getNumber(right);
+                    if (rightVal == 0) {
+                        throw new Thorn.RuntimeError(expr.operator, "Division by zero.");
+                    }
+                    return getNumber(left) / rightVal;
+                }
                 checkNumberOperands(expr.operator, left, right);
-                if ((double)right == 0) {
+                double rightNum = getNumber(right);
+                if (rightNum == 0) {
                     throw new Thorn.RuntimeError(expr.operator, "Division by zero.");
                 }
-                return (double)left / (double)right;
+                return getNumber(left) / rightNum;
             case STAR:
+                if (left instanceof Double && right instanceof Double) {
+                    return getNumber(left) * getNumber(right);
+                }
                 checkNumberOperands(expr.operator, left, right);
-                return (double)left * (double)right;
+                return getNumber(left) * getNumber(right);
             case PERCENT:
+                if (left instanceof Double && right instanceof Double) {
+                    return getNumber(left) % getNumber(right);
+                }
                 checkNumberOperands(expr.operator, left, right);
-                return (double)left % (double)right;
+                return getNumber(left) % getNumber(right);
             case STAR_STAR:
+                if (left instanceof Double && right instanceof Double) {
+                    return Math.pow(getNumber(left), getNumber(right));
+                }
                 checkNumberOperands(expr.operator, left, right);
-                return Math.pow((double)left, (double)right);
+                return Math.pow(getNumber(left), getNumber(right));
             case PLUS:
                 if (left instanceof Double && right instanceof Double) {
-                    return (double)left + (double)right;
+                    return getNumber(left) + getNumber(right);
                 }
                 if (left instanceof String && right instanceof String) {
+                    // Fast path for string concatenation
                     return (String)left + (String)right;
                 }
                 if (left instanceof String || right instanceof String) {
-                    return stringify(left) + stringify(right);
+                    // Optimized string building
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(stringify(left));
+                    sb.append(stringify(right));
+                    return sb.toString();
+                }
+                if (left instanceof List && right instanceof List) {
+                    List<Object> result = new ArrayList<>((List<?>)left);
+                    result.addAll((List<?>)right);
+                    return result;
                 }
                 throw new Thorn.RuntimeError(expr.operator,
-                        "Operands must be two numbers or two strings.");
+                        "Operands must be two numbers, two strings, or two lists.");
             case GREATER:
+                if (left instanceof Double && right instanceof Double) {
+                    return getNumber(left) > getNumber(right);
+                }
                 checkNumberOperands(expr.operator, left, right);
-                return (double)left > (double)right;
+                return getNumber(left) > getNumber(right);
             case GREATER_EQUAL:
+                if (left instanceof Double && right instanceof Double) {
+                    return getNumber(left) >= getNumber(right);
+                }
                 checkNumberOperands(expr.operator, left, right);
-                return (double)left >= (double)right;
+                return getNumber(left) >= getNumber(right);
             case LESS:
+                if (left instanceof Double && right instanceof Double) {
+                    return getNumber(left) < getNumber(right);
+                }
                 checkNumberOperands(expr.operator, left, right);
-                return (double)left < (double)right;
+                return getNumber(left) < getNumber(right);
             case LESS_EQUAL:
+                if (left instanceof Double && right instanceof Double) {
+                    return getNumber(left) <= getNumber(right);
+                }
                 checkNumberOperands(expr.operator, left, right);
-                return (double)left <= (double)right;
+                return getNumber(left) <= getNumber(right);
             case BANG_EQUAL:
                 return !isEqual(left, right);
             case EQUAL_EQUAL:
@@ -113,8 +173,11 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             case BANG:
                 return !isTruthy(right);
             case MINUS:
+                if (right instanceof Double) {
+                    return -getNumber(right);
+                }
                 checkNumberOperand(expr.operator, right);
-                return -(double)right;
+                return -getNumber(right);
         }
 
         return null;
@@ -266,6 +329,84 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             return ((ThornInstance) object).get(expr.name);
         }
 
+        // Add built-in properties for native types
+        if (object instanceof String && expr.name.lexeme.equals("length")) {
+            return (double) ((String) object).length();
+        }
+
+        if (object instanceof List) {
+            List<Object> list = (List<Object>) object;
+            
+            switch (expr.name.lexeme) {
+                case "length":
+                    return (double) list.size();
+                    
+                case "push":
+                    return new ThornCallable() {
+                        @Override
+                        public int arity() { return 1; }
+                        
+                        @Override
+                        public Object call(Interpreter interpreter, List<Object> arguments) {
+                            list.add(arguments.get(0));
+                            return (double) list.size();
+                        }
+                        
+                        @Override
+                        public String toString() { return "<native array method>"; }
+                    };
+                    
+                case "pop":
+                    return new ThornCallable() {
+                        @Override
+                        public int arity() { return 0; }
+                        
+                        @Override
+                        public Object call(Interpreter interpreter, List<Object> arguments) {
+                            if (list.isEmpty()) {
+                                return null;
+                            }
+                            return list.remove(list.size() - 1);
+                        }
+                        
+                        @Override
+                        public String toString() { return "<native array method>"; }
+                    };
+                    
+                case "shift":
+                    return new ThornCallable() {
+                        @Override
+                        public int arity() { return 0; }
+                        
+                        @Override
+                        public Object call(Interpreter interpreter, List<Object> arguments) {
+                            if (list.isEmpty()) {
+                                return null;
+                            }
+                            return list.remove(0);
+                        }
+                        
+                        @Override
+                        public String toString() { return "<native array method>"; }
+                    };
+                    
+                case "unshift":
+                    return new ThornCallable() {
+                        @Override
+                        public int arity() { return 1; }
+                        
+                        @Override
+                        public Object call(Interpreter interpreter, List<Object> arguments) {
+                            list.add(0, arguments.get(0));
+                            return (double) list.size();
+                        }
+                        
+                        @Override
+                        public String toString() { return "<native array method>"; }
+                    };
+            }
+        }
+
         throw new Thorn.RuntimeError(expr.name,
                 "Only instances have properties.");
     }
@@ -323,7 +464,9 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         Object value = null;
         if (stmt.value != null) value = evaluate(stmt.value);
 
-        throw new Return(value);
+        returnValue = value;
+        hasReturned = true;
+        return null;
     }
 
     @Override
@@ -409,6 +552,9 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
             for (Stmt statement : statements) {
                 execute(statement);
+                if (hasReturned) {
+                    break;  // Early exit on return
+                }
             }
         } finally {
             this.environment = previous;
@@ -442,16 +588,26 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
         throw new Thorn.RuntimeError(operator, "Operands must be numbers.");
     }
+    
+    // Fast path for arithmetic operations
+    private double getNumber(Object obj) {
+        return (double) obj;
+    }
 
     private String stringify(Object object) {
         if (object == null) return "null";
 
         if (object instanceof Double) {
-            String text = object.toString();
-            if (text.endsWith(".0")) {
-                text = text.substring(0, text.length() - 2);
+            double value = (double) object;
+            // Fast path for integers
+            if (value == (long) value) {
+                return Long.toString((long) value);
             }
-            return text;
+            return Double.toString(value);
+        }
+
+        if (object instanceof String) {
+            return (String) object;
         }
 
         return object.toString();

@@ -1,15 +1,8 @@
-class Person {
-    $ init(name, age) {
-        this.name = name;
-        this.age = age;
-    }
+x = 10;
+@immut PI = 3.14159;
+print("x = " + x);
+print("PI = " + PI);
 
-    $ greet() {
-        return "Hello, I'm " + this.name + " and I'm " + this.age + " years old.";
-    }
+PI = 2;
 
-    $ birthday() {
-        this.age = this.age + 1;
-        return "Happy birthday! " + this.name + " is now " + this.age;
-    }
-}
+print("PI = " + PI);

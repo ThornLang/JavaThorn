@@ -1,0 +1,17 @@
+// String operations benchmark
+@immut ITERATIONS = 1000;
+
+start_time = clock();
+
+result = "";
+i = 0;
+while (i < ITERATIONS) {
+    result = result + "Hello";
+    i = i + 1;
+}
+
+end_time = clock();
+
+print("Iterations: " + ITERATIONS);
+print("Result length: " + result.length);
+print("Time: " + (end_time - start_time) + "ms");

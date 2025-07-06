@@ -1,0 +1,14 @@
+$ fib(n) {
+    if (n <= 1) {
+        return n;
+    }
+    return fib(n - 1) + fib(n - 2);
+}
+
+@immut N = 30;
+start_time = clock();
+result = fib(N);
+end_time = clock();
+
+print("Fibonacci(" + N + ") = " + result);
+print("Time: " + (end_time - start_time) + "ms");

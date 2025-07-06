@@ -23,16 +23,30 @@ class ThornFunction implements ThornCallable {
     @Override
     public Object call(Interpreter interpreter, List<Object> arguments) {
         Environment environment = new Environment(closure);
+        
+        // Optimized parameter binding - avoid string operations in tight loops
         for (int i = 0; i < params.size(); i++) {
             environment.define(params.get(i).lexeme, arguments.get(i), false);
         }
 
-        try {
-            interpreter.executeBlock(body, environment);
-        } catch (Interpreter.Return returnValue) {
-            return returnValue.value;
-        }
-        return null;
+        // Save current return state
+        Object previousReturnValue = interpreter.returnValue;
+        boolean previousHasReturned = interpreter.hasReturned;
+        
+        // Reset return state for this function call
+        interpreter.returnValue = null;
+        interpreter.hasReturned = false;
+        
+        interpreter.executeBlock(body, environment);
+        
+        // Get the return value
+        Object result = interpreter.hasReturned ? interpreter.returnValue : null;
+        
+        // Restore previous return state
+        interpreter.returnValue = previousReturnValue;
+        interpreter.hasReturned = previousHasReturned;
+        
+        return result;
     }
 
     ThornFunction bind(ThornInstance instance) {

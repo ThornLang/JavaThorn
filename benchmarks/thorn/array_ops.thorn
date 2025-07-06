@@ -1,0 +1,25 @@
+// Array operations benchmark  
+@immut SIZE = 1000;
+
+// Create and populate array
+start_time = clock();
+arr = [];
+i = 0;
+while (i < SIZE) {
+    arr.push(i * 2);
+    i = i + 1;
+}
+
+// Sum all elements
+sum = 0;
+i = 0;
+while (i < SIZE) {
+    sum = sum + arr[i];
+    i = i + 1;
+}
+
+end_time = clock();
+
+print("Array size: " + SIZE);
+print("Sum: " + sum);
+print("Time: " + (end_time - start_time) + "ms");

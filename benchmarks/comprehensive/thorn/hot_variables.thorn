@@ -1,0 +1,27 @@
+// Hot variable access benchmark - tests variable caching
+@immut ITERATIONS = 100000;
+
+$ compute() {
+    sum = 0;
+    multiplier = 7;
+    divisor = 3;
+    
+    i = 0;
+    while (i < ITERATIONS) {
+        // Repeated access to same variables
+        temp = i * multiplier;
+        sum = sum + temp;
+        sum = sum / divisor;
+        sum = sum * divisor;  // Keep sum from growing too large
+        i = i + 1;
+    }
+    
+    return sum;
+}
+
+start_time = clock();
+result = compute();
+end_time = clock();
+
+print("Hot variables result: " + result);
+print("Time: " + (end_time - start_time) + "ms");

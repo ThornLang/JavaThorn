@@ -114,4 +114,9 @@ class Environment {
         throw new Thorn.RuntimeError(name,
                 "Undefined variable '" + name.lexeme + "'.");
     }
+    
+    // Package-private access for optimizations
+    Map<String, Object> getValues() {
+        return values;
+    }
 }

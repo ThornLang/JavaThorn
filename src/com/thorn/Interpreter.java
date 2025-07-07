@@ -482,10 +482,67 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Void visitWhileStmt(Stmt.While stmt) {
+        // Try to optimize simple numeric while loops like: while (i < limit)
+        if (tryOptimizedWhileLoop(stmt)) {
+            return null;
+        }
+        
+        // Fall back to general case
         while (isTruthy(evaluate(stmt.condition))) {
             execute(stmt.body);
+            if (hasReturned) break;
         }
         return null;
+    }
+    
+    // Optimized while loop for simple numeric conditions
+    private boolean tryOptimizedWhileLoop(Stmt.While stmt) {
+        // Check if condition is a simple comparison: variable < number
+        if (!(stmt.condition instanceof Expr.Binary)) {
+            return false;
+        }
+        
+        Expr.Binary condition = (Expr.Binary) stmt.condition;
+        if (condition.operator.type != TokenType.LESS) {
+            return false;
+        }
+        
+        // Check if left side is a variable and right side is a literal
+        if (!(condition.left instanceof Expr.Variable && condition.right instanceof Expr.Literal)) {
+            return false;
+        }
+        
+        Expr.Variable varExpr = (Expr.Variable) condition.left;
+        Expr.Literal limitExpr = (Expr.Literal) condition.right;
+        
+        if (!(limitExpr.value instanceof Double)) {
+            return false;
+        }
+        
+        double limit = (double) limitExpr.value;
+        
+        // Execute optimized loop
+        while (true) {
+            try {
+                Object varValue = environment.get(varExpr.name);
+                if (!(varValue instanceof Double)) {
+                    return false; // Fall back if variable becomes non-numeric
+                }
+                
+                double current = (double) varValue;
+                if (current >= limit) {
+                    break; // Condition false, exit loop
+                }
+                
+                execute(stmt.body);
+                if (hasReturned) break;
+                
+            } catch (Thorn.RuntimeError e) {
+                return false; // Fall back on any error
+            }
+        }
+        
+        return true;
     }
 
     @Override
@@ -498,16 +555,27 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
 
         List<?> list = (List<?>)iterable;
-        Environment previous = environment;
+        
+        // Optimized: reuse environment and avoid repeated defines
+        String varName = stmt.variable.lexeme;
+        Map<String, Object> envValues = environment.getValues();
+        boolean varExisted = envValues.containsKey(varName);
+        Object previousValue = varExisted ? envValues.get(varName) : null;
+        
         try {
-            environment = new Environment(environment);
-            
             for (Object element : list) {
-                environment.define(stmt.variable.lexeme, element, false);
+                // Direct assignment instead of environment.define
+                envValues.put(varName, element);
                 execute(stmt.body);
+                if (hasReturned) break;
             }
         } finally {
-            environment = previous;
+            // Restore previous state
+            if (varExisted) {
+                envValues.put(varName, previousValue);
+            } else {
+                envValues.remove(varName);
+            }
         }
         
         return null;

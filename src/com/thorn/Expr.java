@@ -2,7 +2,7 @@ package com.thorn;
 
 import java.util.List;
 
-abstract class Expr {
+public abstract class Expr {
     interface Visitor<R> {
         R visitBinaryExpr(Binary expr);
         R visitGroupingExpr(Grouping expr);
@@ -24,7 +24,7 @@ abstract class Expr {
 
     abstract <R> R accept(Visitor<R> visitor);
 
-    static class Binary extends Expr {
+    public static class Binary extends Expr {
         Binary(Expr left, Token operator, Expr right) {
             this.left = left;
             this.operator = operator;
@@ -36,12 +36,12 @@ abstract class Expr {
             return visitor.visitBinaryExpr(this);
         }
 
-        final Expr left;
-        final Token operator;
-        final Expr right;
+        public final Expr left;
+        public final Token operator;
+        public final Expr right;
     }
 
-    static class Grouping extends Expr {
+    public static class Grouping extends Expr {
         Grouping(Expr expression) {
             this.expression = expression;
         }
@@ -51,10 +51,10 @@ abstract class Expr {
             return visitor.visitGroupingExpr(this);
         }
 
-        final Expr expression;
+        public final Expr expression;
     }
 
-    static class Literal extends Expr {
+    public static class Literal extends Expr {
         Literal(Object value) {
             this.value = value;
         }
@@ -64,10 +64,10 @@ abstract class Expr {
             return visitor.visitLiteralExpr(this);
         }
 
-        final Object value;
+        public final Object value;
     }
 
-    static class Unary extends Expr {
+    public static class Unary extends Expr {
         Unary(Token operator, Expr right) {
             this.operator = operator;
             this.right = right;
@@ -78,11 +78,11 @@ abstract class Expr {
             return visitor.visitUnaryExpr(this);
         }
 
-        final Token operator;
-        final Expr right;
+        public final Token operator;
+        public final Expr right;
     }
 
-    static class Variable extends Expr {
+    public static class Variable extends Expr {
         Variable(Token name) {
             this.name = name;
         }
@@ -92,10 +92,10 @@ abstract class Expr {
             return visitor.visitVariableExpr(this);
         }
 
-        final Token name;
+        public final Token name;
     }
 
-    static class Assign extends Expr {
+    public static class Assign extends Expr {
         Assign(Token name, Expr value) {
             this.name = name;
             this.value = value;
@@ -106,11 +106,11 @@ abstract class Expr {
             return visitor.visitAssignExpr(this);
         }
 
-        final Token name;
-        final Expr value;
+        public final Token name;
+        public final Expr value;
     }
 
-    static class Logical extends Expr {
+    public static class Logical extends Expr {
         Logical(Expr left, Token operator, Expr right) {
             this.left = left;
             this.operator = operator;
@@ -122,12 +122,12 @@ abstract class Expr {
             return visitor.visitLogicalExpr(this);
         }
 
-        final Expr left;
-        final Token operator;
-        final Expr right;
+        public final Expr left;
+        public final Token operator;
+        public final Expr right;
     }
 
-    static class Call extends Expr {
+    public static class Call extends Expr {
         Call(Expr callee, Token paren, List<Expr> arguments) {
             this.callee = callee;
             this.paren = paren;
@@ -139,12 +139,12 @@ abstract class Expr {
             return visitor.visitCallExpr(this);
         }
 
-        final Expr callee;
-        final Token paren;
-        final List<Expr> arguments;
+        public final Expr callee;
+        public final Token paren;
+        public final List<Expr> arguments;
     }
 
-    static class Lambda extends Expr {
+    public static class Lambda extends Expr {
         Lambda(List<Token> params, List<Stmt> body) {
             this.params = params;
             this.body = body;
@@ -155,11 +155,11 @@ abstract class Expr {
             return visitor.visitLambdaExpr(this);
         }
 
-        final List<Token> params;
-        final List<Stmt> body;
+        public final List<Token> params;
+        public final List<Stmt> body;
     }
 
-    static class ListExpr extends Expr {
+    public static class ListExpr extends Expr {
         ListExpr(List<Expr> elements) {
             this.elements = elements;
         }
@@ -169,10 +169,10 @@ abstract class Expr {
             return visitor.visitListExpr(this);
         }
 
-        final List<Expr> elements;
+        public final List<Expr> elements;
     }
 
-    static class Dict extends Expr {
+    public static class Dict extends Expr {
         Dict(List<Expr> keys, List<Expr> values) {
             this.keys = keys;
             this.values = values;
@@ -183,11 +183,11 @@ abstract class Expr {
             return visitor.visitDictExpr(this);
         }
 
-        final List<Expr> keys;
-        final List<Expr> values;
+        public final List<Expr> keys;
+        public final List<Expr> values;
     }
 
-    static class Index extends Expr {
+    public static class Index extends Expr {
         Index(Expr object, Token bracket, Expr index) {
             this.object = object;
             this.bracket = bracket;
@@ -199,16 +199,16 @@ abstract class Expr {
             return visitor.visitIndexExpr(this);
         }
 
-        final Expr object;
-        final Token bracket;
-        final Expr index;
+        public final Expr object;
+        public final Token bracket;
+        public final Expr index;
     }
 
-    static class Match extends Expr {
-        static class Case {
-            final Expr pattern;
-            final Expr guard;  // optional: if condition
-            final Expr value;
+    public static class Match extends Expr {
+        public static class Case {
+            public final Expr pattern;
+            public final Expr guard;  // optional: if condition
+            public final Expr value;
 
             Case(Expr pattern, Expr guard, Expr value) {
                 this.pattern = pattern;
@@ -227,11 +227,11 @@ abstract class Expr {
             return visitor.visitMatchExpr(this);
         }
 
-        final Expr expr;
-        final List<Case> cases;
+        public final Expr expr;
+        public final List<Case> cases;
     }
 
-    static class Get extends Expr {
+    public static class Get extends Expr {
         Get(Expr object, Token name) {
             this.object = object;
             this.name = name;
@@ -242,11 +242,11 @@ abstract class Expr {
             return visitor.visitGetExpr(this);
         }
 
-        final Expr object;
-        final Token name;
+        public final Expr object;
+        public final Token name;
     }
 
-    static class Set extends Expr {
+    public static class Set extends Expr {
         Set(Expr object, Token name, Expr value) {
             this.object = object;
             this.name = name;
@@ -258,12 +258,12 @@ abstract class Expr {
             return visitor.visitSetExpr(this);
         }
 
-        final Expr object;
-        final Token name;
-        final Expr value;
+        public final Expr object;
+        public final Token name;
+        public final Expr value;
     }
 
-    static class This extends Expr {
+    public static class This extends Expr {
         This(Token keyword) {
             this.keyword = keyword;
         }
@@ -273,6 +273,6 @@ abstract class Expr {
             return visitor.visitThisExpr(this);
         }
 
-        final Token keyword;
+        public final Token keyword;
     }
 }

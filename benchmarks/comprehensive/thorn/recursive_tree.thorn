@@ -1,0 +1,20 @@
+// Recursive tree traversal benchmark - tests return optimization
+$ treeSum(depth, value) {
+    if (depth == 0) {
+        return value;
+    }
+    
+    // Binary tree recursion
+    left = treeSum(depth - 1, value * 2);
+    right = treeSum(depth - 1, value * 2 + 1);
+    
+    return left + right + value;
+}
+
+@immut DEPTH = 15;
+start_time = clock();
+result = treeSum(DEPTH, 1);
+end_time = clock();
+
+print("Tree sum (depth " + DEPTH + "): " + result);
+print("Time: " + (end_time - start_time) + "ms");

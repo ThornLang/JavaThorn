@@ -2,7 +2,7 @@ package com.thorn;
 
 import java.util.List;
 
-abstract class Stmt {
+public abstract class Stmt {
     interface Visitor<R> {
         R visitBlockStmt(Block stmt);
         R visitExpressionStmt(Expression stmt);
@@ -19,7 +19,7 @@ abstract class Stmt {
 
     abstract <R> R accept(Visitor<R> visitor);
 
-    static class Block extends Stmt {
+    public static class Block extends Stmt {
         Block(List<Stmt> statements) {
             this.statements = statements;
         }
@@ -29,10 +29,10 @@ abstract class Stmt {
             return visitor.visitBlockStmt(this);
         }
 
-        final List<Stmt> statements;
+        public final List<Stmt> statements;
     }
 
-    static class Expression extends Stmt {
+    public static class Expression extends Stmt {
         Expression(Expr expression) {
             this.expression = expression;
         }
@@ -42,10 +42,10 @@ abstract class Stmt {
             return visitor.visitExpressionStmt(this);
         }
 
-        final Expr expression;
+        public final Expr expression;
     }
 
-    static class Function extends Stmt {
+    public static class Function extends Stmt {
         Function(Token name, List<Token> params, List<Stmt> body) {
             this.name = name;
             this.params = params;
@@ -57,12 +57,12 @@ abstract class Stmt {
             return visitor.visitFunctionStmt(this);
         }
 
-        final Token name;
-        final List<Token> params;
-        final List<Stmt> body;
+        public final Token name;
+        public final List<Token> params;
+        public final List<Stmt> body;
     }
 
-    static class If extends Stmt {
+    public static class If extends Stmt {
         If(Expr condition, Stmt thenBranch, Stmt elseBranch) {
             this.condition = condition;
             this.thenBranch = thenBranch;
@@ -74,12 +74,12 @@ abstract class Stmt {
             return visitor.visitIfStmt(this);
         }
 
-        final Expr condition;
-        final Stmt thenBranch;
-        final Stmt elseBranch;
+        public final Expr condition;
+        public final Stmt thenBranch;
+        public final Stmt elseBranch;
     }
 
-    static class Return extends Stmt {
+    public static class Return extends Stmt {
         Return(Token keyword, Expr value) {
             this.keyword = keyword;
             this.value = value;
@@ -90,11 +90,11 @@ abstract class Stmt {
             return visitor.visitReturnStmt(this);
         }
 
-        final Token keyword;
-        final Expr value;
+        public final Token keyword;
+        public final Expr value;
     }
 
-    static class Var extends Stmt {
+    public static class Var extends Stmt {
         Var(Token name, Expr initializer, boolean isImmutable) {
             this.name = name;
             this.initializer = initializer;
@@ -106,12 +106,12 @@ abstract class Stmt {
             return visitor.visitVarStmt(this);
         }
 
-        final Token name;
-        final Expr initializer;
-        final boolean isImmutable;
+        public final Token name;
+        public final Expr initializer;
+        public final boolean isImmutable;
     }
 
-    static class While extends Stmt {
+    public static class While extends Stmt {
         While(Expr condition, Stmt body) {
             this.condition = condition;
             this.body = body;
@@ -122,11 +122,11 @@ abstract class Stmt {
             return visitor.visitWhileStmt(this);
         }
 
-        final Expr condition;
-        final Stmt body;
+        public final Expr condition;
+        public final Stmt body;
     }
 
-    static class For extends Stmt {
+    public static class For extends Stmt {
         For(Token variable, Expr iterable, Stmt body) {
             this.variable = variable;
             this.iterable = iterable;
@@ -138,12 +138,12 @@ abstract class Stmt {
             return visitor.visitForStmt(this);
         }
 
-        final Token variable;
-        final Expr iterable;
-        final Stmt body;
+        public final Token variable;
+        public final Expr iterable;
+        public final Stmt body;
     }
 
-    static class Class extends Stmt {
+    public static class Class extends Stmt {
         Class(Token name, List<Stmt.Function> methods) {
             this.name = name;
             this.methods = methods;
@@ -154,11 +154,11 @@ abstract class Stmt {
             return visitor.visitClassStmt(this);
         }
 
-        final Token name;
-        final List<Stmt.Function> methods;
+        public final Token name;
+        public final List<Stmt.Function> methods;
     }
 
-    static class Import extends Stmt {
+    public static class Import extends Stmt {
         Import(Token module, List<Token> names) {
             this.module = module;
             this.names = names;
@@ -169,11 +169,11 @@ abstract class Stmt {
             return visitor.visitImportStmt(this);
         }
 
-        final Token module;
-        final List<Token> names;  // null for "import module", list for "import { a, b } from module"
+        public final Token module;
+        public final List<Token> names;  // null for "import module", list for "import { a, b } from module"
     }
 
-    static class Export extends Stmt {
+    public static class Export extends Stmt {
         Export(Stmt declaration) {
             this.declaration = declaration;
         }
@@ -183,6 +183,6 @@ abstract class Stmt {
             return visitor.visitExportStmt(this);
         }
 
-        final Stmt declaration;
+        public final Stmt declaration;
     }
 }

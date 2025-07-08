@@ -87,6 +87,7 @@ public class Thorn {
 
         if (useVM) {
             // Use VM mode - only basic expressions for now
+            // System.err.println("DEBUG: Using VM mode, compiling " + statements.size() + " statements");
             try {
                 SimpleCompiler compiler = new SimpleCompiler();
                 CompilationResult result = compiler.compile(statements);

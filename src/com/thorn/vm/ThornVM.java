@@ -149,7 +149,11 @@ public class ThornVM {
                     break;
                     
                 case LT:
-                    currentFrame.setRegister(a, isLess(bValue, cValue));
+                    boolean ltResult = isLess(bValue, cValue);
+                    if (System.getProperty("thorn.debug.lt") != null) {
+                        System.err.println("LT: " + bValue + " < " + cValue + " = " + ltResult);
+                    }
+                    currentFrame.setRegister(a, ltResult);
                     break;
                     
                 case LE:
@@ -197,11 +201,19 @@ public class ThornVM {
                     break;
                     
                 case JUMP_IF_FALSE:
-                    if (!isTruthy(currentFrame.getRegister(a))) {
+                    Object condValue = currentFrame.getRegister(a);
+                    boolean shouldJump = !isTruthy(condValue);
+                    if (System.getProperty("thorn.debug.jumps") != null) {
+                        System.err.println("JUMP_IF_FALSE: register=" + a + ", value=" + condValue + ", truthy=" + isTruthy(condValue) + ", shouldJump=" + shouldJump);
+                    }
+                    if (shouldJump) {
                         int offset = OpCode.getB(instruction);
                         // Sign extend from 8 bits to 32 bits
                         if ((offset & 0x80) != 0) {
                             offset = offset | 0xFFFFFF00;
+                        }
+                        if (System.getProperty("thorn.debug.jumps") != null) {
+                            System.err.println("  Jumping by offset: " + offset + ", pc: " + currentFrame.getPc() + " -> " + (currentFrame.getPc() + offset - 1));
                         }
                         currentFrame.setPc(currentFrame.getPc() + offset - 1);
                     }

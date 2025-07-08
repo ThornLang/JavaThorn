@@ -120,10 +120,11 @@ public class FunctionInfo {
      * Includes locals and temporary registers.
      */
     public int getFrameSize() {
-        // For now, use localCount + some temporary registers
+        // For now, use localCount + many temporary registers
+        // Reserve space for nested loop control registers (250+)
         // In a more sophisticated implementation, this would be calculated
         // based on register allocation analysis
-        return Math.max(localCount, 8) + 16;  // 16 temp registers
+        return Math.max(localCount + 200, 256);  // 256 registers total
     }
     
     @Override

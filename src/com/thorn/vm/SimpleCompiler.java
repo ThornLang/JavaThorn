@@ -13,7 +13,9 @@ public class SimpleCompiler {
     private final ConstantPool constantPool;
     private final List<Integer> bytecode;
     private final Map<String, Integer> locals;      
-    private final Stack<Integer> registerStack;     
+    private final Stack<Integer> registerStack;
+    private final Map<Integer, Boolean> numericRegisters; // Track which registers hold numbers
+    private int loopDepth = 0; // Track nested loop depth
     
     private int nextRegister = 0;
     
@@ -22,6 +24,7 @@ public class SimpleCompiler {
         this.bytecode = new ArrayList<>();
         this.locals = new HashMap<>();
         this.registerStack = new Stack<>();
+        this.numericRegisters = new HashMap<>();
         
         // Initialize register pool
         for (int i = 255; i >= 0; i--) {
@@ -135,6 +138,7 @@ public class SimpleCompiler {
         } else if (stmt instanceof Stmt.While) {
             compileWhileStatement((Stmt.While) stmt);
         } else if (stmt instanceof Stmt.For) {
+            // System.err.println("DEBUG: Found For statement, compiling...");
             compileForStatement((Stmt.For) stmt);
         } else if (stmt instanceof Stmt.Function) {
             compileFunctionStatement((Stmt.Function) stmt);
@@ -154,6 +158,12 @@ public class SimpleCompiler {
             int reg = allocateRegister();
             int constantIndex = constantPool.addConstant(literalExpr.value);
             emit(Instruction.createWithConstantB(OpCode.LOAD_CONSTANT, reg, constantIndex, 0));
+            
+            // Track if this register holds a number
+            if (literalExpr.value instanceof Double) {
+                numericRegisters.put(reg, true);
+            }
+            
             return reg;
         } else if (expr instanceof Expr.Variable) {
             Expr.Variable varExpr = (Expr.Variable) expr;
@@ -162,6 +172,7 @@ public class SimpleCompiler {
             
             if (localReg != null) {
                 // Local variable - just return the register
+                // Numeric type info should already be tracked for this register
                 return localReg;
             }
             
@@ -195,8 +206,34 @@ public class SimpleCompiler {
             Integer rightReg = compileExpression(binaryExpr.right);
             int resultReg = allocateRegister();
             
-            OpCode opcode = getArithmeticOpCode(binaryExpr.operator.type);
+            // Check if we can use fast arithmetic opcodes
+            boolean canUseFast = false;
+            if (isArithmeticOperator(binaryExpr.operator.type)) {
+                // Check if both registers are known to hold numbers
+                boolean leftIsNumeric = numericRegisters.getOrDefault(leftReg, false);
+                boolean rightIsNumeric = numericRegisters.getOrDefault(rightReg, false);
+                canUseFast = leftIsNumeric && rightIsNumeric;
+            }
+            
+            OpCode opcode = canUseFast ? 
+                getFastArithmeticOpCode(binaryExpr.operator.type) : 
+                getArithmeticOpCode(binaryExpr.operator.type);
+            
+            // Debug: print when using fast opcodes
+            if (System.getProperty("thorn.debug.fastops") != null) {
+                System.err.println("Arithmetic operation: " + binaryExpr.operator.type + 
+                                 ", leftNumeric=" + numericRegisters.getOrDefault(leftReg, false) +
+                                 ", rightNumeric=" + numericRegisters.getOrDefault(rightReg, false) +
+                                 ", canUseFast=" + canUseFast +
+                                 ", opcode=" + opcode);
+            }
+            
             emit(Instruction.create(opcode, resultReg, leftReg, rightReg));
+            
+            // Mark result as numeric if we're doing arithmetic
+            if (isArithmeticOperator(binaryExpr.operator.type)) {
+                numericRegisters.put(resultReg, true);
+            }
             
             freeRegister(leftReg);
             freeRegister(rightReg);
@@ -375,10 +412,15 @@ public class SimpleCompiler {
         // We need to implement list iteration
         // For now, we'll use a simple index-based approach
         
-        // Allocate registers for index and length
-        int indexReg = allocateRegister();
-        int lengthReg = allocateRegister();
+        // Use high-numbered registers for loop control to avoid conflicts
+        // Allocate from the top of the register space, working downward
+        int baseReg = 250 - (loopDepth * 3);      // Base register for this loop depth
+        int indexReg = baseReg;                   // Index register 
+        int lengthReg = baseReg + 1;              // Length register
+        int tempReg = baseReg + 2;                // Temp register
         int elementReg = getLocalRegister(forStmt.variable.lexeme);
+        
+        loopDepth++; // Increment for nested loops
         
         // Initialize index to 0
         int zeroIndex = constantPool.addConstant(0.0);
@@ -387,17 +429,18 @@ public class SimpleCompiler {
         // Get list length using ARRAY_LENGTH opcode
         emit(Instruction.create(OpCode.ARRAY_LENGTH, lengthReg, iterableReg));
         
-        // Loop start
+        // Loop start - re-evaluate everything fresh to avoid register conflicts
         int loopStart = bytecode.size();
         
-        // Check if index < length
-        int conditionReg = allocateRegister();
-        emit(Instruction.create(OpCode.LT, conditionReg, indexReg, lengthReg));
+        // Reload array length (in case it was corrupted)
+        emit(Instruction.create(OpCode.ARRAY_LENGTH, lengthReg, iterableReg));
+        
+        // Check if index < length - use temp register for condition to avoid conflicts
+        emit(Instruction.create(OpCode.LT, tempReg, indexReg, lengthReg));
         
         // Jump to end if condition is false
         int jumpToEnd = bytecode.size();
-        emit(Instruction.createConditionalJump(OpCode.JUMP_IF_FALSE, conditionReg, 0)); // Patch later
-        freeRegister(conditionReg);
+        emit(Instruction.createConditionalJump(OpCode.JUMP_IF_FALSE, tempReg, 0)); // Patch later
         
         // Get element at current index
         emit(Instruction.create(OpCode.GET_INDEX, elementReg, iterableReg, indexReg));
@@ -405,12 +448,10 @@ public class SimpleCompiler {
         // Execute loop body
         compileStatement(forStmt.body);
         
-        // Increment index
+        // Increment index using our temp register
         int oneIndex = constantPool.addConstant(1.0);
-        int oneReg = allocateRegister();
-        emit(Instruction.createWithConstantB(OpCode.LOAD_CONSTANT, oneReg, oneIndex, 0));
-        emit(Instruction.create(OpCode.ADD, indexReg, indexReg, oneReg));
-        freeRegister(oneReg);
+        emit(Instruction.createWithConstantB(OpCode.LOAD_CONSTANT, tempReg, oneIndex, 0));
+        emit(Instruction.create(OpCode.ADD, indexReg, indexReg, tempReg));
         
         // Jump back to loop start
         int jumpOffset = loopStart - (bytecode.size() + 1);
@@ -418,11 +459,15 @@ public class SimpleCompiler {
         
         // Patch the conditional jump to point here (end)
         int endLabel = bytecode.size();
+        if (System.getProperty("thorn.debug.jumps") != null) {
+            System.err.println("FOR: Patching jump at " + jumpToEnd + " to point to " + endLabel);
+        }
         patchJump(jumpToEnd, endLabel);
         
-        // Free allocated registers
-        freeRegister(indexReg);
-        freeRegister(lengthReg);
+        // Decrement loop depth
+        loopDepth--;
+        
+        // Free the iterable register (reserved registers don't need freeing)
         freeRegister(iterableReg);
     }
     
@@ -646,6 +691,42 @@ public class SimpleCompiler {
         emit(Instruction.create(OpCode.MAKE_CLOSURE, reg, functionIndex, 0));
         
         return reg;
+    }
+    
+    private boolean isArithmeticOperator(TokenType type) {
+        return type == TokenType.PLUS || type == TokenType.MINUS ||
+               type == TokenType.STAR || type == TokenType.SLASH;
+    }
+    
+    private boolean isNumericExpression(Expr expr) {
+        if (expr instanceof Expr.Literal) {
+            Object value = ((Expr.Literal) expr).value;
+            return value instanceof Double;
+        } else if (expr instanceof Expr.Binary) {
+            Expr.Binary binary = (Expr.Binary) expr;
+            // Arithmetic operations on numbers produce numbers
+            return isArithmeticOperator(binary.operator.type) &&
+                   isNumericExpression(binary.left) &&
+                   isNumericExpression(binary.right);
+        } else if (expr instanceof Expr.Unary) {
+            Expr.Unary unary = (Expr.Unary) expr;
+            // Unary minus on number produces number
+            return unary.operator.type == TokenType.MINUS &&
+                   isNumericExpression(unary.right);
+        }
+        // TODO: Add more cases for variables known to be numbers
+        return false;
+    }
+    
+    private OpCode getFastArithmeticOpCode(TokenType operator) {
+        switch (operator) {
+            case PLUS: return OpCode.ADD_FAST;
+            case MINUS: return OpCode.SUB_FAST;
+            case STAR: return OpCode.MUL_FAST;
+            case SLASH: return OpCode.DIV_FAST;
+            default:
+                throw new RuntimeException("No fast opcode for operator: " + operator);
+        }
     }
     
     private Integer compileListExpression(Expr.ListExpr listExpr) {

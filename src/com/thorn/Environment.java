@@ -63,6 +63,32 @@ class Environment {
         if (isImmutable) {
             immutables.put(name, true);
         }
+        
+        // Debug type information if flag is enabled
+        if (System.getProperty("thorn.debug.types") != null) {
+            String thornType = getThornTypeName(value);
+            String javaType = getJavaTypeName(value);
+            System.out.println(String.format("%-20s %-15s %s", name, thornType, javaType));
+        }
+    }
+    
+    private String getThornTypeName(Object value) {
+        if (value == null) return "null";
+        if (value instanceof String) return "string";
+        if (value instanceof Double) return "number";
+        if (value instanceof Boolean) return "boolean";
+        if (value instanceof java.util.List) return "Array";
+        if (value instanceof java.util.Map) return "Dict";
+        if (value instanceof ThornCallable) return "Function";
+        if (value instanceof ThornClass) return "Class";
+        if (value instanceof ThornInstance) return "Instance";
+        if (value instanceof ThornType) return "Type";
+        return "unknown";
+    }
+    
+    private String getJavaTypeName(Object value) {
+        if (value == null) return "null";
+        return value.getClass().getSimpleName();
     }
 
     Object get(Token name) {

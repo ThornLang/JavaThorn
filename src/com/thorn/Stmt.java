@@ -46,9 +46,10 @@ public abstract class Stmt {
     }
 
     public static class Function extends Stmt {
-        Function(Token name, List<Token> params, List<Stmt> body) {
+        Function(Token name, List<Parameter> params, Expr returnType, List<Stmt> body) {
             this.name = name;
             this.params = params;
+            this.returnType = returnType;
             this.body = body;
         }
 
@@ -58,7 +59,8 @@ public abstract class Stmt {
         }
 
         public final Token name;
-        public final List<Token> params;
+        public final List<Parameter> params;
+        public final Expr returnType;  // null if no return type annotation
         public final List<Stmt> body;
     }
 
@@ -95,8 +97,9 @@ public abstract class Stmt {
     }
 
     public static class Var extends Stmt {
-        Var(Token name, Expr initializer, boolean isImmutable) {
+        Var(Token name, Expr type, Expr initializer, boolean isImmutable) {
             this.name = name;
+            this.type = type;
             this.initializer = initializer;
             this.isImmutable = isImmutable;
         }
@@ -107,6 +110,7 @@ public abstract class Stmt {
         }
 
         public final Token name;
+        public final Expr type;  // null if no type annotation
         public final Expr initializer;
         public final boolean isImmutable;
     }
@@ -184,5 +188,16 @@ public abstract class Stmt {
         }
 
         public final Stmt declaration;
+    }
+    
+    // Parameter class for typed function parameters
+    public static class Parameter {
+        Parameter(Token name, Expr type) {
+            this.name = name;
+            this.type = type;
+        }
+        
+        public final Token name;
+        public final Expr type;  // null if no type annotation
     }
 }

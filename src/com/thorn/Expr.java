@@ -21,6 +21,12 @@ public abstract class Expr {
         R visitGetExpr(Get expr);
         R visitSetExpr(Set expr);
         R visitThisExpr(This expr);
+        
+        // Type expression visitors
+        R visitTypeExpr(Type expr);
+        R visitGenericTypeExpr(GenericType expr);
+        R visitFunctionTypeExpr(FunctionType expr);
+        R visitArrayTypeExpr(ArrayType expr);
     }
 
     abstract <R> R accept(Visitor<R> visitor);
@@ -294,5 +300,62 @@ public abstract class Expr {
         }
 
         public final Token keyword;
+    }
+    
+    // Type expression classes
+    public static class Type extends Expr {
+        Type(Token name) {
+            this.name = name;
+        }
+
+        @Override
+        <R> R accept(Visitor<R> visitor) {
+            return visitor.visitTypeExpr(this);
+        }
+
+        public final Token name;
+    }
+    
+    public static class GenericType extends Expr {
+        GenericType(Token name, List<Expr> typeArgs) {
+            this.name = name;
+            this.typeArgs = typeArgs;
+        }
+
+        @Override
+        <R> R accept(Visitor<R> visitor) {
+            return visitor.visitGenericTypeExpr(this);
+        }
+
+        public final Token name;
+        public final List<Expr> typeArgs;
+    }
+    
+    public static class FunctionType extends Expr {
+        FunctionType(List<Expr> paramTypes, Expr returnType) {
+            this.paramTypes = paramTypes;
+            this.returnType = returnType;
+        }
+
+        @Override
+        <R> R accept(Visitor<R> visitor) {
+            return visitor.visitFunctionTypeExpr(this);
+        }
+
+        public final List<Expr> paramTypes;
+        public final Expr returnType;
+    }
+    
+    public static class ArrayType extends Expr {
+        ArrayType(Expr elementType) {
+            this.elementType = elementType;
+        }
+
+        @Override
+        <R> R accept(Visitor<R> visitor) {
+            return visitor.visitArrayTypeExpr(this);
+        }
+
+        public final Expr elementType;
     }
 }

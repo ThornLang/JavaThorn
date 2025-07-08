@@ -32,6 +32,11 @@ class Parser {
             if (match(DOLLAR)) return function("function");
             if (match(AT)) return varDeclaration(true);
             
+            // Check for typed variable declaration: identifier : type = value
+            if (check(IDENTIFIER) && checkAhead(COLON)) {
+                return varDeclaration(false);
+            }
+            
             return statement();
         } catch (ParseError error) {
             synchronize();
@@ -102,13 +107,18 @@ class Parser {
         
         Token name = consume(IDENTIFIER, "Expected variable name.");
         
+        Expr type = null;
+        if (match(COLON)) {
+            type = parseType();
+        }
+        
         Expr initializer = null;
         if (match(EQUAL)) {
             initializer = expression();
         }
 
         consume(SEMICOLON, "Expected ';' after variable declaration.");
-        return new Stmt.Var(name, initializer, isImmutable);
+        return new Stmt.Var(name, type, initializer, isImmutable);
     }
 
     private Stmt statement() {
@@ -219,21 +229,35 @@ class Parser {
         Token name = consume(IDENTIFIER, "Expected " + kind + " name.");
         consume(LEFT_PAREN, "Expected '(' after " + kind + " name.");
         
-        List<Token> parameters = new ArrayList<>();
+        List<Stmt.Parameter> parameters = new ArrayList<>();
         if (!check(RIGHT_PAREN)) {
             do {
                 if (parameters.size() >= 255) {
                     error(peek(), "Can't have more than 255 parameters.");
                 }
-                parameters.add(consume(IDENTIFIER, "Expected parameter name."));
+                
+                Token paramName = consume(IDENTIFIER, "Expected parameter name.");
+                Expr paramType = null;
+                if (match(COLON)) {
+                    paramType = parseType();
+                }
+                
+                parameters.add(new Stmt.Parameter(paramName, paramType));
             } while (match(COMMA));
         }
         consume(RIGHT_PAREN, "Expected ')' after parameters.");
 
+        Expr returnType = null;
+        if (match(COLON)) {
+            returnType = parseType();
+        } else if (match(ARROW)) {
+            returnType = parseType();
+        }
+
         consume(LEFT_BRACE, "Expected '{' before " + kind + " body.");
         List<Stmt> body = block();
         
-        return new Stmt.Function(name, parameters, body);
+        return new Stmt.Function(name, parameters, returnType, body);
     }
 
     private Stmt expressionStatement() {
@@ -579,6 +603,72 @@ class Parser {
     private Token advance() {
         if (!isAtEnd()) current++;
         return previous();
+    }
+
+    // Type parsing methods
+    private Expr parseType() {
+        if (match(STRING_TYPE, NUMBER_TYPE, BOOLEAN_TYPE, NULL_TYPE, ANY_TYPE, VOID_TYPE)) {
+            return new Expr.Type(previous());
+        }
+        
+        if (match(ARRAY_TYPE)) {
+            Token arrayToken = previous();
+            consume(LEFT_BRACKET, "Expected '[' after 'Array'.");
+            Expr elementType = parseType();
+            consume(RIGHT_BRACKET, "Expected ']' after array element type.");
+            return new Expr.GenericType(arrayToken, java.util.Arrays.asList(elementType));
+        }
+        
+        if (match(FUNCTION_TYPE)) {
+            Token functionToken = previous();
+            consume(LEFT_BRACKET, "Expected '[' after 'Function'.");
+            
+            List<Expr> paramTypes = new ArrayList<>();
+            if (!check(RIGHT_BRACKET)) {
+                do {
+                    paramTypes.add(parseType());
+                } while (match(COMMA));
+            }
+            
+            consume(RIGHT_BRACKET, "Expected ']' after function parameter types.");
+            return new Expr.GenericType(functionToken, paramTypes);
+        }
+        
+        if (match(LEFT_PAREN)) {
+            List<Expr> paramTypes = new ArrayList<>();
+            if (!check(RIGHT_PAREN)) {
+                do {
+                    paramTypes.add(parseType());
+                } while (match(COMMA));
+            }
+            consume(RIGHT_PAREN, "Expected ')' after function parameter types.");
+            
+            consume(ARROW, "Expected '->' after function parameter types.");
+            Expr returnType = parseType();
+            
+            return new Expr.FunctionType(paramTypes, returnType);
+        }
+        
+        // Handle custom types (identifiers)
+        if (check(IDENTIFIER)) {
+            Token name = advance();
+            
+            // Check for generic types like List[T]
+            if (match(LEFT_BRACKET)) {
+                List<Expr> typeArgs = new ArrayList<>();
+                if (!check(RIGHT_BRACKET)) {
+                    do {
+                        typeArgs.add(parseType());
+                    } while (match(COMMA));
+                }
+                consume(RIGHT_BRACKET, "Expected ']' after generic type arguments.");
+                return new Expr.GenericType(name, typeArgs);
+            }
+            
+            return new Expr.Type(name);
+        }
+        
+        throw error(peek(), "Expected type.");
     }
 
     private boolean isAtEnd() {

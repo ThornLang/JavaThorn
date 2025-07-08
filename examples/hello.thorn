@@ -1,14 +1,6 @@
-// Test Thorn syntax
-x = 5;
-@immut y = 10;
-
 $ greet(name) {
     return "Hello, " + name;
 }
 
 result = greet("World");
-
-// Test operators
-sum = x + y;
-power = 2 ** 3;
-safe = null ?? "default";
+print(result);

@@ -480,6 +480,37 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     public Object visitThisExpr(Expr.This expr) {
         return lookUpVariable(expr.keyword, expr);
     }
+    
+    // Type expression visitors - for now, just return type information
+    @Override
+    public Object visitTypeExpr(Expr.Type expr) {
+        return ThornTypeFactory.createType(expr.name.lexeme);
+    }
+    
+    @Override
+    public Object visitGenericTypeExpr(Expr.GenericType expr) {
+        List<Object> typeArgs = new ArrayList<>();
+        for (Expr arg : expr.typeArgs) {
+            typeArgs.add(evaluate(arg));
+        }
+        return ThornTypeFactory.createGenericType(expr.name.lexeme, typeArgs);
+    }
+    
+    @Override
+    public Object visitFunctionTypeExpr(Expr.FunctionType expr) {
+        List<Object> paramTypes = new ArrayList<>();
+        for (Expr paramType : expr.paramTypes) {
+            paramTypes.add(evaluate(paramType));
+        }
+        Object returnType = evaluate(expr.returnType);
+        return ThornTypeFactory.createFunctionType(paramTypes, returnType);
+    }
+    
+    @Override
+    public Object visitArrayTypeExpr(Expr.ArrayType expr) {
+        Object elementType = evaluate(expr.elementType);
+        return ThornTypeFactory.createArrayType(elementType);
+    }
 
     @Override
     public Void visitBlockStmt(Stmt.Block stmt) {
@@ -495,7 +526,12 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Void visitFunctionStmt(Stmt.Function stmt) {
-        ThornFunction function = new ThornFunction(stmt.name.lexeme, stmt.params, stmt.body, environment);
+        ThornType returnType = null;
+        if (stmt.returnType != null) {
+            returnType = (ThornType) evaluate(stmt.returnType);
+        }
+        
+        ThornFunction function = new ThornFunction(stmt.name.lexeme, stmt.params, stmt.body, environment, returnType);
         environment.define(stmt.name.lexeme, function, false);
         return null;
     }
@@ -526,9 +562,28 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         if (stmt.initializer != null) {
             value = evaluate(stmt.initializer);
         }
+        
+        // Type check if type annotation is present
+        if (stmt.type != null) {
+            ThornType variableType = (ThornType) evaluate(stmt.type);
+            if (value != null && !variableType.matches(value)) {
+                throw new Thorn.RuntimeError(stmt.name, "Type error: cannot assign " + getTypeName(value) + 
+                                     " to variable '" + stmt.name.lexeme + "' of type " + variableType.getName());
+            }
+        }
 
         environment.define(stmt.name.lexeme, value, stmt.isImmutable);
         return null;
+    }
+    
+    private String getTypeName(Object value) {
+        if (value == null) return "null";
+        if (value instanceof String) return "string";
+        if (value instanceof Double) return "number";
+        if (value instanceof Boolean) return "boolean";
+        if (value instanceof List) return "Array";
+        if (value instanceof ThornCallable) return "Function";
+        return value.getClass().getSimpleName();
     }
 
     @Override
@@ -638,8 +693,13 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
         Map<String, ThornFunction> methods = new HashMap<>();
         for (Stmt.Function method : stmt.methods) {
+            ThornType returnType = null;
+            if (method.returnType != null) {
+                returnType = (ThornType) evaluate(method.returnType);
+            }
+            
             ThornFunction function = new ThornFunction(method.name.lexeme, 
-                    method.params, method.body, environment);
+                    method.params, method.body, environment, returnType);
             methods.put(method.name.lexeme, function);
         }
 
@@ -723,6 +783,11 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     private Object evaluate(Expr expr) {
         return expr.accept(this);
+    }
+    
+    // Public method for type evaluation from functions
+    public Object evaluateType(Expr expr) {
+        return evaluate(expr);
     }
 
     private boolean isTruthy(Object object) {

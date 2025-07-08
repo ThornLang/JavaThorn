@@ -1,8 +1,0 @@
-x = 10;
-@immut PI = 3.14159;
-print("x = " + x);
-print("PI = " + PI);
-
-PI = 2;
-
-print("PI = " + PI);

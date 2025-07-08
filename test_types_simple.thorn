@@ -1,0 +1,8 @@
+// Test simple variable declarations with types
+
+// These should be variable declarations, not assignments
+x: number = 42;
+name: string = "Alice";
+
+print("x: " + x);
+print("name: " + name);

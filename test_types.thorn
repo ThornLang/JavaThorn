@@ -1,0 +1,32 @@
+// Test basic type annotations
+
+// Basic variable types
+x: number = 42;
+name: string = "Alice";
+isActive: boolean = true;
+@immut PI: number = 3.14159;
+
+print("x: " + x);
+print("name: " + name);
+print("isActive: " + isActive);
+print("PI: " + PI);
+
+// Function with typed parameters and return type
+$ greet(name: string): string {
+    return "Hello, " + name + "!";
+}
+
+result: string = greet("World");
+print(result);
+
+// Function with number parameters
+$ add(a: number, b: number): number {
+    return a + b;
+}
+
+sum: number = add(5, 3);
+print("5 + 3 = " + sum);
+
+// Array type
+numbers: Array[number] = [1, 2, 3, 4, 5];
+print("Numbers: " + numbers);

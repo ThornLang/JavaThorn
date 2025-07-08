@@ -40,8 +40,11 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
         StringBuilder builder = new StringBuilder();
         builder.append("(function ").append(stmt.name.lexeme);
         builder.append(" (params");
-        for (Token param : stmt.params) {
-            builder.append(" ").append(param.lexeme);
+        for (Stmt.Parameter param : stmt.params) {
+            builder.append(" ").append(param.name.lexeme);
+            if (param.type != null) {
+                builder.append(": ").append(print(param.type));
+            }
         }
         builder.append(") (body");
         for (Stmt bodyStmt : stmt.body) {
@@ -235,6 +238,41 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
     @Override
     public String visitThisExpr(Expr.This expr) {
         return "this";
+    }
+    
+    @Override
+    public String visitTypeExpr(Expr.Type expr) {
+        return expr.name.lexeme;
+    }
+    
+    @Override
+    public String visitGenericTypeExpr(Expr.GenericType expr) {
+        StringBuilder builder = new StringBuilder();
+        builder.append(expr.name.lexeme).append("[");
+        for (int i = 0; i < expr.typeArgs.size(); i++) {
+            if (i > 0) builder.append(", ");
+            builder.append(print(expr.typeArgs.get(i)));
+        }
+        builder.append("]");
+        return builder.toString();
+    }
+    
+    @Override
+    public String visitFunctionTypeExpr(Expr.FunctionType expr) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("(");
+        for (int i = 0; i < expr.paramTypes.size(); i++) {
+            if (i > 0) builder.append(", ");
+            builder.append(print(expr.paramTypes.get(i)));
+        }
+        builder.append(") -> ");
+        builder.append(print(expr.returnType));
+        return builder.toString();
+    }
+    
+    @Override
+    public String visitArrayTypeExpr(Expr.ArrayType expr) {
+        return print(expr.elementType) + "[]";
     }
 
     private String parenthesize(String name, Expr... exprs) {

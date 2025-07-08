@@ -36,6 +36,16 @@ class Scanner {
         keywords.put("in", IN);
         keywords.put("match", MATCH);
         keywords.put("immut", IMMUT);
+        
+        // Type system keywords
+        keywords.put("string", STRING_TYPE);
+        keywords.put("number", NUMBER_TYPE);
+        keywords.put("boolean", BOOLEAN_TYPE);
+        keywords.put("null", NULL_TYPE);
+        keywords.put("Any", ANY_TYPE);
+        keywords.put("void", VOID_TYPE);
+        keywords.put("Array", ARRAY_TYPE);
+        keywords.put("Function", FUNCTION_TYPE);
     }
 
     Scanner(String source) {

@@ -1,16 +1,16 @@
 // String operations benchmark
 @immut ITERATIONS = 1000;
 
-start_time = clock();
+start_time: number = clock();
 
-result = "";
-i = 0;
+result: string = "";
+i: number = 0;
 while (i < ITERATIONS) {
     result = result + "Hello";
     i = i + 1;
 }
 
-end_time = clock();
+end_time: number = clock();
 
 print("Iterations: " + ITERATIONS);
 print("Result length: " + result.length);

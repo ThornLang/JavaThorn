@@ -510,7 +510,7 @@ public class SimpleCompiler {
         
         // Add parameters as local variables
         for (int i = 0; i < funcStmt.params.size(); i++) {
-            String paramName = funcStmt.params.get(i).lexeme;
+            String paramName = funcStmt.params.get(i).name.lexeme;
             funcCompiler.locals.put(paramName, i); // Use parameter index as register
         }
         
@@ -580,7 +580,7 @@ public class SimpleCompiler {
             
             // Add parameters as local variables
             for (int i = 0; i < method.params.size(); i++) {
-                String paramName = method.params.get(i).lexeme;
+                String paramName = method.params.get(i).name.lexeme;
                 methodCompiler.locals.put(paramName, i);
             }
             

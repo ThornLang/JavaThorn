@@ -179,12 +179,10 @@ public class DeadCodeEliminator {
         expr.accept(new Expr.Visitor<Void>() {
             @Override
             public Void visitLambdaExpr(Expr.Lambda expr) {
-                // Lambda parameters are local definitions
-                for (Token param : expr.params) {
-                    definedSymbols.add(param.lexeme);
-                }
+                // Lambda parameters are local to lambda scope, not global
+                // They should not be added to global definedSymbols
                 
-                // Process lambda body
+                // Process lambda body for nested definitions
                 for (Stmt stmt : expr.body) {
                     collectDefinitions(stmt);
                 }
@@ -672,6 +670,9 @@ public class DeadCodeEliminator {
             
             @Override
             public Void visitForStmt(Stmt.For stmt) {
+                // For loop variable is a local definition
+                scope.localDefinitions.add(stmt.variable.lexeme);
+                
                 analyzeLocalExpression(stmt.iterable, scope);
                 analyzeLocalStatement(stmt.body, scope);
                 return null;
@@ -889,7 +890,9 @@ public class DeadCodeEliminator {
             
             @Override
             public Boolean visitGetExpr(Expr.Get expr) {
-                // Method calls have side effects
+                // Property access itself has no side effects, but the object might
+                // Note: In Thorn, method calls are represented as Expr.Call with Expr.Get as callee
+                // So this is just property access, not method invocation
                 return hasSideEffects(expr.object);
             }
             

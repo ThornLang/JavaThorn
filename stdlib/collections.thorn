@@ -5,3 +5,5 @@ $ map(list: Array[T], func: Function[T, U]): Array[U] {
     }
     return result;
 }
+
+export map;

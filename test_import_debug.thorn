@@ -1,0 +1,10 @@
+// Debug import system
+import "collections";
+
+// Try to call map function
+print("Testing map function availability");
+print("Type of map: " + typeof(map));
+
+// Test with simple array
+result = map([1, 2, 3], $(x) => x + 1);
+print("Map result: " + result);

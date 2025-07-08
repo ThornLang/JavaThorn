@@ -95,3 +95,10 @@ java com.thorn.Thorn
 - Static type system migration (comprehensive 16-week plan documented)
 - Standard library reconstruction (detailed module specifications)
 - Advanced features like generics and compile-time type checking
+
+## Git Commit Naming Convention
+- Use the format "gh-issuenumber: one line description"
+  - Example: `gh-42: add pattern matching support`
+  - Ensures clear tracking of issue-related work
+  - Helps in tracing branch purpose and corresponding GitHub issue
+  

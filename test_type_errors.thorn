@@ -1,4 +1,0 @@
-// Test type checking errors
-
-// This should cause a type error
-x: number = "this is a string, not a number";

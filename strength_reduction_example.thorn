@@ -1,0 +1,27 @@
+// Strength Reduction Optimization Example
+import { range } from "collections";
+
+print("=== Correct Strength Reduction Example ===");
+
+// BEFORE: Multiplication in loop (expensive)
+result_before = 0;
+for (i in range(100)) {
+    result_before = result_before + (i * 2);  // Multiplication each iteration
+}
+print("Before optimization: " + result_before);
+
+// AFTER: Strength reduction to addition (cheaper)
+result_after = 0;
+current_value = 0;  // Represents i*2 for current i
+for (i in range(100)) {
+    result_after = result_after + current_value;
+    current_value = current_value + 2;  // Increment by constant difference
+}
+print("After optimization: " + result_after);
+
+print("Equivalent results: " + (result_before == result_after));
+
+print("\n=== Key Insight ===");
+print("Instead of computing i*2 each time (multiplication),");
+print("we maintain current_value and add 2 each iteration (addition).");
+print("This reduces expensive multiplication to cheaper addition.");

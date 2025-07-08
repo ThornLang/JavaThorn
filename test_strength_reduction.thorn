@@ -1,0 +1,32 @@
+// Test strength reduction optimization
+import { range } from "collections";
+
+print("=== Strength Reduction Test ===");
+
+// Before: multiplication in loop (accumulating)
+result1 = 0;
+for (i in range(100)) {
+    result1 = result1 + (i * 2);
+}
+print("Before (i * 2): " + result1);
+
+// After: strength reduction to addition
+// For i*2: we start with 0*2=0, then 1*2=2, then 2*2=4, etc.
+// The increment between consecutive terms is always 2
+result2 = 0;
+current_value = 0;  // This represents i*2 for current i
+for (i in range(100)) {
+    result2 = result2 + current_value;
+    current_value = current_value + 2;  // Next i*2 = (i+1)*2 = i*2 + 2
+}
+print("After (strength reduction): " + result2);
+
+// Verify they're the same
+print("Results match: " + (result1 == result2));
+
+print("\n=== Alternative: Direct calculation ===");
+// Most optimized: direct calculation
+// Sum of i*2 for i=0 to 99 = 2 * sum(0 to 99) = 2 * (99*100/2) = 9900
+result3 = 2 * (99 * 100 / 2);
+print("Direct calculation: " + result3);
+print("Matches loop result: " + (result1 == result3));

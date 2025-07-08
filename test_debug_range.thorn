@@ -1,0 +1,8 @@
+import { range } from "collections";
+
+result = 0;
+for (i in range(5)) {
+    result = i * 2;
+    print("i = " + i + ", result = " + result);
+}
+print("Final result: " + result);

@@ -11,6 +11,7 @@ public class DeadCodeEliminator {
     private final Set<String> usedSymbols = new HashSet<>();
     private final Set<String> definedSymbols = new HashSet<>();
     private final Map<String, Stmt> symbolDefinitions = new HashMap<>();
+    private final Set<String> exportedSymbols = new HashSet<>();
     
     /**
      * Optimize the AST by removing dead code.
@@ -22,10 +23,12 @@ public class DeadCodeEliminator {
         usedSymbols.clear();
         definedSymbols.clear();
         symbolDefinitions.clear();
+        exportedSymbols.clear();
         
-        // First pass: collect all symbol definitions
+        // First pass: collect all symbol definitions and exports
         for (Stmt stmt : statements) {
             collectDefinitions(stmt);
+            collectExports(stmt);
         }
         
         // Second pass: collect all symbol usages
@@ -33,11 +36,15 @@ public class DeadCodeEliminator {
             collectUsages(stmt);
         }
         
-        // Third pass: filter out unused symbols
+        // Mark exported symbols as used
+        usedSymbols.addAll(exportedSymbols);
+        
+        // Third pass: filter out unused symbols and handle side effects
         List<Stmt> optimized = new ArrayList<>();
         for (Stmt stmt : statements) {
-            if (shouldKeepStatement(stmt)) {
-                optimized.add(stmt);
+            Stmt processedStmt = processStatement(stmt);
+            if (processedStmt != null) {
+                optimized.add(processedStmt);
             }
         }
         
@@ -504,6 +511,139 @@ public class DeadCodeEliminator {
             @Override public Void visitGenericTypeExpr(Expr.GenericType expr) { return null; }
             @Override public Void visitFunctionTypeExpr(Expr.FunctionType expr) { return null; }
             @Override public Void visitArrayTypeExpr(Expr.ArrayType expr) { return null; }
+        });
+    }
+    
+    /**
+     * Collect exported symbols from statements.
+     */
+    private void collectExports(Stmt stmt) {
+        if (stmt instanceof Stmt.Export) {
+            Stmt.Export export = (Stmt.Export) stmt;
+            if (export.declaration instanceof Stmt.Function) {
+                Stmt.Function func = (Stmt.Function) export.declaration;
+                exportedSymbols.add(func.name.lexeme);
+            } else if (export.declaration instanceof Stmt.Var) {
+                Stmt.Var var = (Stmt.Var) export.declaration;
+                exportedSymbols.add(var.name.lexeme);
+            } else if (export.declaration instanceof Stmt.Class) {
+                Stmt.Class cls = (Stmt.Class) export.declaration;
+                exportedSymbols.add(cls.name.lexeme);
+            }
+        }
+    }
+    
+    /**
+     * Process a statement for dead code elimination and side effect preservation.
+     */
+    private Stmt processStatement(Stmt stmt) {
+        if (shouldKeepStatement(stmt)) {
+            return stmt;
+        }
+        
+        // Handle side effects for unused variable assignments
+        if (stmt instanceof Stmt.Expression) {
+            Stmt.Expression exprStmt = (Stmt.Expression) stmt;
+            if (exprStmt.expression instanceof Expr.Assign) {
+                Expr.Assign assign = (Expr.Assign) exprStmt.expression;
+                if (!usedSymbols.contains(assign.name.lexeme)) {
+                    // Check if the assignment has side effects (function calls)
+                    if (hasSideEffects(assign.value)) {
+                        // Convert to expression statement without assignment
+                        return new Stmt.Expression(assign.value);
+                    }
+                }
+            }
+        }
+        
+        return null; // Remove statement
+    }
+    
+    /**
+     * Check if an expression has side effects (function calls, method calls, etc.).
+     */
+    private boolean hasSideEffects(Expr expr) {
+        return expr.accept(new Expr.Visitor<Boolean>() {
+            @Override
+            public Boolean visitCallExpr(Expr.Call expr) {
+                return true; // Function calls have side effects
+            }
+            
+            @Override
+            public Boolean visitGetExpr(Expr.Get expr) {
+                // Method calls have side effects
+                return hasSideEffects(expr.object);
+            }
+            
+            @Override
+            public Boolean visitBinaryExpr(Expr.Binary expr) {
+                return hasSideEffects(expr.left) || hasSideEffects(expr.right);
+            }
+            
+            @Override
+            public Boolean visitUnaryExpr(Expr.Unary expr) {
+                return hasSideEffects(expr.right);
+            }
+            
+            @Override
+            public Boolean visitGroupingExpr(Expr.Grouping expr) {
+                return hasSideEffects(expr.expression);
+            }
+            
+            @Override
+            public Boolean visitAssignExpr(Expr.Assign expr) {
+                return true; // Assignments have side effects
+            }
+            
+            @Override
+            public Boolean visitLogicalExpr(Expr.Logical expr) {
+                return hasSideEffects(expr.left) || hasSideEffects(expr.right);
+            }
+            
+            @Override
+            public Boolean visitListExpr(Expr.ListExpr expr) {
+                return expr.elements.stream().anyMatch(DeadCodeEliminator.this::hasSideEffects);
+            }
+            
+            @Override
+            public Boolean visitDictExpr(Expr.Dict expr) {
+                return expr.keys.stream().anyMatch(DeadCodeEliminator.this::hasSideEffects) || 
+                       expr.values.stream().anyMatch(DeadCodeEliminator.this::hasSideEffects);
+            }
+            
+            @Override
+            public Boolean visitIndexExpr(Expr.Index expr) {
+                return hasSideEffects(expr.object) || hasSideEffects(expr.index);
+            }
+            
+            @Override
+            public Boolean visitIndexSetExpr(Expr.IndexSet expr) {
+                return true; // Index assignments have side effects
+            }
+            
+            @Override
+            public Boolean visitMatchExpr(Expr.Match expr) {
+                return true; // Match expressions could have side effects
+            }
+            
+            @Override
+            public Boolean visitSetExpr(Expr.Set expr) {
+                return true; // Property assignments have side effects
+            }
+            
+            @Override
+            public Boolean visitLambdaExpr(Expr.Lambda expr) {
+                return false; // Lambda creation itself has no side effects
+            }
+            
+            // Simple expressions without side effects
+            @Override public Boolean visitLiteralExpr(Expr.Literal expr) { return false; }
+            @Override public Boolean visitVariableExpr(Expr.Variable expr) { return false; }
+            @Override public Boolean visitThisExpr(Expr.This expr) { return false; }
+            @Override public Boolean visitTypeExpr(Expr.Type expr) { return false; }
+            @Override public Boolean visitGenericTypeExpr(Expr.GenericType expr) { return false; }
+            @Override public Boolean visitFunctionTypeExpr(Expr.FunctionType expr) { return false; }
+            @Override public Boolean visitArrayTypeExpr(Expr.ArrayType expr) { return false; }
         });
     }
     

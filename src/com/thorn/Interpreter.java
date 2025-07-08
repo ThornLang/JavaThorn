@@ -8,12 +8,15 @@ import java.util.Map;
 class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     final Environment globals = new Environment();
     private Environment environment = globals;
+    private final ModuleSystem moduleSystem;
     
     // Return value optimization - avoid exceptions
     Object returnValue = null;
     boolean hasReturned = false;
 
     Interpreter() {
+        this.moduleSystem = new ModuleSystem(this);
+        
         // Add built-in print function
         globals.define("print", new ThornCallable() {
             @Override
@@ -51,6 +54,23 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             }
         } catch (Thorn.RuntimeError error) {
             Thorn.runtimeError(error);
+        }
+    }
+    
+    void executeModule(List<Stmt> statements, ModuleSystem.ModuleEnvironment moduleEnv) {
+        Environment previous = this.environment;
+        this.environment = moduleEnv;
+        
+        try {
+            for (Stmt statement : statements) {
+                execute(statement);
+                if (hasReturned) {
+                    hasReturned = false;
+                    returnValue = null;
+                }
+            }
+        } finally {
+            this.environment = previous;
         }
     }
 
@@ -292,6 +312,37 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
         throw new Thorn.RuntimeError(expr.bracket,
                 "Only lists and dictionaries support indexing.");
+    }
+
+    @Override
+    public Object visitIndexSetExpr(Expr.IndexSet expr) {
+        Object object = evaluate(expr.object);
+        Object index = evaluate(expr.index);
+        Object value = evaluate(expr.value);
+
+        if (object instanceof List) {
+            if (!(index instanceof Double)) {
+                throw new Thorn.RuntimeError(expr.bracket,
+                        "List index must be a number.");
+            }
+            @SuppressWarnings("unchecked")
+            List<Object> list = (List<Object>)object;
+            int i = ((Double)index).intValue();
+            if (i < 0 || i >= list.size()) {
+                throw new Thorn.RuntimeError(expr.bracket,
+                        "List index out of bounds.");
+            }
+            list.set(i, value);
+            return value;
+        } else if (object instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<Object, Object> map = (Map<Object, Object>)object;
+            map.put(index, value);
+            return value;
+        }
+
+        throw new Thorn.RuntimeError(expr.bracket,
+                "Only lists and dictionaries support index assignment.");
     }
 
     @Override
@@ -599,13 +650,54 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Void visitImportStmt(Stmt.Import stmt) {
-        // TODO: Implement module system
+        String modulePath = stmt.module.lexeme;
+        ModuleSystem.Module module = moduleSystem.loadModule(modulePath);
+        
+        if (stmt.names == null || stmt.names.isEmpty()) {
+            // Import all exports
+            for (String name : module.getExportedNames()) {
+                Object value = module.getExport(name);
+                environment.define(name, value, false);
+            }
+        } else {
+            // Import specific names
+            for (Token name : stmt.names) {
+                Object value = module.getExport(name.lexeme);
+                environment.define(name.lexeme, value, false);
+            }
+        }
+        
         return null;
     }
 
     @Override
     public Void visitExportStmt(Stmt.Export stmt) {
-        // TODO: Implement module system
+        // Check if we're in a module environment
+        if (environment instanceof ModuleSystem.ModuleEnvironment) {
+            ModuleSystem.ModuleEnvironment moduleEnv = (ModuleSystem.ModuleEnvironment) environment;
+            
+            // Execute the declaration
+            stmt.declaration.accept(this);
+            
+            // Export based on declaration type
+            if (stmt.declaration instanceof Stmt.Function) {
+                Stmt.Function funcDecl = (Stmt.Function) stmt.declaration;
+                Object value = environment.get(funcDecl.name);
+                moduleEnv.export(funcDecl.name.lexeme, value);
+            } else if (stmt.declaration instanceof Stmt.Var) {
+                Stmt.Var varDecl = (Stmt.Var) stmt.declaration;
+                Object value = environment.get(varDecl.name);
+                moduleEnv.export(varDecl.name.lexeme, value);
+            } else if (stmt.declaration instanceof Stmt.Class) {
+                Stmt.Class classDecl = (Stmt.Class) stmt.declaration;
+                Object value = environment.get(classDecl.name);
+                moduleEnv.export(classDecl.name.lexeme, value);
+            }
+        } else {
+            // Not in a module context, just execute the declaration
+            stmt.declaration.accept(this);
+        }
+        
         return null;
     }
 

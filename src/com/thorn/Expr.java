@@ -16,6 +16,7 @@ public abstract class Expr {
         R visitListExpr(ListExpr expr);
         R visitDictExpr(Dict expr);
         R visitIndexExpr(Index expr);
+        R visitIndexSetExpr(IndexSet expr);
         R visitMatchExpr(Match expr);
         R visitGetExpr(Get expr);
         R visitSetExpr(Set expr);
@@ -202,6 +203,25 @@ public abstract class Expr {
         public final Expr object;
         public final Token bracket;
         public final Expr index;
+    }
+
+    public static class IndexSet extends Expr {
+        IndexSet(Expr object, Token bracket, Expr index, Expr value) {
+            this.object = object;
+            this.bracket = bracket;
+            this.index = index;
+            this.value = value;
+        }
+
+        @Override
+        <R> R accept(Visitor<R> visitor) {
+            return visitor.visitIndexSetExpr(this);
+        }
+
+        public final Expr object;
+        public final Token bracket;
+        public final Expr index;
+        public final Expr value;
     }
 
     public static class Match extends Expr {

@@ -45,8 +45,12 @@ class Parser {
             declaration = function("function");
         } else if (match(CLASS)) {
             declaration = classDeclaration();
+        } else if (match(AT)) {
+            declaration = varDeclaration(true);
+        } else if (check(IDENTIFIER)) {
+            declaration = varDeclaration(false);
         } else {
-            throw error(previous(), "Expected function or class after 'export'.");
+            throw error(previous(), "Expected function, class, or variable after 'export'.");
         }
         return new Stmt.Export(declaration);
     }
@@ -272,7 +276,7 @@ class Parser {
             } else if (expr instanceof Expr.Index) {
                 // Handle array/dict assignment
                 Expr.Index index = (Expr.Index)expr;
-                // We'll handle this in the interpreter
+                return new Expr.IndexSet(index.object, index.bracket, index.index, value);
             }
 
             error(equals, "Invalid assignment target.");

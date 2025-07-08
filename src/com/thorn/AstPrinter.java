@@ -203,6 +203,11 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
     }
 
     @Override
+    public String visitIndexSetExpr(Expr.IndexSet expr) {
+        return "(index-set " + print(expr.object) + " " + print(expr.index) + " " + print(expr.value) + ")";
+    }
+
+    @Override
     public String visitMatchExpr(Expr.Match expr) {
         StringBuilder builder = new StringBuilder();
         builder.append("(match ").append(print(expr.expr));

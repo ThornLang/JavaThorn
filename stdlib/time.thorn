@@ -31,10 +31,8 @@ export $ timer() {
     start_time = clock();
     return {
         "start": start_time,
-        "elapsed": $ () {
-            return clock() - start_time;
-        },
-        "reset": $ () {
+        "elapsed": $() => clock() - start_time,
+        "reset": $() => {
             start_time = clock();
         }
     };

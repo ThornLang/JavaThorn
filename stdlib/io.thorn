@@ -37,7 +37,7 @@ export $ to_json(obj) {
     if (obj == null) return "null";
     if (obj == true) return "true";
     if (obj == false) return "false";
-    if (is_string(obj)) return "\"" + obj + "\"";
+    if (is_string(obj)) return "'" + obj + "'";
     if (is_number(obj)) return stringify(obj);
     if (is_array(obj)) {
         result = "[";

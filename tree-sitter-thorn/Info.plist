@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDocumentTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleTypeExtensions</key>
+            <array>
+                <string>thorn</string>
+            </array>
+            <key>CFBundleTypeName</key>
+            <string>Thorn Source File</string>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>LSTypeIsPackage</key>
+            <false/>
+            <key>NSDocumentClass</key>
+            <string>Document</string>
+        </dict>
+    </array>
+    <key>UTExportedTypeDeclarations</key>
+    <array>
+        <dict>
+            <key>UTTypeConformsTo</key>
+            <array>
+                <string>public.source-code</string>
+                <string>public.plain-text</string>
+            </array>
+            <key>UTTypeDescription</key>
+            <string>Thorn Source File</string>
+            <key>UTTypeIdentifier</key>
+            <string>com.thorn.source</string>
+            <key>UTTypeTagSpecification</key>
+            <dict>
+                <key>public.filename-extension</key>
+                <array>
+                    <string>thorn</string>
+                </array>
+            </dict>
+        </dict>
+    </array>
+</dict>
+</plist>

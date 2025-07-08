@@ -1,0 +1,104 @@
+================================================================================
+Simple function declaration
+================================================================================
+
+$ greet(name) {
+    return "Hello, " + name;
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    parameters: (parameter_list
+      (identifier))
+    body: (block
+      (return_statement
+        value: (binary_expression
+          left: (string_literal)
+          right: (identifier))))))
+
+================================================================================
+Function with multiple parameters
+================================================================================
+
+$ add(a, b) {
+    return a + b;
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    parameters: (parameter_list
+      (identifier)
+      (identifier))
+    body: (block
+      (return_statement
+        value: (binary_expression
+          left: (identifier)
+          right: (identifier))))))
+
+================================================================================
+Function with no parameters
+================================================================================
+
+$ hello() {
+    print("Hello, World!");
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    parameters: (parameter_list)
+    body: (block
+      (expression_statement
+        (call_expression
+          function: (identifier)
+          arguments: (argument_list
+            (string_literal)))))))
+
+================================================================================
+Recursive function
+================================================================================
+
+$ fib(n) {
+    if (n <= 1) {
+        return n;
+    }
+    return fib(n - 1) + fib(n - 2);
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (function_declaration
+    name: (identifier)
+    parameters: (parameter_list
+      (identifier))
+    body: (block
+      (if_statement
+        condition: (binary_expression
+          left: (identifier)
+          right: (number_literal))
+        then: (block
+          (return_statement
+            value: (identifier))))
+      (return_statement
+        value: (binary_expression
+          left: (call_expression
+            function: (identifier)
+            arguments: (argument_list
+              (binary_expression
+                left: (identifier)
+                right: (number_literal))))
+          right: (call_expression
+            function: (identifier)
+            arguments: (argument_list
+              (binary_expression
+                left: (identifier)
+                right: (number_literal)))))))))

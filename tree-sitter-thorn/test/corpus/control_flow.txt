@@ -1,0 +1,101 @@
+================================================================================
+If statement
+================================================================================
+
+if (x > 0) {
+    print("positive");
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (if_statement
+    condition: (binary_expression
+      left: (identifier)
+      right: (number_literal))
+    then: (block
+      (expression_statement
+        (call_expression
+          function: (identifier)
+          arguments: (argument_list
+            (string_literal)))))))
+
+================================================================================
+If-else statement
+================================================================================
+
+if (x > 0) {
+    print("positive");
+} else {
+    print("not positive");
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (if_statement
+    condition: (binary_expression
+      left: (identifier)
+      right: (number_literal))
+    then: (block
+      (expression_statement
+        (call_expression
+          function: (identifier)
+          arguments: (argument_list
+            (string_literal)))))
+    else: (block
+      (expression_statement
+        (call_expression
+          function: (identifier)
+          arguments: (argument_list
+            (string_literal)))))))
+
+================================================================================
+While loop
+================================================================================
+
+while (i < 10) {
+    print(i);
+    i = i + 1;
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (while_statement
+    condition: (binary_expression
+      left: (identifier)
+      right: (number_literal))
+    body: (block
+      (expression_statement
+        (call_expression
+          function: (identifier)
+          arguments: (argument_list
+            (identifier))))
+      (expression_statement
+        (assignment_expression
+          left: (identifier)
+          right: (binary_expression
+            left: (identifier)
+            right: (number_literal)))))))
+
+================================================================================
+For-in loop
+================================================================================
+
+for (item in items) {
+    print(item);
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (for_statement
+    variable: (identifier)
+    iterable: (identifier)
+    body: (block
+      (expression_statement
+        (call_expression
+          function: (identifier)
+          arguments: (argument_list
+            (identifier)))))))

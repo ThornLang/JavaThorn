@@ -1,0 +1,42 @@
+{
+  "name": "tree-sitter-thorn",
+  "version": "0.1.0",
+  "description": "Tree-sitter grammar for the Thorn programming language",
+  "main": "bindings/node",
+  "types": "bindings/node",
+  "keywords": [
+    "tree-sitter",
+    "thorn",
+    "parser",
+    "grammar"
+  ],
+  "files": [
+    "grammar.js",
+    "binding.gyp",
+    "prebuilds/**",
+    "bindings/node/*",
+    "queries/*",
+    "src/**"
+  ],
+  "dependencies": {
+    "node-addon-api": "^7.0.0",
+    "node-gyp-build": "^4.6.0"
+  },
+  "peerDependencies": {
+    "tree-sitter": "^0.20.0"
+  },
+  "devDependencies": {
+    "tree-sitter-cli": "^0.20.0"
+  },
+  "tree-sitter": [
+    {
+      "scope": "source.thorn",
+      "file-types": ["thorn"]
+    }
+  ],
+  "scripts": {
+    "build": "tree-sitter build",
+    "test": "tree-sitter test",
+    "parse": "tree-sitter parse"
+  }
+}

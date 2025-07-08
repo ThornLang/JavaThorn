@@ -1,0 +1,104 @@
+================================================================================
+Arithmetic expressions
+================================================================================
+
+result = a + b * c;
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (expression_statement
+    (assignment_expression
+      left: (identifier)
+      right: (binary_expression
+        left: (identifier)
+        right: (binary_expression
+          left: (identifier)
+          right: (identifier))))))
+
+================================================================================
+Power operator
+================================================================================
+
+result = 2 ** 3;
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (expression_statement
+    (assignment_expression
+      left: (identifier)
+      right: (binary_expression
+        left: (number_literal)
+        right: (number_literal)))))
+
+================================================================================
+Array literal
+================================================================================
+
+numbers = [1, 2, 3, 4, 5];
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (expression_statement
+    (assignment_expression
+      left: (identifier)
+      right: (array_literal
+        (number_literal)
+        (number_literal)
+        (number_literal)
+        (number_literal)
+        (number_literal)))))
+
+================================================================================
+Object literal
+================================================================================
+
+person = {"name": "Alice", "age": 25};
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (expression_statement
+    (assignment_expression
+      left: (identifier)
+      right: (object_literal
+        (object_pair
+          key: (string_literal)
+          value: (string_literal))
+        (object_pair
+          key: (string_literal)
+          value: (number_literal))))))
+
+================================================================================
+Array access
+================================================================================
+
+first = numbers[0];
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (expression_statement
+    (assignment_expression
+      left: (identifier)
+      right: (array_access
+        array: (identifier)
+        index: (number_literal)))))
+
+================================================================================
+Member access
+================================================================================
+
+name = person.name;
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (expression_statement
+    (assignment_expression
+      left: (identifier)
+      right: (member_expression
+        object: (identifier)
+        property: (identifier)))))

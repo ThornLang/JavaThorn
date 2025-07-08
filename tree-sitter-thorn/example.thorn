@@ -1,0 +1,14 @@
+$ greet(name) {
+    return "Hello, " + name;
+}
+
+x = 5;
+@immut PI = 3.14159;
+
+class Person {
+    $ init(name) {
+        this.name = name;
+    }
+}
+
+multiply = $(x, y) => x * y;

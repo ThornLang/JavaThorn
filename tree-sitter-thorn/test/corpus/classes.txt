@@ -1,0 +1,67 @@
+================================================================================
+Class declaration with methods
+================================================================================
+
+class Person {
+    $ init(name, age) {
+        this.name = name;
+        this.age = age;
+    }
+    
+    $ greet() {
+        return "Hello, I'm " + this.name;
+    }
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (class_declaration
+    name: (identifier)
+    body: (class_body
+      (function_declaration
+        name: (identifier)
+        parameters: (parameter_list
+          (identifier)
+          (identifier))
+        body: (block
+          (expression_statement
+            (assignment_expression
+              left: (member_expression
+                object: (this_expression)
+                property: (identifier))
+              right: (identifier)))
+          (expression_statement
+            (assignment_expression
+              left: (member_expression
+                object: (this_expression)
+                property: (identifier))
+              right: (identifier)))))
+      (function_declaration
+        name: (identifier)
+        parameters: (parameter_list)
+        body: (block
+          (return_statement
+            value: (binary_expression
+              left: (string_literal)
+              right: (member_expression
+                object: (this_expression)
+                property: (identifier)))))))))
+
+================================================================================
+Class instantiation
+================================================================================
+
+person = Person("Alice", 25);
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (expression_statement
+    (assignment_expression
+      left: (identifier)
+      right: (call_expression
+        function: (identifier)
+        arguments: (argument_list
+          (string_literal)
+          (number_literal))))))

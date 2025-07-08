@@ -116,17 +116,20 @@ ThornType (abstract)
 - Decidable type checking in finite time
 
 #### Generic Type System
-**Parametric Polymorphism:**
+**⚠️ TEMPORARILY EXCLUDED - DO NOT IMPLEMENT**
+**Note:** Generic types and interfaces are planned for future implementation but should be excluded from the initial static type system migration. Focus on basic primitive types (`int`, `float`, `string`, `boolean`) and simple container types first.
+
+**Future Parametric Polymorphism (not implemented yet):**
 ```thorn
 $ map[T, R](list: Array[T], func: Function[T, R]): Array[R] {
-    // Implementation
+    // Implementation - TO BE IMPLEMENTED LATER
 }
 ```
 
-**Type Constraints:**
+**Future Type Constraints (not implemented yet):**
 ```thorn
 $ sort[T: Comparable](list: Array[T]): Array[T] {
-    // T must implement Comparable interface
+    // T must implement Comparable interface - TO BE IMPLEMENTED LATER
 }
 ```
 
@@ -427,6 +430,41 @@ RETURN_INT i2
 
 ## Language Design Changes
 
+### Type Annotation Requirements
+
+#### Mandatory Type Hints
+**All `.thorn` files MUST include type hints in the following scenarios:**
+
+1. **Variable Initialization:** All variable declarations must include type annotations
+   ```thorn
+   x: int = 42;        // ✓ Required
+   name: string = "Alice";  // ✓ Required
+   active: boolean = true;  // ✓ Required
+   ```
+
+2. **Function Definitions:** All functions must have complete type annotations
+   ```thorn
+   // ✓ Required: parameter types AND return type
+   $ add(a: int, b: int): int {
+       return a + b;
+   }
+   
+   // ✓ Required: even for void functions
+   $ print_message(msg: string): void {
+       print(msg);
+   }
+   ```
+
+#### Optional Type Hints
+**Type hints are NOT required when:**
+
+1. **Variable Reassignment:** When assigning to an already-typed variable
+   ```thorn
+   x: int = 2;     // ✓ Required on initialization
+   x = 3;          // ✓ Optional - type already known (int)
+   x = 5 + 2;      // ✓ Optional - can infer same type
+   ```
+
 ### Type Annotation Syntax
 
 #### Variable Declarations
@@ -456,14 +494,14 @@ $ process(data: Array[int]) {
     return data.length;
 }
 
-// Generic functions
-$ map[T, R](list: Array[T], func: Function[T, R]): Array[R] {
-    result: Array[R] = [];
-    for (item in list) {
-        result.push(func(item));
-    }
-    return result;
-}
+// Generic functions (EXCLUDED - DO NOT IMPLEMENT YET)
+// $ map[T, R](list: Array[T], func: Function[T, R]): Array[R] {
+//     result: Array[R] = [];
+//     for (item in list) {
+//         result.push(func(item));
+//     }
+//     return result;
+// }
 ```
 
 #### Array and Object Types
@@ -539,42 +577,42 @@ if (user != null) {
 
 ### Generic Type System
 
-#### Type Parameters
+#### Type Parameters (EXCLUDED - DO NOT IMPLEMENT)
 ```thorn
-// Generic class
-class Container[T] {
-    value: T;
-    
-    $ init(value: T) {
-        this.value = value;
-    }
-    
-    $ getValue(): T {
-        return this.value;
-    }
-}
+// Generic class (EXCLUDED - FOR FUTURE IMPLEMENTATION)
+// class Container[T] {
+//     value: T;
+//     
+//     $ init(value: T) {
+//         this.value = value;
+//     }
+//     
+//     $ getValue(): T {
+//         return this.value;
+//     }
+// }
 
-// Usage with type inference
-intContainer := Container(42);        // Container[int]
-stringContainer := Container("test"); // Container[string]
+// Usage with type inference (EXCLUDED)
+// intContainer := Container(42);        // Container[int]
+// stringContainer := Container("test"); // Container[string]
 ```
 
-#### Bounded Type Parameters
+#### Bounded Type Parameters (EXCLUDED - DO NOT IMPLEMENT)
 ```thorn
-// Interface definition
-interface Comparable[T] {
-    $ compareTo(other: T): int;
-}
+// Interface definition (EXCLUDED - FOR FUTURE IMPLEMENTATION)
+// interface Comparable[T] {
+//     $ compareTo(other: T): int;
+// }
 
-// Bounded generic function
-$ sort[T: Comparable[T]](items: Array[T]): Array[T] {
-    // Implementation using T.compareTo()
-}
+// Bounded generic function (EXCLUDED)
+// $ sort[T: Comparable[T]](items: Array[T]): Array[T] {
+//     // Implementation using T.compareTo()
+// }
 
-// Multiple bounds
-$ process[T: Comparable[T] & Serializable](item: T) {
-    // T must implement both interfaces
-}
+// Multiple bounds (EXCLUDED)
+// $ process[T: Comparable[T] & Serializable](item: T) {
+//     // T must implement both interfaces
+// }
 ```
 
 ---

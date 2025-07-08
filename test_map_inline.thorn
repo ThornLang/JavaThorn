@@ -1,0 +1,20 @@
+// Test map function inline without import
+$ map(list, func) {
+    result = [];
+    for (item in list) {
+        result.push(func(item));
+    }
+    return result;
+}
+
+// Test map function with numbers
+numbers = [1, 2, 3, 4, 5];
+doubled = map(numbers, $(x) => x * 2);
+print("Original: " + numbers);
+print("Doubled: " + doubled);
+
+// Test map function with more complex transformation
+squares = map(numbers, $(x) => x * x);
+print("Squares: " + squares);
+
+print("Map tests completed!");

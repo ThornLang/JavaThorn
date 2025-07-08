@@ -1,3 +1,7 @@
-$ map(list, func) {
-
+$ map(list: Array[T], func: Function[T, U]): Array[U] {
+    result: Array[U] = [];
+    for (item in list) {
+        result.push(func(item));
+    }
+    return result;
 }

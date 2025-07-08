@@ -13,6 +13,17 @@ public class DeadCodeEliminator {
     private final Map<String, Stmt> symbolDefinitions = new HashMap<>();
     private final Set<String> exportedSymbols = new HashSet<>();
     
+    // Local scope tracking for function/method body optimization
+    private static class LocalScope {
+        final Set<String> localDefinitions = new HashSet<>();
+        final Set<String> localUsages = new HashSet<>();
+        final String scopeName;
+        
+        LocalScope(String scopeName) {
+            this.scopeName = scopeName;
+        }
+    }
+    
     /**
      * Optimize the AST by removing dead code.
      * @param statements List of statements to optimize
@@ -39,10 +50,10 @@ public class DeadCodeEliminator {
         // Mark exported symbols as used
         usedSymbols.addAll(exportedSymbols);
         
-        // Third pass: filter out unused symbols and handle side effects
+        // Third pass: filter out unused symbols, handle side effects, and apply local optimizations
         List<Stmt> optimized = new ArrayList<>();
         for (Stmt stmt : statements) {
-            Stmt processedStmt = processStatement(stmt);
+            Stmt processedStmt = processStatementWithLocalOptimization(stmt);
             if (processedStmt != null) {
                 optimized.add(processedStmt);
             }
@@ -531,6 +542,313 @@ public class DeadCodeEliminator {
                 exportedSymbols.add(cls.name.lexeme);
             }
         }
+    }
+    
+    /**
+     * Process a statement with both global and local optimizations.
+     */
+    private Stmt processStatementWithLocalOptimization(Stmt stmt) {
+        // First apply global optimizations
+        if (!shouldKeepStatement(stmt)) {
+            // Handle side effects for unused variable assignments
+            if (stmt instanceof Stmt.Expression) {
+                Stmt.Expression exprStmt = (Stmt.Expression) stmt;
+                if (exprStmt.expression instanceof Expr.Assign) {
+                    Expr.Assign assign = (Expr.Assign) exprStmt.expression;
+                    if (!usedSymbols.contains(assign.name.lexeme)) {
+                        // Check if the assignment has side effects (function calls)
+                        if (hasSideEffects(assign.value)) {
+                            // Convert to expression statement without assignment
+                            return new Stmt.Expression(assign.value);
+                        }
+                    }
+                }
+            }
+            return null; // Remove statement
+        }
+        
+        // Apply local optimizations for functions and classes
+        if (stmt instanceof Stmt.Function) {
+            return optimizeFunction((Stmt.Function) stmt);
+        } else if (stmt instanceof Stmt.Class) {
+            return optimizeClass((Stmt.Class) stmt);
+        }
+        
+        return stmt;
+    }
+    
+    /**
+     * Optimize a function by applying local dead code elimination to its body.
+     */
+    private Stmt.Function optimizeFunction(Stmt.Function func) {
+        List<Stmt> optimizedBody = optimizeLocalScope(func.body, "function:" + func.name.lexeme);
+        
+        // Return new function with optimized body
+        return new Stmt.Function(func.name, func.params, func.returnType, optimizedBody);
+    }
+    
+    /**
+     * Optimize a class by applying local dead code elimination to its methods.
+     */
+    private Stmt.Class optimizeClass(Stmt.Class cls) {
+        List<Stmt.Function> optimizedMethods = new ArrayList<>();
+        
+        for (Stmt.Function method : cls.methods) {
+            List<Stmt> optimizedBody = optimizeLocalScope(method.body, "method:" + cls.name.lexeme + "." + method.name.lexeme);
+            optimizedMethods.add(new Stmt.Function(method.name, method.params, method.returnType, optimizedBody));
+        }
+        
+        // Return new class with optimized methods
+        return new Stmt.Class(cls.name, optimizedMethods);
+    }
+    
+    /**
+     * Optimize a local scope (function body or method body) by removing unused local variables.
+     */
+    private List<Stmt> optimizeLocalScope(List<Stmt> statements, String scopeName) {
+        LocalScope scope = new LocalScope(scopeName);
+        
+        // First pass: collect local definitions and usages
+        for (Stmt stmt : statements) {
+            analyzeLocalStatement(stmt, scope);
+        }
+        
+        // Second pass: filter and optimize statements
+        List<Stmt> optimized = new ArrayList<>();
+        for (Stmt stmt : statements) {
+            Stmt optimizedStmt = processLocalStatement(stmt, scope);
+            if (optimizedStmt != null) {
+                optimized.add(optimizedStmt);
+            }
+        }
+        
+        return optimized;
+    }
+    
+    /**
+     * Analyze a statement within a local scope to track variable definitions and usages.
+     */
+    private void analyzeLocalStatement(Stmt stmt, LocalScope scope) {
+        stmt.accept(new Stmt.Visitor<Void>() {
+            @Override
+            public Void visitExpressionStmt(Stmt.Expression stmt) {
+                analyzeLocalExpression(stmt.expression, scope);
+                return null;
+            }
+            
+            @Override
+            public Void visitVarStmt(Stmt.Var stmt) {
+                scope.localDefinitions.add(stmt.name.lexeme);
+                if (stmt.initializer != null) {
+                    analyzeLocalExpression(stmt.initializer, scope);
+                }
+                return null;
+            }
+            
+            @Override
+            public Void visitReturnStmt(Stmt.Return stmt) {
+                if (stmt.value != null) {
+                    analyzeLocalExpression(stmt.value, scope);
+                }
+                return null;
+            }
+            
+            @Override
+            public Void visitIfStmt(Stmt.If stmt) {
+                analyzeLocalExpression(stmt.condition, scope);
+                analyzeLocalStatement(stmt.thenBranch, scope);
+                if (stmt.elseBranch != null) {
+                    analyzeLocalStatement(stmt.elseBranch, scope);
+                }
+                return null;
+            }
+            
+            @Override
+            public Void visitWhileStmt(Stmt.While stmt) {
+                analyzeLocalExpression(stmt.condition, scope);
+                analyzeLocalStatement(stmt.body, scope);
+                return null;
+            }
+            
+            @Override
+            public Void visitForStmt(Stmt.For stmt) {
+                analyzeLocalExpression(stmt.iterable, scope);
+                analyzeLocalStatement(stmt.body, scope);
+                return null;
+            }
+            
+            @Override
+            public Void visitBlockStmt(Stmt.Block stmt) {
+                for (Stmt blockStmt : stmt.statements) {
+                    analyzeLocalStatement(blockStmt, scope);
+                }
+                return null;
+            }
+            
+            // These shouldn't appear in function bodies, but handle them safely
+            @Override public Void visitFunctionStmt(Stmt.Function stmt) { return null; }
+            @Override public Void visitClassStmt(Stmt.Class stmt) { return null; }
+            @Override public Void visitImportStmt(Stmt.Import stmt) { return null; }
+            @Override public Void visitExportStmt(Stmt.Export stmt) { return null; }
+        });
+    }
+    
+    /**
+     * Analyze an expression within a local scope to track variable usages.
+     */
+    private void analyzeLocalExpression(Expr expr, LocalScope scope) {
+        expr.accept(new Expr.Visitor<Void>() {
+            @Override
+            public Void visitVariableExpr(Expr.Variable expr) {
+                scope.localUsages.add(expr.name.lexeme);
+                return null;
+            }
+            
+            @Override
+            public Void visitAssignExpr(Expr.Assign expr) {
+                scope.localDefinitions.add(expr.name.lexeme);
+                analyzeLocalExpression(expr.value, scope);
+                return null;
+            }
+            
+            @Override
+            public Void visitCallExpr(Expr.Call expr) {
+                analyzeLocalExpression(expr.callee, scope);
+                for (Expr arg : expr.arguments) {
+                    analyzeLocalExpression(arg, scope);
+                }
+                return null;
+            }
+            
+            @Override
+            public Void visitBinaryExpr(Expr.Binary expr) {
+                analyzeLocalExpression(expr.left, scope);
+                analyzeLocalExpression(expr.right, scope);
+                return null;
+            }
+            
+            @Override
+            public Void visitUnaryExpr(Expr.Unary expr) {
+                analyzeLocalExpression(expr.right, scope);
+                return null;
+            }
+            
+            @Override
+            public Void visitGroupingExpr(Expr.Grouping expr) {
+                analyzeLocalExpression(expr.expression, scope);
+                return null;
+            }
+            
+            @Override
+            public Void visitLogicalExpr(Expr.Logical expr) {
+                analyzeLocalExpression(expr.left, scope);
+                analyzeLocalExpression(expr.right, scope);
+                return null;
+            }
+            
+            @Override
+            public Void visitGetExpr(Expr.Get expr) {
+                analyzeLocalExpression(expr.object, scope);
+                return null;
+            }
+            
+            @Override
+            public Void visitSetExpr(Expr.Set expr) {
+                analyzeLocalExpression(expr.object, scope);
+                analyzeLocalExpression(expr.value, scope);
+                return null;
+            }
+            
+            @Override
+            public Void visitIndexExpr(Expr.Index expr) {
+                analyzeLocalExpression(expr.object, scope);
+                analyzeLocalExpression(expr.index, scope);
+                return null;
+            }
+            
+            @Override
+            public Void visitIndexSetExpr(Expr.IndexSet expr) {
+                analyzeLocalExpression(expr.object, scope);
+                analyzeLocalExpression(expr.index, scope);
+                analyzeLocalExpression(expr.value, scope);
+                return null;
+            }
+            
+            @Override
+            public Void visitListExpr(Expr.ListExpr expr) {
+                for (Expr element : expr.elements) {
+                    analyzeLocalExpression(element, scope);
+                }
+                return null;
+            }
+            
+            @Override
+            public Void visitDictExpr(Expr.Dict expr) {
+                for (Expr key : expr.keys) {
+                    analyzeLocalExpression(key, scope);
+                }
+                for (Expr value : expr.values) {
+                    analyzeLocalExpression(value, scope);
+                }
+                return null;
+            }
+            
+            @Override
+            public Void visitMatchExpr(Expr.Match expr) {
+                analyzeLocalExpression(expr.expr, scope);
+                for (Expr.Match.Case matchCase : expr.cases) {
+                    analyzeLocalExpression(matchCase.pattern, scope);
+                    if (matchCase.guard != null) {
+                        analyzeLocalExpression(matchCase.guard, scope);
+                    }
+                    analyzeLocalExpression(matchCase.value, scope);
+                }
+                return null;
+            }
+            
+            @Override
+            public Void visitLambdaExpr(Expr.Lambda expr) {
+                // Lambda parameters are local to the lambda, not this scope
+                for (Stmt stmt : expr.body) {
+                    analyzeLocalStatement(stmt, scope);
+                }
+                return null;
+            }
+            
+            // Simple expressions that don't affect local scope
+            @Override public Void visitLiteralExpr(Expr.Literal expr) { return null; }
+            @Override public Void visitThisExpr(Expr.This expr) { return null; }
+            @Override public Void visitTypeExpr(Expr.Type expr) { return null; }
+            @Override public Void visitGenericTypeExpr(Expr.GenericType expr) { return null; }
+            @Override public Void visitFunctionTypeExpr(Expr.FunctionType expr) { return null; }
+            @Override public Void visitArrayTypeExpr(Expr.ArrayType expr) { return null; }
+        });
+    }
+    
+    /**
+     * Process a statement within a local scope, applying local dead code elimination.
+     */
+    private Stmt processLocalStatement(Stmt stmt, LocalScope scope) {
+        if (stmt instanceof Stmt.Expression) {
+            Stmt.Expression exprStmt = (Stmt.Expression) stmt;
+            if (exprStmt.expression instanceof Expr.Assign) {
+                Expr.Assign assign = (Expr.Assign) exprStmt.expression;
+                // Check if this local variable is unused
+                if (!scope.localUsages.contains(assign.name.lexeme)) {
+                    // Check if the assignment has side effects
+                    if (hasSideEffects(assign.value)) {
+                        // Convert to expression statement without assignment
+                        return new Stmt.Expression(assign.value);
+                    } else {
+                        // Remove the statement entirely
+                        return null;
+                    }
+                }
+            }
+        }
+        
+        // Keep all other statements (return, if, while, etc.)
+        return stmt;
     }
     
     /**

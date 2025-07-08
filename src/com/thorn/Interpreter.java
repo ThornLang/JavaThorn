@@ -18,33 +18,15 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         this.moduleSystem = new ModuleSystem(this);
         
         // Add built-in print function
-        globals.define("print", new ThornCallable() {
-            @Override
-            public int arity() { return 1; }
-
-            @Override
-            public Object call(Interpreter interpreter, List<Object> arguments) {
-                System.out.println(stringify(arguments.get(0)));
-                return null;
-            }
-
-            @Override
-            public String toString() { return "<native fn>"; }
-        }, false);
+        globals.define("print", new JavaFunction("print", 1, (interpreter, arguments) -> {
+            System.out.println(stringify(arguments.get(0)));
+            return null;
+        }), false);
 
         // Add built-in clock function for benchmarking
-        globals.define("clock", new ThornCallable() {
-            @Override
-            public int arity() { return 0; }
-
-            @Override
-            public Object call(Interpreter interpreter, List<Object> arguments) {
-                return (double) System.currentTimeMillis();
-            }
-
-            @Override
-            public String toString() { return "<native fn>"; }
-        }, false);
+        globals.define("clock", new JavaFunction("clock", 0, (interpreter, arguments) -> {
+            return (double) System.currentTimeMillis();
+        }), false);
     }
 
     void interpret(List<Stmt> statements) {

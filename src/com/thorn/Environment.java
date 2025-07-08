@@ -79,7 +79,9 @@ class Environment {
         if (value instanceof Boolean) return "boolean";
         if (value instanceof java.util.List) return "Array";
         if (value instanceof java.util.Map) return "Dict";
-        if (value instanceof ThornCallable) return "Function";
+        if (value instanceof ThornFunction) return "Function";
+        if (value instanceof JavaFunction) return "JavaFunction";
+        if (value instanceof ThornCallable) return "Function";  // fallback for other callable types
         if (value instanceof ThornClass) return "Class";
         if (value instanceof ThornInstance) return "Instance";
         if (value instanceof ThornType) return "Type";

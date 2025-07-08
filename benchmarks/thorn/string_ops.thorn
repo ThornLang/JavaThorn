@@ -10,6 +10,13 @@ while (i < ITERATIONS) {
     i = i + 1;
 }
 
+$ fib(n) {
+    if (n <= 1) {
+        return n;
+    }
+    return fib(n - 1) + fib(n - 2);
+}
+
 end_time: number = clock();
 
 print("Iterations: " + ITERATIONS);

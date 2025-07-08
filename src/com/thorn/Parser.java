@@ -19,7 +19,18 @@ class Parser {
     List<Stmt> parse() {
         List<Stmt> statements = new ArrayList<>();
         while (!isAtEnd()) {
-            statements.add(declaration());
+            Stmt stmt = declaration();
+            if (stmt != null) {
+                statements.add(stmt);
+            } else {
+                // If declaration() returned null, there was an error, stop parsing
+                break;
+            }
+            
+            // Stop parsing after first error to prevent cascading errors
+            if (Thorn.hadError) {
+                break;
+            }
         }
         return statements;
     }
@@ -218,10 +229,22 @@ class Parser {
         List<Stmt> statements = new ArrayList<>();
 
         while (!check(RIGHT_BRACE) && !isAtEnd()) {
-            statements.add(declaration());
+            Stmt stmt = declaration();
+            if (stmt != null) {
+                statements.add(stmt);
+            }
+            
+            // Stop parsing block after first error to prevent cascading errors
+            if (Thorn.hadError) {
+                break;
+            }
         }
 
-        consume(RIGHT_BRACE, "Expected '}' after block.");
+        // Only consume the closing brace if there wasn't an error
+        if (!Thorn.hadError) {
+            consume(RIGHT_BRACE, "Expected '}' after block.");
+        }
+        
         return statements;
     }
 
@@ -262,6 +285,14 @@ class Parser {
 
     private Stmt expressionStatement() {
         Expr expr = expression();
+        
+        // Better error message for missing semicolon 
+        if (check(RIGHT_BRACE) || check(RETURN) || check(IF) || check(WHILE) || check(FOR) || check(IDENTIFIER)) {
+            // Create a helpful error message pointing to the end of the expression
+            Token prevToken = previous();
+            throw error(prevToken, "Expected ';' after expression.");
+        }
+        
         consume(SEMICOLON, "Expected ';' after expression.");
         return new Stmt.Expression(expr);
     }
@@ -698,6 +729,9 @@ class Parser {
 
         while (!isAtEnd()) {
             if (previous().type == SEMICOLON) return;
+            
+            // Stop synchronizing if we hit a } - this prevents cascading errors
+            if (previous().type == RIGHT_BRACE) return;
 
             switch (peek().type) {
                 case CLASS:

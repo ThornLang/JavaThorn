@@ -210,9 +210,28 @@ class Scanner {
     }
 
     private void string() {
+        StringBuilder value = new StringBuilder();
+        
         while (peek() != '"' && !isAtEnd()) {
-            if (peek() == '\n') line++;
-            advance();
+            if (peek() == '\\' && peekNext() != '\0') {
+                // Handle escape sequences
+                advance(); // consume the backslash
+                char escaped = advance();
+                switch (escaped) {
+                    case 'n': value.append('\n'); break;
+                    case 't': value.append('\t'); break;
+                    case 'r': value.append('\r'); break;
+                    case '\\': value.append('\\'); break;
+                    case '"': value.append('"'); break;
+                    default: 
+                        // Unknown escape sequence, keep both characters
+                        value.append('\\').append(escaped);
+                        break;
+                }
+            } else {
+                if (peek() == '\n') line++;
+                value.append(advance());
+            }
         }
 
         if (isAtEnd()) {
@@ -223,9 +242,7 @@ class Scanner {
         // The closing "
         advance();
 
-        // Trim the surrounding quotes
-        String value = source.substring(start + 1, current - 1);
-        addToken(STRING, value);
+        addToken(STRING, value.toString());
     }
 
     private boolean match(char expected) {

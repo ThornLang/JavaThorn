@@ -45,6 +45,156 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             @Override
             public String toString() { return "<native fn>"; }
         }, false);
+
+        // Add I/O functions
+        globals.define("read_file", new ThornCallable() {
+            @Override
+            public int arity() { return 1; }
+
+            @Override
+            public Object call(Interpreter interpreter, List<Object> arguments) {
+                String path = stringify(arguments.get(0));
+                try {
+                    return new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(path)));
+                } catch (Exception e) {
+                    throw new RuntimeException("Error reading file '" + path + "': " + e.getMessage());
+                }
+            }
+
+            @Override
+            public String toString() { return "<native fn>"; }
+        }, false);
+
+        globals.define("write_file", new ThornCallable() {
+            @Override
+            public int arity() { return 2; }
+
+            @Override
+            public Object call(Interpreter interpreter, List<Object> arguments) {
+                String path = stringify(arguments.get(0));
+                String content = stringify(arguments.get(1));
+                try {
+                    java.nio.file.Files.write(java.nio.file.Paths.get(path), content.getBytes());
+                    return true;
+                } catch (Exception e) {
+                    throw new RuntimeException("Error writing file '" + path + "': " + e.getMessage());
+                }
+            }
+
+            @Override
+            public String toString() { return "<native fn>"; }
+        }, false);
+
+        globals.define("append_file", new ThornCallable() {
+            @Override
+            public int arity() { return 2; }
+
+            @Override
+            public Object call(Interpreter interpreter, List<Object> arguments) {
+                String path = stringify(arguments.get(0));
+                String content = stringify(arguments.get(1));
+                try {
+                    java.nio.file.Files.write(
+                        java.nio.file.Paths.get(path), 
+                        content.getBytes(), 
+                        java.nio.file.StandardOpenOption.CREATE,
+                        java.nio.file.StandardOpenOption.APPEND
+                    );
+                    return true;
+                } catch (Exception e) {
+                    throw new RuntimeException("Error appending to file '" + path + "': " + e.getMessage());
+                }
+            }
+
+            @Override
+            public String toString() { return "<native fn>"; }
+        }, false);
+
+        globals.define("file_exists", new ThornCallable() {
+            @Override
+            public int arity() { return 1; }
+
+            @Override
+            public Object call(Interpreter interpreter, List<Object> arguments) {
+                String path = stringify(arguments.get(0));
+                return java.nio.file.Files.exists(java.nio.file.Paths.get(path));
+            }
+
+            @Override
+            public String toString() { return "<native fn>"; }
+        }, false);
+
+        globals.define("delete_file", new ThornCallable() {
+            @Override
+            public int arity() { return 1; }
+
+            @Override
+            public Object call(Interpreter interpreter, List<Object> arguments) {
+                String path = stringify(arguments.get(0));
+                try {
+                    return java.nio.file.Files.deleteIfExists(java.nio.file.Paths.get(path));
+                } catch (Exception e) {
+                    throw new RuntimeException("Error deleting file '" + path + "': " + e.getMessage());
+                }
+            }
+
+            @Override
+            public String toString() { return "<native fn>"; }
+        }, false);
+
+        globals.define("read_input", new ThornCallable() {
+            @Override
+            public int arity() { return 0; }
+
+            @Override
+            public Object call(Interpreter interpreter, List<Object> arguments) {
+                try {
+                    java.util.Scanner scanner = new java.util.Scanner(System.in);
+                    String input = scanner.nextLine();
+                    scanner.close();
+                    return input;
+                } catch (Exception e) {
+                    throw new RuntimeException("Error reading input: " + e.getMessage());
+                }
+            }
+
+            @Override
+            public String toString() { return "<native fn>"; }
+        }, false);
+
+        globals.define("flush_output", new ThornCallable() {
+            @Override
+            public int arity() { return 0; }
+
+            @Override
+            public Object call(Interpreter interpreter, List<Object> arguments) {
+                System.out.flush();
+                return null;
+            }
+
+            @Override
+            public String toString() { return "<native fn>"; }
+        }, false);
+
+        globals.define("list_directory", new ThornCallable() {
+            @Override
+            public int arity() { return 1; }
+
+            @Override
+            public Object call(Interpreter interpreter, List<Object> arguments) {
+                String path = stringify(arguments.get(0));
+                try {
+                    return java.nio.file.Files.list(java.nio.file.Paths.get(path))
+                        .map(p -> p.getFileName().toString())
+                        .collect(java.util.stream.Collectors.toList());
+                } catch (Exception e) {
+                    throw new RuntimeException("Error listing directory '" + path + "': " + e.getMessage());
+                }
+            }
+
+            @Override
+            public String toString() { return "<native fn>"; }
+        }, false);
     }
 
     void interpret(List<Stmt> statements) {

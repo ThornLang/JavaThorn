@@ -262,6 +262,47 @@ public class ThornVM {
                     currentFrame.setRegister(a, getTypeName(bValue));
                     break;
                     
+                // I/O Operations
+                case READ_FILE:
+                    String readPath = (String) constantPool.getConstant(OpCode.getBValue(instruction));
+                    currentFrame.setRegister(a, readFile(readPath));
+                    break;
+                    
+                case WRITE_FILE:
+                    String writePath = (String) constantPool.getConstant(a);
+                    String writeContent = stringify(currentFrame.getRegister(OpCode.getBValue(instruction)));
+                    currentFrame.setRegister(a, writeFile(writePath, writeContent));
+                    break;
+                    
+                case APPEND_FILE:
+                    String appendPath = (String) constantPool.getConstant(a);
+                    String appendContent = stringify(currentFrame.getRegister(OpCode.getBValue(instruction)));
+                    currentFrame.setRegister(a, appendFile(appendPath, appendContent));
+                    break;
+                    
+                case FILE_EXISTS:
+                    String existsPath = (String) constantPool.getConstant(OpCode.getBValue(instruction));
+                    currentFrame.setRegister(a, fileExists(existsPath));
+                    break;
+                    
+                case DELETE_FILE:
+                    String deletePath = (String) constantPool.getConstant(OpCode.getBValue(instruction));
+                    currentFrame.setRegister(a, deleteFile(deletePath));
+                    break;
+                    
+                case READ_INPUT:
+                    currentFrame.setRegister(a, readInput());
+                    break;
+                    
+                case FLUSH_OUTPUT:
+                    flushOutput();
+                    break;
+                    
+                case LIST_DIRECTORY:
+                    String dirPath = (String) constantPool.getConstant(OpCode.getBValue(instruction));
+                    currentFrame.setRegister(a, listDirectory(dirPath));
+                    break;
+                    
                 case MAKE_CLOSURE:
                     // Create a function closure from function pool
                     int funcIndex = OpCode.getB(instruction); // Function index directly, not from constants
@@ -561,13 +602,73 @@ public class ThornVM {
         // Handle built-in functions
         if ("native_print".equals(function)) {
             if (argCount > 0) {
-                System.out.println(stringify(callerFrame.getRegister(0)));
+                System.out.println(stringify(callerFrame.getRegister(1)));
             }
             return null;
         }
         
         if ("native_clock".equals(function)) {
             return (double) System.currentTimeMillis();
+        }
+        
+        // Handle I/O functions
+        if ("native_read_file".equals(function)) {
+            if (argCount > 0) {
+                String path = stringify(callerFrame.getRegister(1));
+                return readFile(path);
+            }
+            throw new RuntimeException("read_file requires a path argument");
+        }
+        
+        if ("native_write_file".equals(function)) {
+            if (argCount >= 2) {
+                String path = stringify(callerFrame.getRegister(1));
+                String content = stringify(callerFrame.getRegister(2));
+                return writeFile(path, content);
+            }
+            throw new RuntimeException("write_file requires path and content arguments");
+        }
+        
+        if ("native_append_file".equals(function)) {
+            if (argCount >= 2) {
+                String path = stringify(callerFrame.getRegister(1));
+                String content = stringify(callerFrame.getRegister(2));
+                return appendFile(path, content);
+            }
+            throw new RuntimeException("append_file requires path and content arguments");
+        }
+        
+        if ("native_file_exists".equals(function)) {
+            if (argCount > 0) {
+                String path = stringify(callerFrame.getRegister(1));
+                return fileExists(path);
+            }
+            throw new RuntimeException("file_exists requires a path argument");
+        }
+        
+        if ("native_delete_file".equals(function)) {
+            if (argCount > 0) {
+                String path = stringify(callerFrame.getRegister(1));
+                return deleteFile(path);
+            }
+            throw new RuntimeException("delete_file requires a path argument");
+        }
+        
+        if ("native_read_input".equals(function)) {
+            return readInput();
+        }
+        
+        if ("native_flush_output".equals(function)) {
+            flushOutput();
+            return null;
+        }
+        
+        if ("native_list_directory".equals(function)) {
+            if (argCount > 0) {
+                String path = stringify(callerFrame.getRegister(1));
+                return listDirectory(path);
+            }
+            throw new RuntimeException("list_directory requires a path argument");
         }
         
         throw new RuntimeException("Not a function: " + function);
@@ -577,5 +678,85 @@ public class ThornVM {
         // Add built-in functions and constants
         globals.put("clock", "native_clock");
         globals.put("print", "native_print");
+        
+        // Add I/O functions
+        globals.put("read_file", "native_read_file");
+        globals.put("write_file", "native_write_file");
+        globals.put("append_file", "native_append_file");
+        globals.put("file_exists", "native_file_exists");
+        globals.put("delete_file", "native_delete_file");
+        globals.put("read_input", "native_read_input");
+        globals.put("flush_output", "native_flush_output");
+        globals.put("list_directory", "native_list_directory");
+    }
+    
+    // I/O Operations Implementation
+    
+    private String readFile(String path) {
+        try {
+            return new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(path)));
+        } catch (Exception e) {
+            throw new RuntimeException("Error reading file '" + path + "': " + e.getMessage());
+        }
+    }
+    
+    private boolean writeFile(String path, String content) {
+        try {
+            java.nio.file.Files.write(java.nio.file.Paths.get(path), content.getBytes());
+            return true;
+        } catch (Exception e) {
+            throw new RuntimeException("Error writing file '" + path + "': " + e.getMessage());
+        }
+    }
+    
+    private boolean appendFile(String path, String content) {
+        try {
+            java.nio.file.Files.write(
+                java.nio.file.Paths.get(path), 
+                content.getBytes(), 
+                java.nio.file.StandardOpenOption.CREATE,
+                java.nio.file.StandardOpenOption.APPEND
+            );
+            return true;
+        } catch (Exception e) {
+            throw new RuntimeException("Error appending to file '" + path + "': " + e.getMessage());
+        }
+    }
+    
+    private boolean fileExists(String path) {
+        return java.nio.file.Files.exists(java.nio.file.Paths.get(path));
+    }
+    
+    private boolean deleteFile(String path) {
+        try {
+            return java.nio.file.Files.deleteIfExists(java.nio.file.Paths.get(path));
+        } catch (Exception e) {
+            throw new RuntimeException("Error deleting file '" + path + "': " + e.getMessage());
+        }
+    }
+    
+    private String readInput() {
+        try {
+            java.util.Scanner scanner = new java.util.Scanner(System.in);
+            String input = scanner.nextLine();
+            scanner.close();
+            return input;
+        } catch (Exception e) {
+            throw new RuntimeException("Error reading input: " + e.getMessage());
+        }
+    }
+    
+    private void flushOutput() {
+        System.out.flush();
+    }
+    
+    private java.util.List<String> listDirectory(String path) {
+        try {
+            return java.nio.file.Files.list(java.nio.file.Paths.get(path))
+                .map(p -> p.getFileName().toString())
+                .collect(java.util.stream.Collectors.toList());
+        } catch (Exception e) {
+            throw new RuntimeException("Error listing directory '" + path + "': " + e.getMessage());
+        }
     }
 }

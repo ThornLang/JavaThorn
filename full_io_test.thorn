@@ -1,0 +1,46 @@
+// import { file_exists, delete_file, write_file, read_file, append_file, list_directory } from "io";
+
+print("=== ThornLang I/O Test Suite ===");
+
+print("Test 1: File operations");
+path = "full_test.txt";
+content = "Line 1: Hello ThornLang!";
+
+print(file_exists(path));
+
+if (file_exists(path)) {
+    delete_file(path);
+    print("Existing file deleted: " + path);
+}   
+
+write_result = write_file(path, content);
+print("Write successful: " + write_result);
+
+read_content = read_file(path);
+print("Read content: " + read_content);
+
+// Test 2: File existence check
+exists = file_exists(path);
+print("File exists: " + exists);
+
+// Test 3: Append to file
+append_result = append_file(path, "\nLine 2: Appended content");
+print("Append successful: " + append_result);
+
+updated_content = read_file(path);
+print("Updated content: " + updated_content);
+
+// Test 4: Directory listing
+print("Current directory files:");
+files = list_directory(".");
+// Note: Simplified output for compatibility
+
+// Test 5: File deletion
+// delete_result = delete_file(path);
+// print("Delete successful: " + delete_result);
+
+// Verify deletion
+exists_after = file_exists(path);
+print("File exists after deletion: " + exists_after);
+
+print("=== All I/O tests completed! ===");

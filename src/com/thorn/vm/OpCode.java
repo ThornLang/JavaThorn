@@ -89,7 +89,17 @@ public enum OpCode {
     MATCH_PATTERN(60),   // Pattern matching optimization
     LAMBDA_CREATE(61),   // Create lambda function
     NOP(62),             // No operation
-    HALT(63);            // Stop execution
+    HALT(63),            // Stop execution
+    
+    // I/O Operations (64-71)
+    READ_FILE(64),       // A = read_file(constants[B])
+    WRITE_FILE(65),      // write_file(constants[A], B)
+    APPEND_FILE(66),     // append_file(constants[A], B)
+    FILE_EXISTS(67),     // A = file_exists(constants[B])
+    DELETE_FILE(68),     // A = delete_file(constants[B])
+    READ_INPUT(69),      // A = read_input()
+    FLUSH_OUTPUT(70),    // flush_output()
+    LIST_DIRECTORY(71);  // A = list_directory(constants[B])
     
     private final int code;
     

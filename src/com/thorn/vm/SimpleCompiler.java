@@ -146,6 +146,10 @@ public class SimpleCompiler {
             compileReturnStatement((Stmt.Return) stmt);
         } else if (stmt instanceof Stmt.Class) {
             compileClassStatement((Stmt.Class) stmt);
+        } else if (stmt instanceof Stmt.Export) {
+            compileExportStatement((Stmt.Export) stmt);
+        } else if (stmt instanceof Stmt.Import) {
+            compileImportStatement((Stmt.Import) stmt);
         } else {
             System.err.println("Warning: Unsupported statement type: " + stmt.getClass().getSimpleName());
         }
@@ -207,13 +211,9 @@ public class SimpleCompiler {
             int resultReg = allocateRegister();
             
             // Check if we can use fast arithmetic opcodes
+            // Disable fast opcodes for now due to unreliable numeric tracking
+            // TODO: Improve numeric register tracking to enable fast opcodes safely
             boolean canUseFast = false;
-            if (isArithmeticOperator(binaryExpr.operator.type)) {
-                // Check if both registers are known to hold numbers
-                boolean leftIsNumeric = numericRegisters.getOrDefault(leftReg, false);
-                boolean rightIsNumeric = numericRegisters.getOrDefault(rightReg, false);
-                canUseFast = leftIsNumeric && rightIsNumeric;
-            }
             
             OpCode opcode = canUseFast ? 
                 getFastArithmeticOpCode(binaryExpr.operator.type) : 
@@ -262,6 +262,10 @@ public class SimpleCompiler {
             return compileGetExpression((Expr.Get) expr);
         } else if (expr instanceof Expr.Set) {
             return compileSetExpression((Expr.Set) expr);
+        } else if (expr instanceof Expr.IndexSet) {
+            return compileIndexSetExpression((Expr.IndexSet) expr);
+        } else if (expr instanceof Expr.Index) {
+            return compileIndexExpression((Expr.Index) expr);
         } else if (expr instanceof Expr.Grouping) {
             Expr.Grouping groupingExpr = (Expr.Grouping) expr;
             return compileExpression(groupingExpr.expression);
@@ -269,6 +273,12 @@ public class SimpleCompiler {
             return compileLambdaExpression((Expr.Lambda) expr);
         } else if (expr instanceof Expr.ListExpr) {
             return compileListExpression((Expr.ListExpr) expr);
+        } else if (expr instanceof Expr.Dict) {
+            return compileDictExpression((Expr.Dict) expr);
+        } else if (expr instanceof Expr.Logical) {
+            return compileLogicalExpression((Expr.Logical) expr);
+        } else if (expr instanceof Expr.This) {
+            return compileThisExpression((Expr.This) expr);
         } else {
             System.err.println("Warning: Unsupported expression type: " + expr.getClass().getSimpleName());
             // Return a null literal register
@@ -293,6 +303,7 @@ public class SimpleCompiler {
             case LESS_EQUAL: return OpCode.LE;
             case GREATER: return OpCode.GT;
             case GREATER_EQUAL: return OpCode.GE;
+            case QUESTION_QUESTION: return OpCode.NULL_COALESCE;
             default:
                 throw new RuntimeException("Unsupported operator: " + operator);
         }
@@ -695,7 +706,12 @@ public class SimpleCompiler {
     
     private boolean isArithmeticOperator(TokenType type) {
         return type == TokenType.PLUS || type == TokenType.MINUS ||
-               type == TokenType.STAR || type == TokenType.SLASH;
+               type == TokenType.STAR || type == TokenType.SLASH ||
+               type == TokenType.PERCENT || type == TokenType.STAR_STAR ||
+               type == TokenType.EQUAL_EQUAL || type == TokenType.BANG_EQUAL ||
+               type == TokenType.LESS || type == TokenType.LESS_EQUAL ||
+               type == TokenType.GREATER || type == TokenType.GREATER_EQUAL ||
+               type == TokenType.QUESTION_QUESTION;
     }
     
     private boolean isNumericExpression(Expr expr) {
@@ -760,6 +776,121 @@ public class SimpleCompiler {
         int reg = allocateRegister();
         int listIndex = constantPool.addConstant(list);
         emit(Instruction.createWithConstantB(OpCode.LOAD_CONSTANT, reg, listIndex, 0));
+        return reg;
+    }
+    
+    private Integer compileIndexSetExpression(Expr.IndexSet indexSetExpr) {
+        // Compile the object being indexed (array or dictionary)
+        Integer objectReg = compileExpression(indexSetExpr.object);
+        
+        // Compile the index expression
+        Integer indexReg = compileExpression(indexSetExpr.index);
+        
+        // Compile the value to be assigned
+        Integer valueReg = compileExpression(indexSetExpr.value);
+        
+        // Emit SET_INDEX instruction: object[index] = value (format: B[A] = C)
+        emit(Instruction.create(OpCode.SET_INDEX, indexReg, objectReg, valueReg));
+        
+        // Free the object and index registers (value register is returned)
+        freeRegister(objectReg);
+        freeRegister(indexReg);
+        
+        // Return the assigned value (assignment expressions return the assigned value)
+        return valueReg;
+    }
+    
+    private Integer compileIndexExpression(Expr.Index indexExpr) {
+        // Compile the object being indexed (array or dictionary)
+        Integer objectReg = compileExpression(indexExpr.object);
+        
+        // Compile the index expression
+        Integer indexReg = compileExpression(indexExpr.index);
+        
+        // Allocate result register
+        int resultReg = allocateRegister();
+        
+        // Emit GET_INDEX instruction: result = object[index]
+        emit(Instruction.create(OpCode.GET_INDEX, resultReg, objectReg, indexReg));
+        
+        // Free temporary registers
+        freeRegister(objectReg);
+        freeRegister(indexReg);
+        
+        // Return the result register
+        return resultReg;
+    }
+    
+    private Integer compileDictExpression(Expr.Dict dictExpr) {
+        // For now, compile as a runtime dictionary creation
+        // Each key-value pair needs to be compiled separately
+        
+        // Compile all key-value pairs
+        List<Integer> keyRegs = new ArrayList<>();
+        List<Integer> valueRegs = new ArrayList<>();
+        
+        for (int i = 0; i < dictExpr.keys.size(); i++) {
+            Integer keyReg = compileExpression(dictExpr.keys.get(i));
+            Integer valueReg = compileExpression(dictExpr.values.get(i));
+            keyRegs.add(keyReg);
+            valueRegs.add(valueReg);
+        }
+        
+        // Allocate result register
+        int resultReg = allocateRegister();
+        
+        // Create empty dictionary
+        emit(Instruction.create(OpCode.NEW_DICT, resultReg, 0, 0));
+        
+        // Add each key-value pair
+        for (int i = 0; i < keyRegs.size(); i++) {
+            emit(Instruction.create(OpCode.SET_INDEX, keyRegs.get(i), resultReg, valueRegs.get(i)));
+            freeRegister(keyRegs.get(i));
+            freeRegister(valueRegs.get(i));
+        }
+        
+        return resultReg;
+    }
+    
+    private Integer compileLogicalExpression(Expr.Logical logicalExpr) {
+        // Compile both operands
+        Integer leftReg = compileExpression(logicalExpr.left);
+        Integer rightReg = compileExpression(logicalExpr.right);
+        
+        // Allocate result register
+        int resultReg = allocateRegister();
+        
+        // Emit appropriate logical operation
+        OpCode opcode = logicalExpr.operator.type == TokenType.AND_AND ? OpCode.AND : OpCode.OR;
+        emit(Instruction.create(opcode, resultReg, leftReg, rightReg));
+        
+        // Free temporary registers
+        freeRegister(leftReg);
+        freeRegister(rightReg);
+        
+        return resultReg;
+    }
+    
+    private void compileExportStatement(Stmt.Export exportStmt) {
+        // For now, just compile the underlying declaration
+        // TODO: Implement proper module export tracking
+        compileStatement(exportStmt.declaration);
+    }
+    
+    private void compileImportStatement(Stmt.Import importStmt) {
+        // For now, import statements are no-ops in the VM
+        // TODO: Implement proper module import system
+        // The VM would need to load and execute the module file
+        System.err.println("Warning: Import statements not yet fully implemented in VM");
+    }
+    
+    private Integer compileThisExpression(Expr.This thisExpr) {
+        // For now, return a null literal for 'this'
+        // TODO: Implement proper 'this' context tracking in VM
+        int reg = allocateRegister();
+        int nullIndex = constantPool.addConstant(null);
+        emit(Instruction.createWithConstantB(OpCode.LOAD_CONSTANT, reg, nullIndex, 0));
+        System.err.println("Warning: 'this' keyword not yet fully implemented in VM");
         return reg;
     }
 }

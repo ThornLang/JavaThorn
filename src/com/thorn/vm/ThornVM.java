@@ -274,6 +274,11 @@ public class ThornVM {
                     currentFrame.setRegister(a, new java.util.HashMap<String, Object>());
                     break;
                     
+                case NEW_DICT:
+                    // Create a new dictionary (HashMap)
+                    currentFrame.setRegister(a, new java.util.HashMap<String, Object>());
+                    break;
+                    
                 case GET_PROPERTY:
                     // A = B.constants[C]
                     Object obj = bValue;
@@ -334,8 +339,14 @@ public class ThornVM {
                         } else {
                             throw new RuntimeException("String index out of bounds: " + idx);
                         }
+                    } else if (indexable instanceof java.util.Map) {
+                        @SuppressWarnings("unchecked")
+                        java.util.Map<Object, Object> map = (java.util.Map<Object, Object>) indexable;
+                        Object value = map.get(index);
+                        currentFrame.setRegister(a, value);
                     } else {
-                        throw new RuntimeException("Invalid index operation");
+                        throw new RuntimeException("Invalid index operation on type: " + 
+                                                 (indexable != null ? indexable.getClass().getSimpleName() : "null"));
                     }
                     break;
                     
@@ -353,8 +364,13 @@ public class ThornVM {
                         } else {
                             throw new RuntimeException("List index out of bounds: " + idx);
                         }
+                    } else if (setIndexable instanceof java.util.Map) {
+                        @SuppressWarnings("unchecked")
+                        java.util.Map<Object, Object> map = (java.util.Map<Object, Object>) setIndexable;
+                        map.put(setIndex, setIndexValue);
                     } else {
-                        throw new RuntimeException("Cannot set index on non-list");
+                        throw new RuntimeException("Cannot set index on non-indexable type: " + 
+                                                 (setIndexable != null ? setIndexable.getClass().getSimpleName() : "null"));
                     }
                     break;
                     

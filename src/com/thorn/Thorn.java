@@ -20,6 +20,7 @@ public class Thorn {
     public static void main(String[] args) throws IOException {
         if (args.length > 3) {
             System.out.println("Usage: thorn [--ast] [--vm] [script]");
+            System.out.println("       Use -Doptimize.thorn.ast=true to enable dead code elimination");
             System.exit(64);
         } 
         
@@ -77,10 +78,18 @@ public class Thorn {
         // Stop if there was a syntax error
         if (hadError) return;
 
+        // Apply dead code elimination optimization if enabled
+        boolean optimizeAst = Boolean.getBoolean("optimize.thorn.ast");
+        if (optimizeAst) {
+            DeadCodeEliminator eliminator = new DeadCodeEliminator();
+            statements = eliminator.optimize(statements);
+        }
+
         // Print AST if requested
         if (printAst) {
             AstPrinter printer = new AstPrinter();
-            System.out.println("=== Abstract Syntax Tree ===");
+            String astHeader = optimizeAst ? "=== Abstract Syntax Tree (Optimized) ===" : "=== Abstract Syntax Tree ===";
+            System.out.println(astHeader);
             System.out.println(printer.print(statements));
             System.out.println("=== End AST ===\n");
         }

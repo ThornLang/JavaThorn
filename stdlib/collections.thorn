@@ -1,0 +1,172 @@
+export class Stack {
+    $ init() {
+        this.items = [];
+        this.top_index = -1;
+    }
+    
+    $ push(item) {
+        this.top_index = this.top_index + 1;
+        this.items[this.top_index] = item;
+    }
+    
+    $ pop() {
+        if (this.is_empty()) {
+            return null;
+        }
+        item = this.items[this.top_index];
+        this.top_index = this.top_index - 1;
+        return item;
+    }
+    
+    $ peek() {
+        if (this.is_empty()) {
+            return null;
+        }
+        return this.items[this.top_index];
+    }
+    
+    $ is_empty() {
+        return this.top_index == -1;
+    }
+    
+    $ size() {
+        return this.top_index + 1;
+    }
+}
+
+export class Queue {
+    $ init() {
+        this.items = [];
+        this.front_index = 0;
+        this.rear_index = -1;
+        this.count = 0;
+    }
+    
+    $ enqueue(item) {
+        this.rear_index = this.rear_index + 1;
+        this.items[this.rear_index] = item;
+        this.count = this.count + 1;
+    }
+    
+    $ dequeue() {
+        if (this.is_empty()) {
+            return null;
+        }
+        item = this.items[this.front_index];
+        this.front_index = this.front_index + 1;
+        this.count = this.count - 1;
+        return item;
+    }
+    
+    $ front() {
+        if (this.is_empty()) {
+            return null;
+        }
+        return this.items[this.front_index];
+    }
+    
+    $ is_empty() {
+        return this.count == 0;
+    }
+    
+    $ size() {
+        return this.count;
+    }
+}
+
+export class Set {
+    $ init() {
+        this.items = [];
+        this.item_count = 0;
+    }
+    
+    $ add(item) {
+        if (!this.has(item)) {
+            this.items[this.item_count] = item;
+            this.item_count = this.item_count + 1;
+            return true;
+        }
+        return false;
+    }
+    
+    $ remove(item) {
+        index = this.find_index(item);
+        if (index != -1) {
+            i = index;
+            while (i < this.item_count - 1) {
+                this.items[i] = this.items[i + 1];
+                i = i + 1;
+            }
+            this.item_count = this.item_count - 1;
+            return true;
+        }
+        return false;
+    }
+    
+    $ has(item) {
+        return this.find_index(item) != -1;
+    }
+    
+    $ size() {
+        return this.item_count;
+    }
+    
+    $ find_index(item) {
+        i = 0;
+        while (i < this.item_count) {
+            if (this.items[i] == item) {
+                return i;
+            }
+            i = i + 1;
+        }
+        return -1;
+    }
+}
+
+export class Map {
+    $ init() {
+        this.keys = [];
+        this.values = [];
+        this.pair_count = 0;
+    }
+    
+    $ put(key, value) {
+        index = this.find_key_index(key);
+        if (index != -1) {
+            this.values[index] = value;
+            return value;
+        } else {
+            this.keys[this.pair_count] = key;
+            this.values[this.pair_count] = value;
+            this.pair_count = this.pair_count + 1;
+            return value;
+        }
+    }
+    
+    $ get(key) {
+        index = this.find_key_index(key);
+        if (index != -1) {
+            return this.values[index];
+        }
+        return null;
+    }
+    
+    $ has_key(key) {
+        return this.find_key_index(key) != -1;
+    }
+    
+    $ size() {
+        return this.pair_count;
+    }
+    
+    $ find_key_index(key) {
+        i = 0;
+        while (i < this.pair_count) {
+            if (this.keys[i] == key) {
+                return i;
+            }
+            i = i + 1;
+        }
+        return -1;
+    }
+}

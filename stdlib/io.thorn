@@ -1,0 +1,109 @@
+export $ println(message) {
+    print(message + "\n");
+}
+
+export $ print_error(message) {
+    print("ERROR: " + message);
+}
+
+export $ print_warning(message) {
+    print("WARNING: " + message);
+}
+
+export $ printf(format, values) {
+    result = format;
+    i = 0;
+    while (i < values.length) {
+        placeholder = "{" + i + "}";
+        result = replace_first(result, placeholder, stringify(values[i]));
+        i = i + 1;
+    }
+    print(result);
+}
+
+export $ read_file(path) {
+    print("Reading file: " + path);
+    //TODO: Implement actual file reading logic
+    return "";
+}
+
+export $ write_file(path, content) {
+    print("Writing to file: " + path);
+    //TODO: Implement actual file writing logic
+    return true;
+}
+
+export $ to_json(obj) {
+    if (obj == null) return "null";
+    if (obj == true) return "true";
+    if (obj == false) return "false";
+    if (is_string(obj)) return "\"" + obj + "\"";
+    if (is_number(obj)) return stringify(obj);
+    if (is_array(obj)) {
+        result = "[";
+        i = 0;
+        while (i < obj.length) {
+            if (i > 0) result = result + ",";
+            result = result + to_json(obj[i]);
+            i = i + 1;
+        }
+        result = result + "]";
+        return result;
+    }
+    return "{}";
+}
+
+$ replace_first(str, old, new) {
+    index = index_of(str, old);
+    if (index == -1) return str;
+    return substring(str, 0, index) + new + substring(str, index + old.length, str.length);
+}
+
+$ is_string(value) {
+    return typeof(value) == "string";
+}
+
+$ is_number(value) {
+    return typeof(value) == "number";
+}
+
+$ is_array(value) {
+    return value != null && value.length != null && typeof(value) != "string";
+}
+
+$ stringify(value) {
+    if (value == null) return "null";
+    if (value == true) return "true";
+    if (value == false) return "false";
+    return value + "";
+}
+
+$ substring(str, start, end) {
+    result = "";
+    i = start;
+    while (i < end && i < str.length) {
+        result = result + str[i];
+        i = i + 1;
+    }
+    return result;
+}
+
+$ index_of(str, substring) {
+    if (substring.length > str.length) return -1;
+    
+    i = 0;
+    while (i <= str.length - substring.length) {
+        found = true;
+        j = 0;
+        while (j < substring.length) {
+            if (str[i + j] != substring[j]) {
+                found = false;
+                break;
+            }
+            j = j + 1;
+        }
+        if (found) return i;
+        i = i + 1;
+    }
+    return -1;
+}

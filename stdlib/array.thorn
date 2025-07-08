@@ -1,0 +1,252 @@
+export $ len(arr) {
+    return arr.length;
+}
+
+export $ is_empty(arr) {
+    return arr.length == 0;
+}
+
+export $ push(arr, element) {
+    arr[arr.length] = element;
+    return arr;
+}
+
+export $ pop(arr) {
+    if (arr.length == 0) {
+        return null;
+    }
+    last = arr[arr.length - 1];
+    return last;
+}
+
+export $ index_of(arr, element) {
+    i = 0;
+    while (i < arr.length) {
+        if (arr[i] == element) {
+            return i;
+        }
+        i = i + 1;
+    }
+    return -1;
+}
+
+export $ contains(arr, element) {
+    return index_of(arr, element) != -1;
+}
+
+export $ reverse(arr) {
+    start = 0;
+    end = arr.length - 1;
+    
+    while (start < end) {
+        temp = arr[start];
+        arr[start] = arr[end];
+        arr[end] = temp;
+        start = start + 1;
+        end = end - 1;
+    }
+    return arr;
+}
+
+export $ copy(arr) {
+    result = [];
+    i = 0;
+    while (i < arr.length) {
+        result[i] = arr[i];
+        i = i + 1;
+    }
+    return result;
+}
+
+export $ slice(arr, start, end) {
+    if (start < 0) start = 0;
+    if (end > arr.length) end = arr.length;
+    if (start >= end) return [];
+    
+    result = [];
+    i = start;
+    result_index = 0;
+    while (i < end) {
+        result[result_index] = arr[i];
+        i = i + 1;
+        result_index = result_index + 1;
+    }
+    return result;
+}
+
+export $ concat(arr1, arr2) {
+    result = copy(arr1);
+    i = 0;
+    while (i < arr2.length) {
+        result[result.length] = arr2[i];
+        i = i + 1;
+    }
+    return result;
+}
+
+export $ map(arr, func) {
+    result = [];
+    i = 0;
+    while (i < arr.length) {
+        result[i] = func(arr[i]);
+        i = i + 1;
+    }
+    return result;
+}
+
+export $ filter(arr, predicate) {
+    result = [];
+    result_index = 0;
+    i = 0;
+    while (i < arr.length) {
+        if (predicate(arr[i])) {
+            result[result_index] = arr[i];
+            result_index = result_index + 1;
+        }
+        i = i + 1;
+    }
+    return result;
+}
+
+export $ reduce(arr, func, initial) {
+    accumulator = initial;
+    i = 0;
+    while (i < arr.length) {
+        accumulator = func(accumulator, arr[i]);
+        i = i + 1;
+    }
+    return accumulator;
+}
+
+export $ find(arr, predicate) {
+    i = 0;
+    while (i < arr.length) {
+        if (predicate(arr[i])) {
+            return arr[i];
+        }
+        i = i + 1;
+    }
+    return null;
+}
+
+export $ sort_numeric(arr) {
+    n = arr.length;
+    i = 0;
+    while (i < n - 1) {
+        j = 0;
+        while (j < n - i - 1) {
+            if (arr[j] > arr[j + 1]) {
+                temp = arr[j];
+                arr[j] = arr[j + 1];
+                arr[j + 1] = temp;
+            }
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    return arr;
+}
+
+export $ min(arr) {
+    if (arr.length == 0) return null;
+    
+    min_val = arr[0];
+    i = 1;
+    while (i < arr.length) {
+        if (arr[i] < min_val) {
+            min_val = arr[i];
+        }
+        i = i + 1;
+    }
+    return min_val;
+}
+
+export $ max(arr) {
+    if (arr.length == 0) return null;
+    
+    max_val = arr[0];
+    i = 1;
+    while (i < arr.length) {
+        if (arr[i] > max_val) {
+            max_val = arr[i];
+        }
+        i = i + 1;
+    }
+    return max_val;
+}
+
+export $ sum(arr) {
+    total = 0;
+    i = 0;
+    while (i < arr.length) {
+        total = total + arr[i];
+        i = i + 1;
+    }
+    return total;
+}
+
+export $ average(arr) {
+    if (arr.length == 0) return null;
+    return sum(arr) / arr.length;
+}
+
+export $ unique(arr) {
+    result = [];
+    result_index = 0;
+    i = 0;
+    
+    while (i < arr.length) {
+        found = false;
+        j = 0;
+        while (j < result_index) {
+            if (result[j] == arr[i]) {
+                found = true;
+                break;
+            }
+            j = j + 1;
+        }
+        
+        if (!found) {
+            result[result_index] = arr[i];
+            result_index = result_index + 1;
+        }
+        i = i + 1;
+    }
+    return result;
+}
+
+export $ range(start, end, step) {
+    if (step == null) step = 1;
+    if (step == 0) return [];
+    
+    result = [];
+    result_index = 0;
+    
+    if (step > 0) {
+        current = start;
+        while (current < end) {
+            result[result_index] = current;
+            current = current + step;
+            result_index = result_index + 1;
+        }
+    } else {
+        current = start;
+        while (current > end) {
+            result[result_index] = current;
+            current = current + step;
+            result_index = result_index + 1;
+        }
+    }
+    
+    return result;
+}
+
+export $ fill(size, value) {
+    result = [];
+    i = 0;
+    while (i < size) {
+        result[i] = value;
+        i = i + 1;
+    }
+    return result;
+}

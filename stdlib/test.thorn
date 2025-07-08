@@ -1,0 +1,103 @@
+export class TestSuite {
+    $ init(name) {
+        this.name = name;
+        this.tests = [];
+        this.test_count = 0;
+        this.passed_count = 0;
+        this.failed_count = 0;
+    }
+    
+    $ add_test(name, test_func) {
+        test = {"name": name, "func": test_func};
+        this.tests[this.test_count] = test;
+        this.test_count = this.test_count + 1;
+    }
+    
+    $ run() {
+        print("Running test suite: " + this.name);
+        
+        i = 0;
+        while (i < this.test_count) {
+            test = this.tests[i];
+            this.run_test(test);
+            i = i + 1;
+        }
+        
+        print("Results: " + this.passed_count + " passed, " + this.failed_count + " failed");
+        return this.failed_count == 0;
+    }
+    
+    $ run_test(test) {
+        print("  " + test.name + "... ");
+        
+        result = test.func();
+        if (result == false) {
+            print("FAIL");
+            this.failed_count = this.failed_count + 1;
+        } else {
+            print("PASS");
+            this.passed_count = this.passed_count + 1;
+        }
+    }
+}
+
+test_suites = [];
+current_suite = null;
+
+export $ describe(name, suite_func) {
+    current_suite = TestSuite(name);
+    test_suites[test_suites.length] = current_suite;
+    suite_func();
+    current_suite = null;
+}
+
+export $ it(name, test_func) {
+    if (current_suite != null) {
+        current_suite.add_test(name, test_func);
+    }
+}
+
+export $ run_all_tests() {
+    i = 0;
+    while (i < test_suites.length) {
+        suite = test_suites[i];
+        suite.run();
+        i = i + 1;
+    }
+}
+
+export $ expect_equal(actual, expected, message) {
+    if (actual != expected) {
+        error_msg = message ?? ("Expected " + expected + " but got " + actual);
+        print("    ASSERTION FAILED: " + error_msg);
+        return false;
+    }
+    return true;
+}
+
+export $ expect_true(value, message) {
+    if (value != true) {
+        error_msg = message ?? ("Expected true but got " + value);
+        print("    ASSERTION FAILED: " + error_msg);
+        return false;
+    }
+    return true;
+}
+
+export $ expect_false(value, message) {
+    if (value != false) {
+        error_msg = message ?? ("Expected false but got " + value);
+        print("    ASSERTION FAILED: " + error_msg);
+        return false;
+    }
+    return true;
+}
+
+export $ expect_not_null(value, message) {
+    if (value == null) {
+        error_msg = message ?? "Expected value to not be null";
+        print("    ASSERTION FAILED: " + error_msg);
+        return false;
+    }
+    return true;
+}

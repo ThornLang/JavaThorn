@@ -1,0 +1,7 @@
+// Test: Main file testing nested import chain
+import { chainFunction } from "tests/gh-29/nested_import_chain";
+
+print("=== Testing Nested Import Chain ===");
+result = chainFunction();
+print("Final result: " + result);
+print("=== Test Complete ===");

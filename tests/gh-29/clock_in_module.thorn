@@ -1,0 +1,16 @@
+// Test: Clock function in module
+startTime = clock();
+print("Module start time: " + startTime);
+
+$ measureTime() {
+    start = clock();
+    // Simulate some work
+    counter = 0;
+    while (counter < 1000) {
+        counter = counter + 1;
+    }
+    end = clock();
+    return end - start;
+}
+
+export measureTime;

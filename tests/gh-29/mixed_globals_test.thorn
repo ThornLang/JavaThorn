@@ -1,0 +1,13 @@
+// Test: Comprehensive test of mixed globals usage
+import { benchmark, logMessage } from "tests/gh-29/mixed_globals_module";
+
+print("=== Mixed Globals Comprehensive Test ===");
+
+logMessage("Starting comprehensive test");
+logMessage("Testing benchmark function");
+
+duration = benchmark(500);
+logMessage("Benchmark result: " + duration + " ms");
+
+logMessage("All tests completed successfully");
+print("=== Test Complete ===");

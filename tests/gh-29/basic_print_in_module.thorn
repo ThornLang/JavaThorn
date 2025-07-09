@@ -1,8 +1,0 @@
-// Test: Basic print function in module
-print("Module can use print function");
-
-$ testPrint() {
-    print("Function in module can use print");
-}
-
-export testPrint;

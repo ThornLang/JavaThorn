@@ -30,7 +30,6 @@ export $ assertNotEqual(expected, actual, message) {
     }
 }
 
-
 export $ assertNull(value, message) {
     if (value != null) {
         print("ASSERTION FAILED: " + message);

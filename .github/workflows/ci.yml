@@ -67,6 +67,11 @@ jobs:
         echo "Testing existing examples..."
         for file in examples/*.thorn; do
           if [ -f "$file" ]; then
+            # Skip files that are designed to demonstrate errors
+            if [[ "$file" == *"immutable_test.thorn" ]]; then
+              echo "Skipping $file (contains intentional errors)"
+              continue
+            fi
             echo "Testing $file (interpreter)..."
             java com.thorn.Thorn "$file"
             echo "Testing $file (VM)..."

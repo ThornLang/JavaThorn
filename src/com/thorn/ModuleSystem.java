@@ -51,9 +51,13 @@ public class ModuleSystem {
         }
         
         public Object getExport(String name) {
+            return getExport(name, null);
+        }
+        
+        public Object getExport(String name, Token token) {
             if (!exportedNames.contains(name)) {
-                throw new Thorn.RuntimeError(null, "Module '" + this.name + 
-                    "' does not export '" + name + "'");
+                throw new Thorn.RuntimeError(token, "ImportError: Unable to find '" + name + 
+                    "' in module '" + this.name + "'");
             }
             return exports.get(new Token(TokenType.IDENTIFIER, name, null, 0));
         }
@@ -75,7 +79,7 @@ public class ModuleSystem {
         
         // Check for circular dependencies
         if (loadingModules.contains(modulePath)) {
-            throw new Thorn.RuntimeError(null, "Circular dependency detected: " + modulePath);
+            throw new Thorn.RuntimeError(null, "ImportError: Circular dependency detected for module '" + modulePath + "'");
         }
         
         loadingModules.add(modulePath);

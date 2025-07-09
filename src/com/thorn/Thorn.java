@@ -223,8 +223,9 @@ public class Thorn {
     }
 
     static void runtimeError(RuntimeError error) {
-        System.err.println(error.getMessage() +
-                "\n[line " + error.token.line + "]");
+        String lineInfo = error.token != null ? 
+            "\n[line " + error.token.line + "]" : "";
+        System.err.println(error.getMessage() + lineInfo);
         hadRuntimeError = true;
     }
 

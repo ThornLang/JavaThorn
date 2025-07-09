@@ -778,7 +778,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Void visitImportStmt(Stmt.Import stmt) {
-        String modulePath = stmt.module.lexeme;
+        String modulePath = (String) stmt.module.literal;
         ModuleSystem.Module module = moduleSystem.loadModule(modulePath);
         
         if (stmt.names == null || stmt.names.isEmpty()) {
@@ -790,7 +790,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         } else {
             // Import specific names
             for (Token name : stmt.names) {
-                Object value = module.getExport(name.lexeme);
+                Object value = module.getExport(name.lexeme, name);
                 environment.define(name.lexeme, value, false);
             }
         }

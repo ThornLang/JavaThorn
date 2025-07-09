@@ -71,7 +71,7 @@ class Parser {
             // Check if this is a variable declaration (has : or =) or just an identifier export
             if (match(COLON, EQUAL)) {
                 // This is a variable declaration, back up and parse it properly
-                current--; // Back up to the identifier
+                current -= 2; // Back up past both the matched token and the identifier
                 Stmt declaration = varDeclaration(false);
                 return new Stmt.Export(declaration);
             } else {

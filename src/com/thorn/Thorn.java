@@ -165,6 +165,7 @@ public class Thorn {
         pipeline.registerPass(new CommonSubexpressionEliminationPass());
         pipeline.registerPass(new LoopOptimizationPass());
         pipeline.registerPass(new FunctionInliningPass());
+        pipeline.registerPass(new TailCallOptimizationPass());
         
         // Create optimization context
         OptimizationContext context = new OptimizationContext(level, printAst, printAst);

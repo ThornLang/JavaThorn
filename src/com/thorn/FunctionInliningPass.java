@@ -30,25 +30,17 @@ public class FunctionInliningPass extends OptimizationPass {
     }
     
     @Override
-    public boolean shouldRun(OptimizationContext context) {
-        // Run at O2 and above
-        return context.getLevel().includes(OptimizationLevel.O2);
+    public OptimizationLevel getMinimumLevel() {
+        return OptimizationLevel.O2;
     }
     
     @Override
-    public List<Stmt> transform(List<Stmt> statements, OptimizationContext context) {
-        InliningTransformer transformer = new InliningTransformer(context);
-        return transformer.transform(statements);
-    }
-    
-    @Override
-    public int getEstimatedCost() {
-        return 7; // High cost - complex analysis
-    }
-    
-    @Override
-    public String getDescription() {
-        return "Inlines small functions to eliminate call overhead and enable further optimizations";
+    public List<Stmt> optimize(List<Stmt> statements, OptimizationContext context) {
+        if (context.isDebugMode()) {
+            System.out.println("=== Function Inlining Pass ===");
+            System.out.println("  Stub implementation - no transformations applied");
+        }
+        return statements; // TODO: Implement function inlining optimization
     }
     
     /**

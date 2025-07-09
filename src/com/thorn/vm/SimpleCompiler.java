@@ -187,9 +187,32 @@ public class SimpleCompiler {
             return reg;
         } else if (expr instanceof Expr.Assign) {
             Expr.Assign assignExpr = (Expr.Assign) expr;
-            Integer valueReg = compileExpression(assignExpr.value);
             String name = assignExpr.name.lexeme;
             Integer localReg = locals.get(name);
+            
+            // Check for increment pattern: i = i + 1
+            if (localReg != null && assignExpr.value instanceof Expr.Binary) {
+                Expr.Binary binaryValue = (Expr.Binary) assignExpr.value;
+                if (binaryValue.operator.type == TokenType.PLUS) {
+                    // Check for i = i + 1 pattern
+                    if (binaryValue.left instanceof Expr.Variable && 
+                        binaryValue.right instanceof Expr.Literal) {
+                        Expr.Variable var = (Expr.Variable) binaryValue.left;
+                        Expr.Literal lit = (Expr.Literal) binaryValue.right;
+                        
+                        if (var.name.lexeme.equals(name) && 
+                            lit.value instanceof Double && 
+                            (Double)lit.value == 1.0) {
+                            // Use INCREMENT_LOCAL superinstruction
+                            emit(Instruction.create(OpCode.INCREMENT_LOCAL, localReg));
+                            return localReg;
+                        }
+                    }
+                }
+            }
+            
+            // Standard assignment
+            Integer valueReg = compileExpression(assignExpr.value);
             
             if (localReg != null) {
                 // Local variable assignment
@@ -206,6 +229,42 @@ public class SimpleCompiler {
             }
         } else if (expr instanceof Expr.Binary) {
             Expr.Binary binaryExpr = (Expr.Binary) expr;
+            
+            // Check for superinstruction patterns
+            if (binaryExpr.operator.type == TokenType.PLUS) {
+                // Pattern: constant + local
+                if (binaryExpr.left instanceof Expr.Literal && binaryExpr.right instanceof Expr.Variable) {
+                    Expr.Literal literal = (Expr.Literal) binaryExpr.left;
+                    Expr.Variable var = (Expr.Variable) binaryExpr.right;
+                    Integer localReg = locals.get(var.name.lexeme);
+                    
+                    if (localReg != null && literal.value instanceof Double) {
+                        int resultReg = allocateRegister();
+                        int constIndex = constantPool.addConstant(literal.value);
+                        emit(Instruction.createWithConstantB(OpCode.ADD_CONST_TO_LOCAL, resultReg, constIndex, localReg));
+                        numericRegisters.put(resultReg, true);
+                        return resultReg;
+                    }
+                }
+                
+                // Pattern: local + local
+                if (binaryExpr.left instanceof Expr.Variable && binaryExpr.right instanceof Expr.Variable) {
+                    Expr.Variable leftVar = (Expr.Variable) binaryExpr.left;
+                    Expr.Variable rightVar = (Expr.Variable) binaryExpr.right;
+                    Integer leftLocal = locals.get(leftVar.name.lexeme);
+                    Integer rightLocal = locals.get(rightVar.name.lexeme);
+                    
+                    if (leftLocal != null && rightLocal != null) {
+                        int resultReg = allocateRegister();
+                        emit(Instruction.create(OpCode.ADD_LOCALS, resultReg, leftLocal, rightLocal));
+                        // Assume numeric if both locals exist
+                        numericRegisters.put(resultReg, true);
+                        return resultReg;
+                    }
+                }
+            }
+            
+            // Standard binary expression compilation
             Integer leftReg = compileExpression(binaryExpr.left);
             Integer rightReg = compileExpression(binaryExpr.right);
             int resultReg = allocateRegister();
@@ -362,9 +421,9 @@ public class SimpleCompiler {
         // Compile condition
         Integer conditionReg = compileExpression(ifStmt.condition);
         
-        // Emit conditional jump - if false, jump to else branch
+        // Use CMP_JUMP_IF_FALSE superinstruction for direct jumps
         int jumpToElse = bytecode.size();
-        emit(Instruction.createConditionalJump(OpCode.JUMP_IF_FALSE, conditionReg, 0)); // Patch later
+        emit(Instruction.createConditionalJump(OpCode.CMP_JUMP_IF_FALSE, conditionReg, 0)); // Patch later
         freeRegister(conditionReg);
         
         // Compile then branch

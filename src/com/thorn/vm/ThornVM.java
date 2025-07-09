@@ -391,6 +391,80 @@ public class ThornVM {
                     // No operation
                     break;
                     
+                // Superinstructions for common patterns
+                case ADD_LOCALS:
+                    // Direct register-to-register addition
+                    Object local1 = currentFrame.getRegister(OpCode.getB(instruction));
+                    Object local2 = currentFrame.getRegister(OpCode.getC(instruction));
+                    if (local1 instanceof Double && local2 instanceof Double) {
+                        currentFrame.setRegister(a, (Double)local1 + (Double)local2);
+                    } else {
+                        currentFrame.setRegister(a, add(local1, local2));
+                    }
+                    break;
+                    
+                case ADD_CONST_TO_LOCAL:
+                    // Add constant to local variable
+                    Object constVal = constantPool.getConstant(OpCode.getBValue(instruction));
+                    Object localVal = currentFrame.getRegister(OpCode.getC(instruction));
+                    if (constVal instanceof Double && localVal instanceof Double) {
+                        currentFrame.setRegister(a, (Double)constVal + (Double)localVal);
+                    } else {
+                        currentFrame.setRegister(a, add(constVal, localVal));
+                    }
+                    break;
+                    
+                case LOAD_CONST_ADD:
+                    // Load constant and add to existing register value
+                    Object existingVal = currentFrame.getRegister(a);
+                    Object constToAdd = constantPool.getConstant(OpCode.getBValue(instruction));
+                    if (existingVal instanceof Double && constToAdd instanceof Double) {
+                        currentFrame.setRegister(a, (Double)existingVal + (Double)constToAdd);
+                    } else {
+                        currentFrame.setRegister(a, add(existingVal, constToAdd));
+                    }
+                    break;
+                    
+                case CMP_JUMP_IF_FALSE:
+                    // Combined compare and jump
+                    Object cmpValue = currentFrame.getRegister(a);
+                    if (!isTruthy(cmpValue)) {
+                        int cmpJumpOffset = OpCode.getB(instruction);
+                        // Sign extend from 8 bits
+                        if ((cmpJumpOffset & 0x80) != 0) {
+                            cmpJumpOffset = cmpJumpOffset | 0xFFFFFF00;
+                        }
+                        currentFrame.setPc(currentFrame.getPc() + cmpJumpOffset - 1);
+                    }
+                    break;
+                    
+                case INCREMENT_LOCAL:
+                    // In-place increment of local variable
+                    Object toIncrement = currentFrame.getRegister(a);
+                    if (toIncrement instanceof Double) {
+                        currentFrame.setRegister(a, (Double)toIncrement + 1.0);
+                    } else {
+                        throw new RuntimeException("Cannot increment non-numeric value");
+                    }
+                    break;
+                    
+                case LOAD_LOCAL_LOAD_LOCAL:
+                    // Load two locals in one instruction
+                    currentFrame.setRegister(a, currentFrame.getRegister(OpCode.getBValue(instruction)));
+                    currentFrame.setRegister(a + 1, currentFrame.getRegister(OpCode.getCValue(instruction)));
+                    break;
+                    
+                case STORE_LOCAL_STORE_LOCAL:
+                    // Store two locals in one instruction
+                    currentFrame.setRegister(a, bValue);
+                    currentFrame.setRegister(a + 1, cValue);
+                    break;
+                    
+                case JUMP_BACK:
+                    // Absolute jump for tail calls (pc = A)
+                    currentFrame.setPc(a);
+                    break;
+                    
                 case HALT:
                     halted = true;
                     break;

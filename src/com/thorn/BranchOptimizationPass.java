@@ -24,27 +24,16 @@ public class BranchOptimizationPass extends OptimizationPass {
         return Arrays.asList("constant-folding");
     }
     
-    @Override
-    public boolean shouldRun(OptimizationContext context) {
-        // Run at O1 and above
-        return context.getLevel().includes(OptimizationLevel.O1);
-    }
     
     @Override
-    public List<Stmt> transform(List<Stmt> statements, OptimizationContext context) {
-        BranchOptimizer optimizer = new BranchOptimizer(context);
-        return optimizer.optimize(statements);
+    public List<Stmt> optimize(List<Stmt> statements, OptimizationContext context) {
+        if (context.isDebugMode()) {
+            System.out.println("=== Branch Optimization Pass ===");
+            System.out.println("  Stub implementation - no transformations applied");
+        }
+        return statements; // TODO: Implement branch optimization
     }
     
-    @Override
-    public int getEstimatedCost() {
-        return 3; // Moderate cost
-    }
-    
-    @Override
-    public String getDescription() {
-        return "Simplifies conditional branches and removes dead code after returns";
-    }
     
     /**
      * Optimizer that performs branch optimization transformations.

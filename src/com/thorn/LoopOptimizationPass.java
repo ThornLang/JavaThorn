@@ -204,6 +204,11 @@ public class LoopOptimizationPass extends OptimizationPass {
                     Stmt optimizedDeclaration = optimizeStatement(stmt.declaration);
                     return new Stmt.Export(optimizedDeclaration);
                 }
+                
+                @Override
+                public Stmt visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
+                    return stmt;
+                }
             });
         }
         
@@ -305,6 +310,11 @@ public class LoopOptimizationPass extends OptimizationPass {
                 
                 @Override
                 public Stmt visitExportStmt(Stmt.Export stmt) {
+                    return stmt;
+                }
+                
+                @Override
+                public Stmt visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
                     return stmt;
                 }
             });
@@ -542,6 +552,11 @@ public class LoopOptimizationPass extends OptimizationPass {
                 public Stmt visitExportStmt(Stmt.Export stmt) {
                     return stmt;
                 }
+                
+                @Override
+                public Stmt visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
+                    return stmt;
+                }
             });
         }
         
@@ -630,6 +645,7 @@ public class LoopOptimizationPass extends OptimizationPass {
                     @Override public Void visitClassStmt(Stmt.Class stmt) { return null; }
                     @Override public Void visitImportStmt(Stmt.Import stmt) { return null; }
                     @Override public Void visitExportStmt(Stmt.Export stmt) { return null; }
+                    @Override public Void visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) { return null; }
                 });
             }
             
@@ -681,6 +697,7 @@ public class LoopOptimizationPass extends OptimizationPass {
                     @Override public Void visitClassStmt(Stmt.Class stmt) { return null; }
                     @Override public Void visitImportStmt(Stmt.Import stmt) { return null; }
                     @Override public Void visitExportStmt(Stmt.Export stmt) { return null; }
+                    @Override public Void visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) { return null; }
                 });
             }
             

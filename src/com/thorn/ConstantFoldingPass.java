@@ -161,6 +161,11 @@ public class ConstantFoldingPass extends OptimizationPass {
                 public Stmt visitExportStmt(Stmt.Export stmt) {
                     return new Stmt.Export(foldStatement(stmt.declaration));
                 }
+                
+                @Override
+                public Stmt visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
+                    return stmt;
+                }
             });
         }
         

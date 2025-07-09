@@ -208,6 +208,11 @@ public class BranchOptimizationPass extends OptimizationPass {
                     Stmt optimizedDeclaration = optimizeStatement(stmt.declaration);
                     return new Stmt.Export(optimizedDeclaration);
                 }
+                
+                @Override
+                public Stmt visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
+                    return stmt;
+                }
             });
         }
         

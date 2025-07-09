@@ -189,6 +189,11 @@ public class UnreachableCodeEliminationPass extends OptimizationPass {
                     Stmt declaration = processStatement(stmt.declaration);
                     return declaration != null ? new Stmt.Export(declaration) : null;
                 }
+                
+                @Override
+                public Stmt visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
+                    return stmt;
+                }
             });
         }
         

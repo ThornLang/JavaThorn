@@ -200,6 +200,8 @@ public class TailCallOptimizationPass extends OptimizationPass {
             public Stmt visitImportStmt(Stmt.Import stmt) { return stmt; }
             @Override
             public Stmt visitExportStmt(Stmt.Export stmt) { return stmt; }
+            @Override
+            public Stmt visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) { return stmt; }
         });
     }
     

@@ -1,0 +1,10 @@
+// Test: Nested object literals
+class EventEmitter {
+    $ emit(event: string, data: Any): void {
+        print("Emitting " + event + " with data: " + data);
+    }
+}
+
+emitter = EventEmitter();
+emitter.emit("user_event", {"user": {"name": "Bob", "profile": {"age": 30}}});
+emitter.emit("config_event", {"settings": {"debug": true, "features": {"auth": true}}});

@@ -1,0 +1,76 @@
+// Benchmark designed to showcase optimization framework
+
+// 1. Constant folding test
+$ compute_constants() {
+    @immut a = 2 + 3 * 4;     // Should fold to 14.0
+    @immut b = 10 / 2 - 1;    // Should fold to 4.0  
+    @immut c = a + b;         // Should fold to 18.0
+    return c * 2;             // Should fold to 36.0
+}
+
+// 2. Dead code elimination test
+$ process_value(x) {
+    if (true) {               // Branch optimization
+        return x * 2;
+    } else {
+        // Dead code - should be eliminated
+        print("This should never execute");
+        return x * 3;
+    }
+}
+
+// 3. Common subexpression elimination test
+$ calculate_area(w, h) {
+    @immut perimeter = 2 * (w + h);
+    @immut diagonal = (w + h) * 1.414;  // CSE should reuse (w + h)
+    return perimeter + diagonal;
+}
+
+// 4. Function inlining test (small function)
+$ double(x) { return x * 2; }
+$ triple(x) { return x * 3; }
+
+// 5. Loop optimization test
+$ sum_with_invariant(n) {
+    @immut constant = 10 * 5;  // Loop invariant
+    sum = 0;
+    for (i = 0; i < n; i = i + 1) {
+        sum = sum + i + constant;  // constant should be hoisted
+    }
+    return sum;
+}
+
+// 6. Copy propagation test
+$ copy_prop_test(x) {
+    a = x;
+    b = a;      // Should propagate x
+    c = b + 1;  // Should become x + 1
+    return c;
+}
+
+// Main benchmark
+start_time = clock();
+
+// Run tests multiple times
+@immut iterations = 10000;
+result = 0;
+
+for (i = 0; i < iterations; i = i + 1) {
+    result = result + compute_constants();
+    result = result + process_value(i);
+    result = result + calculate_area(5, 10);
+    result = result + double(i) + triple(i);  // Should be inlined
+    result = result + copy_prop_test(i);
+}
+
+// Small loop that should be unrolled
+for (j = 0; j < 4; j = j + 1) {
+    result = result + j;
+}
+
+result = result + sum_with_invariant(100);
+
+end_time = clock();
+
+print("Result: " + result);
+print("Time: " + (end_time - start_time) + "ms");

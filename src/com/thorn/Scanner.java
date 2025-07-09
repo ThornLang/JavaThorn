@@ -41,7 +41,6 @@ class Scanner {
         keywords.put("string", STRING_TYPE);
         keywords.put("number", NUMBER_TYPE);
         keywords.put("boolean", BOOLEAN_TYPE);
-        keywords.put("null", NULL_TYPE);
         keywords.put("Any", ANY_TYPE);
         keywords.put("void", VOID_TYPE);
         keywords.put("Array", ARRAY_TYPE);

@@ -89,7 +89,17 @@ public enum OpCode {
     MATCH_PATTERN(60),   // Pattern matching optimization
     LAMBDA_CREATE(61),   // Create lambda function
     NOP(62),             // No operation
-    HALT(63);            // Stop execution
+    HALT(63),            // Stop execution
+    
+    // Superinstructions for common patterns (64-71)
+    ADD_LOCALS(64),              // A = locals[B] + locals[C] (direct register add)
+    ADD_CONST_TO_LOCAL(65),      // A = constants[B] + locals[C]
+    LOAD_CONST_ADD(66),          // A = B + constants[C] (load and add in one)
+    CMP_JUMP_IF_FALSE(67),       // if (!A) pc += B (compare and jump combined)
+    INCREMENT_LOCAL(68),         // locals[A] = locals[A] + 1 (in-place increment)
+    LOAD_LOCAL_LOAD_LOCAL(69),   // Load two locals: A = locals[B], A+1 = locals[C]
+    STORE_LOCAL_STORE_LOCAL(70), // Store two locals: locals[A] = B, locals[A+1] = C
+    JUMP_BACK(71);               // pc = A (absolute jump for tail calls)
     
     private final int code;
     

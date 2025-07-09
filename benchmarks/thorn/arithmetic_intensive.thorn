@@ -1,0 +1,55 @@
+// Benchmark for arithmetic superinstructions
+$ benchmark_arithmetic() {
+    sum = 0;
+    
+    // Test INCREMENT_LOCAL superinstruction
+    for (i = 0; i < 1000000; i = i + 1) {
+        sum = sum + i;
+    }
+    
+    return sum;
+}
+
+$ benchmark_local_additions() {
+    a = 100;
+    b = 200;
+    result = 0;
+    
+    // Test ADD_LOCALS superinstruction
+    for (i = 0; i < 100000; i = i + 1) {
+        result = result + (a + b);
+    }
+    
+    return result;
+}
+
+$ benchmark_constant_additions() {
+    x = 0;
+    
+    // Test ADD_CONST_TO_LOCAL superinstruction
+    for (i = 0; i < 100000; i = i + 1) {
+        x = x + 100 + i;
+    }
+    
+    return x;
+}
+
+print("=== Arithmetic Superinstruction Benchmarks ===");
+
+// Benchmark 1: Loop with increment
+start_time = clock();
+result1 = benchmark_arithmetic();
+end_time = clock();
+print("Loop increment (1M iterations): " + (end_time - start_time) + "ms");
+
+// Benchmark 2: Local variable additions
+start_time = clock();
+result2 = benchmark_local_additions();
+end_time = clock();
+print("Local additions (100K iterations): " + (end_time - start_time) + "ms");
+
+// Benchmark 3: Constant additions
+start_time = clock();
+result3 = benchmark_constant_additions();
+end_time = clock();
+print("Constant additions (100K iterations): " + (end_time - start_time) + "ms");

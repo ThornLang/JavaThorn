@@ -78,11 +78,12 @@ public class Thorn {
         // Stop if there was a syntax error
         if (hadError) return;
 
-        // Apply dead code elimination optimization if enabled
-        boolean optimizeAst = Boolean.getBoolean("optimize.thorn.ast");
+        // Apply optimizations if enabled
+        OptimizationLevel optLevel = getOptimizationLevel();
+        boolean optimizeAst = optLevel != OptimizationLevel.O0;
+        
         if (optimizeAst) {
-            DeadCodeEliminator eliminator = new DeadCodeEliminator();
-            statements = eliminator.optimize(statements);
+            statements = applyOptimizations(statements, optLevel);
         }
 
         // Print AST if requested
@@ -118,6 +119,88 @@ public class Thorn {
         } else {
             // Use tree-walking interpreter
             interpreter.interpret(statements);
+        }
+    }
+
+    /**
+     * Get the optimization level from system properties.
+     * Supports both new and legacy configuration formats.
+     */
+    private static OptimizationLevel getOptimizationLevel() {
+        // Check for new optimization level property
+        String levelProp = System.getProperty("optimize.thorn.level");
+        if (levelProp != null) {
+            try {
+                return OptimizationLevel.fromString(levelProp);
+            } catch (IllegalArgumentException e) {
+                System.err.println("Invalid optimization level: " + levelProp + ", using O0");
+                return OptimizationLevel.O0;
+            }
+        }
+        
+        // Check for legacy property for backward compatibility
+        boolean legacyOptimize = Boolean.getBoolean("optimize.thorn.ast");
+        if (legacyOptimize) {
+            return OptimizationLevel.O1; // Default to O1 for backward compatibility
+        }
+        
+        return OptimizationLevel.O0;
+    }
+    
+    /**
+     * Apply optimizations to the AST using the optimization pipeline.
+     */
+    private static List<Stmt> applyOptimizations(List<Stmt> statements, OptimizationLevel level) {
+        // Create and configure the optimization pipeline
+        OptimizationPipeline pipeline = new OptimizationPipeline(printAst);
+        
+        // Register available optimization passes
+        pipeline.registerPass(new DeadCodeEliminationPass());
+        pipeline.registerPass(new ConstantFoldingPass());
+        pipeline.registerPass(new BranchOptimizationPass());
+        pipeline.registerPass(new CopyPropagationPass());
+        pipeline.registerPass(new DeadStoreEliminationPass());
+        pipeline.registerPass(new ControlFlowAnalysisPass());
+        pipeline.registerPass(new UnreachableCodeEliminationPass());
+        pipeline.registerPass(new CommonSubexpressionEliminationPass());
+        pipeline.registerPass(new LoopOptimizationPass());
+        pipeline.registerPass(new FunctionInliningPass());
+        pipeline.registerPass(new TailCallOptimizationPass());
+        
+        // Create optimization context
+        OptimizationContext context = new OptimizationContext(level, printAst, printAst);
+        
+        // Configure passes based on system properties
+        configureOptimizationPasses(context);
+        
+        // Apply optimizations
+        return pipeline.optimize(statements, context);
+    }
+    
+    /**
+     * Configure optimization passes based on system properties.
+     */
+    private static void configureOptimizationPasses(OptimizationContext context) {
+        // Check for explicitly enabled/disabled passes
+        String enabledPasses = System.getProperty("optimize.thorn.passes.enable");
+        if (enabledPasses != null) {
+            for (String passName : enabledPasses.split(",")) {
+                context.enablePass(passName.trim());
+            }
+        }
+        
+        String disabledPasses = System.getProperty("optimize.thorn.passes.disable");
+        if (disabledPasses != null) {
+            for (String passName : disabledPasses.split(",")) {
+                context.disablePass(passName.trim());
+            }
+        }
+        
+        // Configure individual pass parameters
+        // Example: -Doptimize.thorn.inline.threshold=10
+        String inlineThreshold = System.getProperty("optimize.thorn.inline.threshold");
+        if (inlineThreshold != null) {
+            context.setPassConfiguration("function-inlining", "threshold", inlineThreshold);
         }
     }
 

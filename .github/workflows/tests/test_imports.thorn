@@ -1,0 +1,7 @@
+// Test that import statements parse correctly
+import { map } from "collections";
+
+numbers = [1, 2, 3];
+doubled = map(numbers, $(x) => x * 2);
+
+print("Import tests passed!");

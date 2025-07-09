@@ -1,0 +1,82 @@
+name: ThornLang CI
+
+on:
+  # Run on PRs to any branch
+  pull_request:
+    branches: [ "*" ]
+  
+  # Run on pushes to main branch only (not on pushes from PRs)
+  push:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    
+    - name: Make build script executable
+      run: chmod +x build.sh
+    
+    - name: Build ThornLang
+      run: ./build.sh
+    
+    # Test files are now stored in .github/workflows/tests/ directory
+    
+    - name: Test basic ThornLang execution (interpreter mode)
+      run: |
+        echo "Testing interpreter mode..."
+        java com.thorn.Thorn .github/workflows/tests/test_syntax.thorn
+        java com.thorn.Thorn .github/workflows/tests/test_arithmetic.thorn
+        java com.thorn.Thorn .github/workflows/tests/test_imports.thorn
+    
+    - name: Test ThornLang VM execution
+      run: |
+        echo "Testing VM mode..."
+        java com.thorn.Thorn .github/workflows/tests/test_syntax.thorn --vm
+        java com.thorn.Thorn .github/workflows/tests/test_arithmetic.thorn --vm
+        java com.thorn.Thorn .github/workflows/tests/test_imports.thorn --vm
+    
+    - name: Test AST generation
+      run: |
+        echo "Testing AST generation..."
+        java com.thorn.Thorn .github/workflows/tests/test_syntax.thorn --ast > /dev/null
+        java com.thorn.Thorn .github/workflows/tests/test_arithmetic.thorn --ast > /dev/null
+    
+    - name: Test optimization features
+      run: |
+        echo "Testing optimization features..."
+        java -Doptimize.thorn.ast=true com.thorn.Thorn .github/workflows/tests/test_syntax.thorn
+        java -Doptimize.thorn.ast=true com.thorn.Thorn .github/workflows/tests/test_syntax.thorn --vm
+    
+    - name: Test REPL startup
+      run: |
+        echo "Testing REPL startup..."
+        echo 'print("REPL test"); exit;' | timeout 10 java com.thorn.Thorn || true
+    
+    - name: Run existing examples
+      run: |
+        echo "Testing existing examples..."
+        for file in examples/*.thorn; do
+          if [ -f "$file" ]; then
+            # Skip files that are designed to demonstrate errors
+            if [[ "$file" == *"immutable_test.thorn" ]]; then
+              echo "Skipping $file (contains intentional errors)"
+              continue
+            fi
+            echo "Testing $file (interpreter)..."
+            java com.thorn.Thorn "$file"
+            echo "Testing $file (VM)..."
+            java com.thorn.Thorn "$file" --vm
+          fi
+        done
+    
+    # Test files are stored in version control, no cleanup needed

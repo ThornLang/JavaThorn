@@ -1,0 +1,66 @@
+x = 5;
+name = "ThornLang";
+active = true;
+
+$ add(a, b) {
+    return a + b;
+}
+
+square = $(x) => x * x;
+multiply = $(a, b) => a * b;
+
+class Calculator {
+    $ init(initial) {
+        this.value = initial;
+    }
+    
+    $ add(n) {
+        this.value = this.value + n;
+        return this.value;
+    }
+    
+    $ get_value() {
+        return this.value;
+    }
+}
+
+if (x > 0) {
+    print("Positive number");
+} else {
+    print("Non-positive number");
+}
+
+for (i in [1, 2, 3]) {
+    print("Item: " + i);
+}
+
+counter = 0;
+while (counter < 3) {
+    counter = counter + 1;
+}
+
+numbers = [1, 2, 3, 4, 5];
+first = numbers[0];
+numbers[1] = 10;
+
+person = {"name": "Alice", "age": 30};
+person_name = person["name"];
+person["city"] = "New York";
+
+maybe_null = null;
+default_value = maybe_null ?? "default";
+
+result = match (x) {
+    0 => "zero",
+    1 => "one",  
+    _ => "other",
+};
+
+sum = add(5, 3);
+squared = square(4);
+
+calc = Calculator(10);
+calc.add(5);
+final_value = calc.get_value();
+
+print("All syntax tests completed successfully!");

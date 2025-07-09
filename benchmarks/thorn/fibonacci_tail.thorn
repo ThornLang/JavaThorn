@@ -1,0 +1,19 @@
+// Tail-recursive fibonacci implementation
+$ fib_tail(n, a, b) {
+    if (n == 0) return a;
+    if (n == 1) return b;
+    return fib_tail(n - 1, b, a + b);
+}
+
+$ fib_optimized(n) {
+    return fib_tail(n, 0, 1);
+}
+
+@immut N = 30;
+start_time = clock();
+result = fib_optimized(N);
+end_time = clock();
+
+print("Fibonacci(" + N + ") = " + result);
+print("Time: " + (end_time - start_time) + "ms");
+print("(Tail-recursive version)");

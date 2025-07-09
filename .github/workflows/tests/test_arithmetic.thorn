@@ -1,0 +1,19 @@
+a = 10;
+b = 5;
+
+sum = a + b;
+diff = a - b;
+product = a * b;
+quotient = a / b;
+remainder = a % b;
+
+greater = a > b;
+less = a < b;
+equal = a == b;
+not_equal = a != b;
+
+and_result = true && false;
+or_result = true || false;
+not_result = !true;
+
+print("Arithmetic tests passed!");

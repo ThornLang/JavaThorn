@@ -1,9 +1,7 @@
-$ map(list: Array[T], func: Function[T, U]): Array[U] {
+export $ map(list: Array[Any], func: Function[Any]): Array[Any] {
     result: Array[U] = [];
     for (item in list) {
         result.push(func(item));
     }
     return result;
 }
-
-export map;

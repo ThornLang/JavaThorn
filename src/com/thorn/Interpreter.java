@@ -790,7 +790,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         } else {
             // Import specific names
             for (Token name : stmt.names) {
-                Object value = module.getExport(name.lexeme);
+                Object value = module.getExport(name.lexeme, name);
                 environment.define(name.lexeme, value, false);
             }
         }

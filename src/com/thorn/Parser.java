@@ -731,15 +731,30 @@ class Parser {
             Token functionToken = previous();
             consume(LEFT_BRACKET, "Expected '[' after 'Function'.");
             
-            List<Expr> paramTypes = new ArrayList<>();
-            if (!check(RIGHT_BRACKET)) {
-                do {
-                    paramTypes.add(parseType());
-                } while (match(COMMA));
+            // Check if this is the new tuple syntax: Function[(params...), return]
+            if (match(LEFT_PAREN)) {
+                // Parse parameter types
+                List<Expr> paramTypes = new ArrayList<>();
+                if (!check(RIGHT_PAREN)) {
+                    do {
+                        paramTypes.add(parseType());
+                    } while (match(COMMA));
+                }
+                consume(RIGHT_PAREN, "Expected ')' after function parameter types.");
+                
+                consume(COMMA, "Expected ',' between parameter tuple and return type.");
+                
+                // Parse return type
+                Expr returnType = parseType();
+                
+                consume(RIGHT_BRACKET, "Expected ']' after function type.");
+                return new Expr.FunctionType(paramTypes, returnType);
+            } else {
+                // Legacy syntax: Function[ReturnType] - treat as function with no parameters
+                Expr returnType = parseType();
+                consume(RIGHT_BRACKET, "Expected ']' after function return type.");
+                return new Expr.FunctionType(new ArrayList<>(), returnType);
             }
-            
-            consume(RIGHT_BRACKET, "Expected ']' after function parameter types.");
-            return new Expr.GenericType(functionToken, paramTypes);
         }
         
         if (match(LEFT_PAREN)) {

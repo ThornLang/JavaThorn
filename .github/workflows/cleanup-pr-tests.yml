@@ -3,11 +3,20 @@ name: Cleanup PR Tests
 on:
   pull_request:
     types: [closed]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Issue number to clean up (e.g., 29)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
 
 jobs:
   cleanup-tests:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
     
     steps:
     - name: Checkout code
@@ -17,8 +26,12 @@ jobs:
         
     - name: Extract issue number and cleanup
       run: |
-        # Extract issue number from PR title (format: gh-XX: description)
-        ISSUE_NUM=$(echo "${{ github.event.pull_request.title }}" | grep -o "gh-[0-9]*" | grep -o "[0-9]*" || echo "")
+        # Extract issue number from PR title or use manual input
+        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          ISSUE_NUM="${{ github.event.inputs.issue_number }}"
+        else
+          ISSUE_NUM=$(echo "${{ github.event.pull_request.title }}" | grep -o "gh-[0-9]*" | grep -o "[0-9]*" || echo "")
+        fi
         
         if [ -n "$ISSUE_NUM" ]; then
           TEST_DIR="tests/gh-$ISSUE_NUM"
@@ -33,16 +46,20 @@ jobs:
               rm -rf tests
             fi
             
-            # Configure git
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            # Configure git with your credentials and co-author
+            git config user.name "brodycritchlow"
+            git config user.email "brody@critchlow.tech"
             
             # Commit and push the cleanup
             git add -A
             if git diff --staged --quiet; then
               echo "ℹ️  No changes to commit"
             else
-              git commit -m "chore: cleanup tests for merged PR #${{ github.event.pull_request.number }} (gh-$ISSUE_NUM)"
+              if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+                git commit -m "chore: cleanup tests for issue gh-$ISSUE_NUM (manual cleanup)" -m "Co-authored-by: thorn-lang[bot] <>"
+              else
+                git commit -m "chore: cleanup tests for merged PR #${{ github.event.pull_request.number }} (gh-$ISSUE_NUM)" -m "Co-authored-by: thorn-lang[bot] <>"
+              fi
               git push
               echo "✅ Test cleanup committed and pushed"
             fi

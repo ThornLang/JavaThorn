@@ -1,19 +1,8 @@
 // Let's build an event system to understand how lambdas enable powerful patterns!
 // You'll learn how lambdas can be stored, passed around, and called later.
 
-// Simple data classes for our events (workaround until object literals are fixed)
-class GameStartData {
-    $ init(time: string) {
-        this.time = time;
-    }
-}
-
-class PlayerScoreData {
-    $ init(player: string, points: number) {
-        this.player = player;
-        this.points = points;
-    }
-}
+// Note: Now using object literals directly instead of wrapper classes!
+// Object literals like {"key": "value"} are now fully supported.
 
 class EventData {
     $ init() {
@@ -202,28 +191,28 @@ game_events = EventEmitter();
 // Register multiple handlers for the same event
 // Each lambda will be called when "player_score" is emitted
 game_events.on("player_score", $(data) => {
-    print("Score updated! Player: " + data.player + ", Points: " + data.points);
+    print("Score updated! Player: " + data["player"] + ", Points: " + data["points"]);
 });
 
 // This lambda checks for high scores
 game_events.on("player_score", $(data) => {
-    if (data.points >= 100) {
-        print("🎉 " + data.player + " reached 100 points!");
+    if (data["points"] >= 100) {
+        print("🎉 " + data["player"] + " reached 100 points!");
     }
 });
 
 // This lambda only runs once, then removes itself
 game_events.once("game_start", $(data) => {
-    print("Game started at: " + data.time);
+    print("Game started at: " + data["time"]);
     print("(This message only appears once)\n");
 });
 
 // Trigger the events and watch our lambdas respond
-game_events.emit("game_start", GameStartData("10:00 AM"));
-game_events.emit("game_start", GameStartData("10:01 AM"));  // Won't print - handler removed itself
+game_events.emit("game_start", {"time": "10:00 AM"});
+game_events.emit("game_start", {"time": "10:01 AM"});  // Won't print - handler removed itself
 
-game_events.emit("player_score", PlayerScoreData("Alice", 50));
-game_events.emit("player_score", PlayerScoreData("Bob", 120));  // Triggers high score message
+game_events.emit("player_score", {"player": "Alice", "points": 50});
+game_events.emit("player_score", {"player": "Bob", "points": 120});  // Triggers high score message
 
 print("\n=== Observable Pattern Demo ===\n");
 

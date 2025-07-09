@@ -1,0 +1,22 @@
+// Test that the feature only works in constructor methods
+class ConstructorOnlyTest {
+    $ init() {
+        // This should work - creates properties
+        name: string = "Constructor";
+        value: number = 42;
+    }
+    
+    $ other_method() {
+        // This should create local variables, not properties
+        local_var: string = "local";
+        temp_num: number = 100;
+        
+        // Verify we can access the constructor-created properties
+        return this.name + " has value " + this.value + " and local " + local_var + " temp " + temp_num;
+    }
+}
+
+test = ConstructorOnlyTest();
+print("Name: " + test.name);
+print("Value: " + test.value);
+print("Method result: " + test.other_method());

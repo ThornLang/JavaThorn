@@ -11,6 +11,8 @@ class Parser {
 
     private final List<Token> tokens;
     private int current = 0;
+    private boolean inClassMethod = false;
+    private boolean inConstructor = false;
 
     Parser(List<Token> tokens) {
         this.tokens = tokens;
@@ -142,6 +144,15 @@ class Parser {
         }
 
         consume(SEMICOLON, "Expected ';' after variable declaration.");
+        
+        // If we're inside a constructor and have an initializer, create a property assignment
+        if (inConstructor && initializer != null) {
+            // Create this.name = value
+            Expr thisExpr = new Expr.This(new Token(THIS, "this", null, name.line));
+            Expr setExpr = new Expr.Set(thisExpr, name, initializer);
+            return new Stmt.Expression(setExpr);
+        }
+        
         return new Stmt.Var(name, type, initializer, isImmutable);
     }
 
@@ -291,7 +302,23 @@ class Parser {
         }
 
         consume(LEFT_BRACE, "Expected '{' before " + kind + " body.");
+        
+        // Track when we're inside a class method
+        boolean wasInClassMethod = inClassMethod;
+        boolean wasInConstructor = inConstructor;
+        if (kind.equals("method")) {
+            inClassMethod = true;
+            // Check if this is the constructor (init method)
+            if (name.lexeme.equals("init")) {
+                inConstructor = true;
+            }
+        }
+        
         List<Stmt> body = block();
+        
+        // Restore previous context
+        inClassMethod = wasInClassMethod;
+        inConstructor = wasInConstructor;
         
         return new Stmt.Function(name, parameters, returnType, body);
     }
@@ -307,6 +334,17 @@ class Parser {
         }
         
         consume(SEMICOLON, "Expected ';' after expression.");
+        
+        // If we're in a constructor and this is an assignment to a simple variable,
+        // convert it to a property assignment
+        if (inConstructor && expr instanceof Expr.Assign) {
+            Expr.Assign assign = (Expr.Assign) expr;
+            // Create this.name = value
+            Expr thisExpr = new Expr.This(new Token(THIS, "this", null, assign.name.line));
+            Expr setExpr = new Expr.Set(thisExpr, assign.name, assign.value);
+            return new Stmt.Expression(setExpr);
+        }
+        
         return new Stmt.Expression(expr);
     }
 

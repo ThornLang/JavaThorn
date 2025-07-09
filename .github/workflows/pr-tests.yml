@@ -74,27 +74,36 @@ jobs:
           
           # Test interpreter mode
           echo "   Interpreter mode:"
-          if timeout 30s java com.thorn.Thorn "$test_file" > /dev/null 2>&1; then
+          echo "   Running: java com.thorn.Thorn \"$test_file\""
+          if timeout 30s java com.thorn.Thorn "$test_file" > interpreter_output.tmp 2>&1; then
             echo "   ✅ PASSED"
             ((passed++))
+            echo "   Output:"
+            cat interpreter_output.tmp | head -3 | sed 's/^/     /'
           else
             echo "   ❌ FAILED"
             ((failed++))
             echo "   Error output:"
-            timeout 30s java com.thorn.Thorn "$test_file" 2>&1 | head -5 | sed 's/^/     /'
+            cat interpreter_output.tmp | head -10 | sed 's/^/     /'
           fi
           
           # Test VM mode
           echo "   VM mode:"
-          if timeout 30s java com.thorn.Thorn "$test_file" --vm > /dev/null 2>&1; then
+          echo "   Running: java com.thorn.Thorn \"$test_file\" --vm"
+          if timeout 30s java com.thorn.Thorn "$test_file" --vm > vm_output.tmp 2>&1; then
             echo "   ✅ PASSED"
             ((passed++))
+            echo "   Output:"
+            cat vm_output.tmp | head -3 | sed 's/^/     /'
           else
             echo "   ❌ FAILED"
             ((failed++))
             echo "   Error output:"
-            timeout 30s java com.thorn.Thorn "$test_file" --vm 2>&1 | head -5 | sed 's/^/     /'
+            cat vm_output.tmp | head -10 | sed 's/^/     /'
           fi
+          
+          # Clean up temp files
+          rm -f interpreter_output.tmp vm_output.tmp
         done
         
         echo ""

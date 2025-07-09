@@ -27,10 +27,10 @@ jobs:
         distribution: 'temurin'
     
     - name: Make build script executable
-      run: chmod +x build.sh
+      run: chmod +x scripts/build.sh
     
     - name: Build ThornLang
-      run: ./build.sh
+      run: ./scripts/build.sh
     
     # Test files are now stored in .github/workflows/tests/ directory
     

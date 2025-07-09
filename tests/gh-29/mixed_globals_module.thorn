@@ -1,0 +1,28 @@
+// Test: Module using both print and clock extensively
+print("=== Mixed Globals Test Module ===");
+
+initTime = clock();
+print("Module initialization time: " + initTime);
+
+$ benchmark(iterations) {
+    print("Starting benchmark with " + iterations + " iterations");
+    
+    start = clock();
+    count = 0;
+    while (count < iterations) {
+        count = count + 1;
+    }
+    end = clock();
+    
+    duration = end - start;
+    print("Benchmark completed in " + duration + " ms");
+    return duration;
+}
+
+$ logMessage(message) {
+    timestamp = clock();
+    print("[" + timestamp + "] " + message);
+}
+
+export benchmark;
+export logMessage;

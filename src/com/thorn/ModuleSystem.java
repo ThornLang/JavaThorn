@@ -105,7 +105,7 @@ public class ModuleSystem {
             loadedModules.put(modulePath, module);
             
             // Execute the module in its own environment with export tracking
-            ModuleEnvironment moduleEnv = new ModuleEnvironment(module);
+            ModuleEnvironment moduleEnv = new ModuleEnvironment(module, interpreter.globals);
             interpreter.executeModule(statements, moduleEnv);
             
             return module;
@@ -153,7 +153,8 @@ public class ModuleSystem {
     public static class ModuleEnvironment extends Environment {
         private final Module module;
         
-        public ModuleEnvironment(Module module) {
+        public ModuleEnvironment(Module module, Environment globals) {
+            super(globals);
             this.module = module;
         }
         

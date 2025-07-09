@@ -66,6 +66,7 @@ jobs:
         
         passed=0
         failed=0
+        set +e  # Disable exit on error for test loop
         
         for test_file in $test_files; do
           echo ""
@@ -105,6 +106,8 @@ jobs:
           # Clean up temp files
           rm -f interpreter_output.tmp vm_output.tmp
         done
+        
+        set -e  # Re-enable exit on error
         
         echo ""
         echo "📊 Test Summary for Issue #$ISSUE_NUM"

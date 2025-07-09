@@ -1,0 +1,24 @@
+// Test mixing new syntax with explicit this.property
+class MixedTest {
+    $ init() {
+        // New syntax
+        name: string = "Bob";
+        age: number = 30;
+        
+        // Explicit this.property (should still work)
+        this.explicit_prop = "explicit";
+        
+        // Without type hints
+        simple_value = "simple";
+    }
+    
+    $ show_all() {
+        print("name: " + this.name);
+        print("age: " + this.age);
+        print("explicit_prop: " + this.explicit_prop);
+        print("simple_value: " + this.simple_value);
+    }
+}
+
+test = MixedTest();
+test.show_all();

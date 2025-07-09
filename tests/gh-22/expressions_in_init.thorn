@@ -1,0 +1,23 @@
+// Test expressions and complex values in property initialization
+class ExpressionTest {
+    $ init(base_value: number) {
+        // Expressions
+        calculated: number = base_value * 2;
+        
+        // Function calls
+        formatted: string = "Value: " + this.calculated;
+        
+        // Null coalescing
+        optional: string = null ?? "default";
+        
+        // Complex expressions
+        complex: number = (base_value + 5) * 3;
+    }
+    
+    $ get_results() {
+        return "calculated=" + this.calculated + ", formatted=" + this.formatted + ", optional=" + this.optional + ", complex=" + this.complex;
+    }
+}
+
+test = ExpressionTest(10);
+print(test.get_results());

@@ -1,0 +1,15 @@
+// Test basic property initialization without 'this.' prefix
+class BasicTest {
+    $ init() {
+        name: string = "Alice";
+        age: number = 25;
+        active: boolean = true;
+    }
+    
+    $ get_info() {
+        return this.name + " is " + this.age + " years old";
+    }
+}
+
+test = BasicTest();
+print(test.get_info());

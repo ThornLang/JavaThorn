@@ -51,9 +51,9 @@ maybe_null = null;
 default_value = maybe_null ?? "default";
 
 result = match (x) {
-    case 0 => "zero";
-    case 1 => "one";
-    case _ => "other";
+    0 => "zero",
+    1 => "one",  
+    _ => "other",
 };
 
 sum = add(5, 3);

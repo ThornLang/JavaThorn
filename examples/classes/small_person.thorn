@@ -1,0 +1,55 @@
+You// Classes in ThornLang demonstrate object-oriented programming
+// Classes use 'class' keyword and methods use $ prefix
+
+// Basic class with constructor and methods
+class Person {
+    // Constructor method is always named 'init'
+    // Properties are created when assigned in init
+    $ init(name: string, age: number) {
+        // 'this' refers to the current instance
+        this.name = name;  // Creates 'name' property
+        this.age = age;     // Creates 'age' property
+    }
+    
+    // Method with return type
+    $ greet(): string {
+        return "Hello, my name is " + this.name;
+    }
+    
+    // Method that modifies state
+    $ have_birthday(): void {
+        this.age = this.age + 1;
+        print(this.name + " is now " + this.age + " years old!");
+    }
+    
+    // Method with parameters
+    $ can_vote(voting_age: number): boolean {
+        return this.age >= voting_age;
+    }
+}
+
+// === Using the class ===
+
+// Create instances by calling class name as constructor
+// Type hints for class instances coming in future versions
+person1 = Person("Alice", 25);
+person2 = Person("Bob", 17);
+
+// Call methods on instances
+print(person1.greet());
+print(person2.greet());
+
+// Access properties directly
+print(person1.name + " is " + person1.age + " years old");
+
+// Call methods with parameters
+can_vote: boolean = person2.can_vote(18);
+print("Can " + person2.name + " vote? " + can_vote);
+
+// Modify instance state
+person1.have_birthday();
+
+// Objects are passed by reference
+another_ref = person1;
+another_ref.age = 30;
+print(person1.name + "'s age is now: " + person1.age);  // 30

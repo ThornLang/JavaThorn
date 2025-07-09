@@ -1,0 +1,279 @@
+// Loops - Repeating Code Efficiently
+// Master different types of loops and iteration patterns
+
+// === While Loops ===
+// Keep running while a condition is true
+
+// Basic counting loop
+counter = 0;
+while (counter < 5) {
+    print("Count: " + counter);
+    counter = counter + 1;
+}
+
+// While loop with user interaction simulation
+attempts = 3;
+password = "secret123";
+user_input = "";  // Simulated input
+
+while (attempts > 0 && user_input != password) {
+    print("Password attempts remaining: " + attempts);
+    
+    // Simulate different inputs
+    if (attempts == 3) {
+        user_input = "wrong";
+    } else if (attempts == 2) {
+        user_input = "incorrect";
+    } else {
+        user_input = "secret123";  // Finally get it right
+    }
+    
+    if (user_input == password) {
+        print("Access granted!");
+    } else {
+        attempts = attempts - 1;
+        if (attempts > 0) {
+            print("Incorrect password. Try again.");
+        } else {
+            print("Account locked!");
+        }
+    }
+}
+
+// === For-In Loops ===
+// Iterate over collections easily
+
+// Loop through array
+fruits = ["apple", "banana", "orange", "grape"];
+print("\nFruits in basket:");
+for (fruit in fruits) {
+    print("  - " + fruit);
+}
+
+// Loop through numbers
+numbers = [10, 20, 30, 40, 50];
+sum = 0;
+for (num in numbers) {
+    sum = sum + num;
+}
+print("\nSum of numbers: " + sum);
+
+// === Traditional Index-Based Loops ===
+// When you need the index
+
+// Print with indices
+print("\nFruits with indices:");
+i = 0;
+while (i < fruits.length) {
+    print("  " + i + ": " + fruits[i]);
+    i = i + 1;
+}
+
+// Reverse iteration
+print("\nFruits in reverse:");
+i = fruits.length - 1;
+while (i >= 0) {
+    print("  - " + fruits[i]);
+    i = i - 1;
+}
+
+// === Nested Loops ===
+// Loops inside loops for 2D operations
+
+// Multiplication table
+print("\nMultiplication table (1-5):");
+row = 1;
+while (row <= 5) {
+    line = "";
+    col = 1;
+    while (col <= 5) {
+        product = row * col;
+        // Format with padding
+        if (product < 10) {
+            line = line + " ";
+        }
+        line = line + product + " ";
+        col = col + 1;
+    }
+    print(line);
+    row = row + 1;
+}
+
+// === Loop Control Patterns ===
+
+// Find first matching item
+target = "orange";
+found = false;
+index = 0;
+
+while (index < fruits.length && !found) {
+    if (fruits[index] == target) {
+        found = true;
+        print("\nFound " + target + " at index " + index);
+    }
+    index = index + 1;
+}
+
+// Skip certain items (continue simulation)
+print("\nProcessing only even numbers:");
+for (num in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
+    if (num % 2 != 0) {
+        // Skip odd numbers
+    } else {
+        print("  Processing: " + num);
+    }
+}
+
+// === Infinite Loop with Exit Condition ===
+// Careful with these!
+
+// Game loop simulation
+game_running = true;
+turn = 0;
+
+while (game_running) {
+    turn = turn + 1;
+    print("\nTurn " + turn);
+    
+    // Simulate game ending condition
+    if (turn >= 3) {
+        print("Game Over!");
+        game_running = false;
+    } else {
+        print("Playing...");
+    }
+}
+
+// === Do-While Pattern ===
+// Run at least once, then check condition
+
+// Menu simulation (do-while pattern in Thorn)
+choice = 0;
+first_run = true;
+
+while (first_run || (choice >= 1 && choice <= 3)) {
+    first_run = false;
+    
+    print("\n=== Menu ===");
+    print("1. Option One");
+    print("2. Option Two");
+    print("3. Option Three");
+    print("4. Exit");
+    
+    // Simulate user choice
+    choice = 4;  // Exit after showing menu once
+    print("You chose: " + choice);
+}
+
+// === Loop Performance Patterns ===
+
+// Caching length for performance
+data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+data_length = data.length;  // Cache length
+processed = 0;
+
+i = 0;
+while (i < data_length) {
+    // Process data
+    processed = processed + data[i];
+    i = i + 1;
+}
+print("\nProcessed sum: " + processed);
+
+// === Sliding Window Pattern ===
+// Process consecutive elements
+
+window_size = 3;
+values = [1, 4, 2, 8, 5, 7, 3];
+print("\nSliding window sums (size " + window_size + "):");
+
+i = 0;
+while (i <= values.length - window_size) {
+    window_sum = 0;
+    j = 0;
+    while (j < window_size) {
+        window_sum = window_sum + values[i + j];
+        j = j + 1;
+    }
+    print("  Window starting at " + i + ": sum = " + window_sum);
+    i = i + 1;
+}
+
+// === Loop with State Machine ===
+// Different behavior based on state
+
+state = "INIT";
+steps = 0;
+
+print("\nState machine simulation:");
+while (state != "END" && steps < 10) {
+    steps = steps + 1;
+    print("  Step " + steps + ": State = " + state);
+    
+    if (state == "INIT") {
+        state = "PROCESSING";
+    } else if (state == "PROCESSING") {
+        if (steps > 3) {
+            state = "FINISHING";
+        }
+    } else if (state == "FINISHING") {
+        state = "END";
+    }
+}
+
+// === Batch Processing Pattern ===
+// Process items in chunks
+
+items = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+batch_size = 3;
+batch_number = 0;
+
+print("\nBatch processing (size " + batch_size + "):");
+i = 0;
+while (i < items.length) {
+    batch_number = batch_number + 1;
+    batch = [];
+    
+    // Collect batch items
+    j = 0;
+    while (j < batch_size && (i + j) < items.length) {
+        batch.push(items[i + j]);
+        j = j + 1;
+    }
+    
+    print("  Batch " + batch_number + ": " + batch);
+    i = i + batch_size;
+}
+
+// === Fibonacci Sequence ===
+// Classic loop example
+
+print("\nFibonacci sequence (first 10 numbers):");
+prev = 0;
+curr = 1;
+count = 0;
+
+while (count < 10) {
+    if (count == 0) {
+        print("  " + prev);
+    } else if (count == 1) {
+        print("  " + curr);
+    } else {
+        next = prev + curr;
+        print("  " + next);
+        prev = curr;
+        curr = next;
+    }
+    count = count + 1;
+}
+
+// === Loop Tips ===
+print("\n=== Loop Best Practices ===");
+print("1. Always ensure loop termination condition");
+print("2. Avoid modifying collection while iterating");
+print("3. Cache length for better performance");
+print("4. Use for-in when you don't need indices");
+print("5. Consider early exit when item is found");
+print("6. Be careful with nested loops (O(n²) complexity)");
+print("7. Initialize loop variables before the loop");
+print("8. Use meaningful variable names (not just i, j)");

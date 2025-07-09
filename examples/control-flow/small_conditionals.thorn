@@ -1,0 +1,242 @@
+// Control Flow - Making Decisions in Your Code
+// Learn how to control which code runs based on conditions
+
+// === If Statements ===
+// The most basic decision-making structure
+
+age = 18;
+if (age >= 18) {
+    print("You are an adult!");
+}
+
+// If-else: do one thing OR another
+temperature = 25;
+if (temperature > 30) {
+    print("It's hot outside!");
+} else {
+    print("The weather is nice.");
+}
+
+// If-else if-else: multiple conditions
+// Only the FIRST true condition executes
+score = 85;
+grade = "";  // Declare variable first
+if (score >= 90) {
+    grade = "A";
+} else if (score >= 80) {
+    grade = "B";
+} else if (score >= 70) {
+    grade = "C";
+} else if (score >= 60) {
+    grade = "D";
+} else {
+    grade = "F";
+}
+print("Your grade is: " + grade);
+
+// === Boolean Logic ===
+// Combine conditions with && (AND) and || (OR)
+
+// AND: both conditions must be true
+age = 25;
+has_license = true;
+if (age >= 18 && has_license) {
+    print("You can drive!");
+}
+
+// OR: at least one condition must be true
+is_weekend = false;
+is_holiday = true;
+if (is_weekend || is_holiday) {
+    print("No work today!");
+}
+
+// NOT: reverse a condition with !
+is_raining = false;
+if (!is_raining) {
+    print("Great day for a picnic!");
+}
+
+// Complex conditions
+hour = 14;
+is_weekday = true;
+is_lunch_time = hour >= 12 && hour <= 13;
+is_working_hours = hour >= 9 && hour <= 17 && is_weekday;
+
+if (is_lunch_time) {
+    print("Time for lunch!");
+} else if (is_working_hours) {
+    print("Keep working!");
+} else {
+    print("Free time!");
+}
+
+// === Null Checking ===
+// Handle missing values safely
+
+username = null;
+if (username != null) {
+    print("Welcome, " + username);
+} else {
+    print("Please log in");
+}
+
+// Null coalescing operator ?? provides default values
+display_name = username ?? "Guest";
+print("Hello, " + display_name);
+
+// === Nested Conditions ===
+// Put if statements inside other if statements
+
+weather = "sunny";
+temperature = 28;
+
+if (weather == "sunny") {
+    if (temperature > 25) {
+        print("Perfect beach weather!");
+    } else {
+        print("Sunny but a bit cool");
+    }
+} else if (weather == "rainy") {
+    if (temperature < 15) {
+        print("Cold and rainy - stay inside!");
+    } else {
+        print("Warm rain - might be refreshing");
+    }
+}
+
+// === Early Returns ===
+// Exit functions early based on conditions
+
+$ calculate_discount(price: number, is_member: boolean): number {
+    // Guard clause - handle special cases first
+    if (price <= 0) {
+        return 0;
+    }
+    
+    if (is_member) {
+        return price * 0.2;  // 20% member discount
+    }
+    
+    return price * 0.05;  // 5% regular discount
+}
+
+print("Member discount: $" + calculate_discount(100, true));
+print("Regular discount: $" + calculate_discount(100, false));
+
+// === Conditional Expressions ===
+// Sometimes you need to choose between values
+
+// Traditional if-else for assignment
+status = "";
+if (score >= 60) {
+    status = "Pass";
+} else {
+    status = "Fail";
+}
+print("Status: " + status);
+
+// More concise with conditional logic
+passed = score >= 60;
+message = passed && "Congratulations!" || "Try again next time";
+print(message);
+
+// === Type Checking ===
+// Make decisions based on value types
+
+$ process_value(value: Any): void {
+    // Check for null first
+    if (value == null) {
+        print("Value is null");
+        return;
+    }
+    
+    // In Thorn, we can check types by attempting operations
+    // This is a simplified example
+    print("Processing: " + value);
+}
+
+process_value(42);
+process_value("hello");
+process_value(null);
+process_value(true);
+
+// === Validation Pattern ===
+// Common pattern for input validation
+
+$ validate_age(age: Any): boolean {
+    // Check if it's a number
+    if (age == null) {
+        print("Error: Age is required");
+        return false;
+    }
+    
+    // Check range
+    if (age < 0) {
+        print("Error: Age cannot be negative");
+        return false;
+    }
+    
+    if (age > 150) {
+        print("Error: Invalid age");
+        return false;
+    }
+    
+    return true;
+}
+
+// Test validation
+ages = [25, -5, 200, null, 30];
+for (test_age in ages) {
+    if (validate_age(test_age)) {
+        print(test_age + " is a valid age");
+    }
+}
+
+// === Switch-like Pattern with If-Else ===
+// Thorn doesn't have switch, but if-else chains work well
+
+day = "Monday";
+activity = "";
+
+if (day == "Monday") {
+    activity = "Team meeting";
+} else if (day == "Tuesday" || day == "Thursday") {
+    activity = "Development work";
+} else if (day == "Wednesday") {
+    activity = "Client calls";
+} else if (day == "Friday") {
+    activity = "Code review";
+} else {
+    activity = "Weekend!";
+}
+
+print("Today's main activity: " + activity);
+
+// === Boolean Flags ===
+// Use boolean variables to track state
+
+is_logged_in = true;
+is_admin = false;
+has_premium = true;
+
+// Check multiple flags
+if (is_logged_in) {
+    if (is_admin) {
+        print("Welcome, Administrator!");
+    } else if (has_premium) {
+        print("Welcome, Premium User!");
+    } else {
+        print("Welcome, User!");
+    }
+} else {
+    print("Please log in to continue");
+}
+
+// === Tips for Good Conditionals ===
+print("\n=== Best Practices ===");
+print("1. Handle edge cases (null, empty, zero) first");
+print("2. Use meaningful variable names for conditions");
+print("3. Avoid deeply nested if statements (max 2-3 levels)");
+print("4. Consider extracting complex conditions into variables");
+print("5. Return early to reduce nesting");

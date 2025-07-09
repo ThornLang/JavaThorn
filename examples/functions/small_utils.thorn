@@ -1,0 +1,68 @@
+// Functions in ThornLang use $ and support type hints
+// Syntax: $ name(param: type): return_type { body }
+
+// Function with no parameters, void return 
+$ greet(): void {
+    print("Welcome to ThornLang!");
+}
+
+// Function with typed parameter & void return
+$ greet_user(name: string): void {
+    print("Hello, " + name + "!");
+}
+
+// Function with return type
+$ add(a: number, b: number): number {
+    return a + b;
+}
+
+// Multiple typed parameters and calculations
+$ calculate_price(base_price: number, tax_rate: number, discount: number): number {
+    subtotal: number = base_price - discount;
+    tax: number = subtotal * tax_rate;
+    total: number = subtotal + tax;
+    return total;
+}
+
+// String return type
+$ format_currency(amount: number): string {
+    // Convert number to string with $ prefix
+    return "$" + amount;
+}
+
+// Void function calling other functions
+$ print_receipt(item: string, price: number, tax_rate: number) {
+    total: number = calculate_price(price, tax_rate, 0);
+    formatted: string = format_currency(total);
+    print(item + ": " + formatted);
+}
+
+// Function returning boolean
+$ is_expensive(price: number): boolean {
+    return price > 100;
+}
+
+// === Using the functions ===
+
+greet();
+greet_user("Alice");
+
+// Type hints ensure correct usage
+sum: number = add(10, 20);
+print("10 + 20 = " + sum);
+
+// Calculate with tax and discount
+price: number = calculate_price(100, 0.08, 10);  
+print("Final price: " + format_currency(price));
+
+// Check if expensive
+expensive: boolean = is_expensive(price);
+print("Is expensive? " + expensive);
+
+print_receipt("Coffee", 4.50, 0.08);
+
+// Functions are first-class values
+// Type will be Function in future versions
+my_function = add;
+result: number = my_function(5, 3);
+print("5 + 3 = " + result);

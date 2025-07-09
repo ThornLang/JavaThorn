@@ -62,21 +62,15 @@ jobs:
         echo "Testing REPL startup..."
         echo 'print("REPL test"); exit;' | timeout 10 java com.thorn.Thorn || true
     
-    - name: Run existing examples
+    - name: Run organized examples
       run: |
-        echo "Testing existing examples..."
-        for file in examples/*.thorn; do
-          if [ -f "$file" ]; then
-            # Skip files that are designed to demonstrate errors
-            if [[ "$file" == *"immutable_test.thorn" ]]; then
-              echo "Skipping $file (contains intentional errors)"
-              continue
-            fi
-            echo "Testing $file (interpreter)..."
-            java com.thorn.Thorn "$file"
-            echo "Testing $file (VM)..."
-            java com.thorn.Thorn "$file" --vm
-          fi
+        echo "Testing organized examples..."
+        # Test all example files in subdirectories
+        find examples/ -name "*.thorn" -type f | while read file; do
+          echo "Testing $file (interpreter)..."
+          java com.thorn.Thorn "$file"
+          echo "Testing $file (VM)..."
+          java com.thorn.Thorn "$file" --vm
         done
     
     # Test files are stored in version control, no cleanup needed

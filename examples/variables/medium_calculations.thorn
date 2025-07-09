@@ -1,0 +1,63 @@
+// Type hints make numeric operations clearer and safer
+
+// Using type hints for numeric variables
+price: number = 29.99;
+quantity: number = 3;
+subtotal: number = price * quantity;  // 89.97
+
+// Division always returns a number (float)
+items: number = 10;
+groups: number = 3;
+items_per_group: number = items / groups;  // 3.333...
+print("Items per group: " + items_per_group);
+
+// Modulo operator with type hints
+remaining: number = items % groups;  // 1
+print("Items left over: " + remaining);
+
+// Type annotations help prevent accidental type changes
+count: number = 100;
+// count = "100 items";  // This would be a type error in static mode
+
+// For dynamic behavior, use 'Any' type (use sparingly!)
+data: Any = 100;          // starts as number
+data = "100 items";       // now it's a string
+data = true;              // now it's a boolean
+
+// Comparison operators with type hints
+stock: number = 50;
+reorder_level: number = 20;
+need_reorder: boolean = stock < reorder_level;  // false
+in_stock: boolean = stock > 0;                   // true
+
+// Type hints in compound operations
+counter: number = 0;
+counter = counter + 1;  // increment by 1
+counter = counter * 2;  // double it
+print("Counter value: " + counter);  // 2
+
+// Boolean type hints for logical operations
+is_premium: boolean = true;
+is_active: boolean = true;
+has_access: boolean = is_premium && is_active;  // AND operator
+print("User has access: " + has_access);
+
+// Complex boolean expressions
+is_weekend: boolean = false;
+is_holiday: boolean = true;
+is_closed: boolean = is_weekend || is_holiday;  // true
+is_open: boolean = !is_closed;                   // false
+print("Store is open: " + is_open);
+
+// Type hints with scoped variables
+global_message: string = "I'm accessible everywhere";
+if (true) {
+    // Local variables can also have type hints
+    local_message: string = "I only exist in this block";
+    global_message = "Modified from inside block";
+    
+    // Type hints ensure consistency even in nested scopes
+    temp_value: number = 42;
+}
+// local_message and temp_value are not accessible here
+print(global_message);

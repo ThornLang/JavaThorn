@@ -1,0 +1,97 @@
+// Complex type-hinted variables for game state management
+// Demonstrates advanced type usage and real-world patterns
+
+// Constants use @immut to prevent reassignment
+// Convention: use CAPS for constant names
+@immut GAME_TITLE: string = "Space Explorer";
+@immut VERSION: string = "1.2.0";
+@immut MAX_PLAYERS: number = 4;
+@immut DEFAULT_LIVES: number = 3;
+
+// Player state with appropriate types
+player_name: string = "AstroKid";
+player_level: number = 15;
+player_score: number = 42500;
+player_lives: number = DEFAULT_LIVES;
+player_health: number = 85.5;  // Decimals for precise health tracking
+is_invincible: boolean = false;
+last_checkpoint: string = "Station Alpha";
+
+// Optional values using union types (string or null)
+// In future versions: power_up: string | null = null;
+// For now, we use dynamic typing for nullable values
+power_up = null;  // Can be string or null
+companion = null;  // Can be string or null
+
+// Type hints for collections
+// Array[T] and Dict types will be supported in future versions
+// For now, collections are dynamically typed
+inventory = ["laser_gun", "shield", "medkit", "scanner"];
+coordinates = {"x": 150, "y": 75, "z": 0};
+high_scores = [98000, 87500, 76200, 65100, 54300];
+
+// Calculations with explicit type hints
+total_play_time: number = 3600;  // seconds
+minutes_played: number = total_play_time / 60;
+hours_played: number = minutes_played / 60;
+time_bonus: number = hours_played * 100;
+
+// Complex calculations maintain type safety
+base_score: number = player_score + time_bonus + (player_level * 1000);
+score_multiplier: number = 1.0;
+
+if (player_lives == DEFAULT_LIVES) {
+    score_multiplier = 1.5;  // No deaths bonus
+}
+
+final_score: number = base_score * score_multiplier;
+
+// String building with type hints
+status_line1: string = "Player: " + player_name + " | Level: " + player_level;
+status_line2: string = "Score: " + final_score + " | Health: " + player_health + "%";
+
+// Enum-like string values (enums coming in future versions)
+game_difficulty: string = "normal";  // "easy" | "normal" | "hard"
+
+if (player_level > 20) {
+    game_difficulty = "hard";
+} else if (player_level < 5) {
+    game_difficulty = "easy";
+}
+
+// State tracking with type hints
+previous_score: number = player_score;
+player_score = player_score + 500;  // Found treasure
+score_increased: boolean = player_score > previous_score;
+
+// Complex boolean conditions with clear types
+has_power_up: boolean = power_up != null;
+health_ok: boolean = player_health > 50;
+can_use_special: boolean = health_ok && !is_invincible && has_power_up;
+
+low_health: boolean = player_health < 30;
+last_life: boolean = player_lives == 1;
+needs_healing: boolean = low_health || last_life;
+
+no_lives: boolean = player_lives <= 0;
+no_health: boolean = player_health <= 0;
+game_over: boolean = no_lives || no_health;
+
+// Display game state with formatted output
+print("=== " + GAME_TITLE + " v" + VERSION + " ===");
+print(status_line1);
+print(status_line2);
+print("Difficulty: " + game_difficulty);
+print("Time played: " + hours_played + " hours");
+print("Inventory size: " + 4);  // Will use inventory.length when available
+print("Can use special ability: " + can_use_special);
+
+if (game_over) {
+    print("GAME OVER - Final Score: " + final_score);
+} else {
+    print("Continue playing at: " + last_checkpoint);
+}
+
+// Type hints document intent and catch errors early
+// Even though ThornLang is currently dynamic, using types prepares
+// your code for the upcoming static type system

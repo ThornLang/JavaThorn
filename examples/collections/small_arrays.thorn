@@ -1,0 +1,137 @@
+// Arrays are ordered lists of items - perfect for storing multiple values!
+// Think of an array like a row of boxes, each with a number (index) starting at 0
+
+// Creating arrays - use square brackets []
+numbers: Array[number] = [1, 2, 3, 4, 5];
+print("Numbers array: " + numbers);
+
+// Access items by index - remember, first item is at index 0!
+first_number = numbers[0];  // Gets 1
+third_number = numbers[2];  // Gets 3 (not 4!)
+print("First number: " + first_number);
+print("Third number: " + third_number);
+
+// Arrays can hold any type
+names: Array[string] = ["Alice", "Bob", "Charlie"];
+print("Names: " + names);
+
+// Mixed types need Array[Any]
+mixed: Array[Any] = [42, "hello", true, 3.14];
+print("Mixed array: " + mixed);
+
+// Get array length with .length property
+count: number = numbers.length;W
+print("Array has " + count + " items");
+
+// Add items to the end with push()
+numbers.push(6);
+print("After push: " + numbers);
+
+// Add multiple items
+numbers.push(7);
+numbers.push(8);
+print("After more pushes: " + numbers);
+
+// Remove and return the last item with pop()
+last = numbers.pop();
+print("Popped value: " + last);
+print("After pop: " + numbers);
+
+// Check if array contains an item
+has_three: boolean = numbers.includes(3);
+has_ten: boolean = numbers.includes(10);
+print("Contains 3? " + has_three);
+print("Contains 10? " + has_ten);
+
+// Find the position of an item
+// Returns -1 if not found
+position = names.indexOf("Bob");
+not_found = names.indexOf("David");
+print("Bob is at index: " + position);
+print("David is at index: " + not_found + " (not found)");
+
+// Loop through arrays with for-in
+print("\nLooping through names:");
+for (name in names) {
+    print("  Hello, " + name + "!");
+}
+
+// Traditional index-based loop
+print("\nLooping with indices:");
+i: number = 0;
+while (i < numbers.length) {
+    print("  numbers[" + i + "] = " + numbers[i]);
+    i = i + 1;
+}
+
+// Create empty array and build it up
+scores: Array[number] = [];
+scores.push(85);
+scores.push(92);
+scores.push(78);
+scores.push(95);
+print("\nTest scores: " + scores);
+
+// Array slicing - get a portion of an array
+// slice(start, end) - end is exclusive
+first_three = numbers.slice(0, 3);
+print("First three numbers: " + first_three);
+
+middle = numbers.slice(2, 5);
+print("Middle portion: " + middle);
+
+// Slice from index to end
+from_third = numbers.slice(2);
+print("From third onward: " + from_third);
+
+// Arrays are reference types - assignment doesn't copy!
+original = [1, 2, 3];
+reference = original;  // Both point to same array
+reference[0] = 99;
+print("\nOriginal after change: " + original);  // Shows [99, 2, 3]
+
+// To copy an array, use slice() with no arguments
+copy = original.slice();
+copy[0] = 1;  // Doesn't affect original
+print("Original unchanged: " + original);
+print("Copy modified: " + copy);
+
+// Nested arrays (2D arrays)
+grid: Array[Array[number]] = [
+    [1, 2, 3],
+    [4, 5, 6],
+    [7, 8, 9]
+];
+print("\n2D grid: " + grid);
+
+// Access nested items with multiple indices
+middle_value = grid[1][1];  // Row 1, Column 1 = 5
+print("Middle of grid: " + middle_value);
+
+// Common array patterns
+print("\n=== Common Patterns ===");
+
+// Sum all numbers
+sum: number = 0;
+for (n in numbers) {
+    sum = sum + n;
+}
+print("Sum of numbers: " + sum);
+
+// Find maximum
+max: number = scores[0];
+for (score in scores) {
+    if (score > max) {
+        max = score;
+    }
+}
+print("Highest score: " + max);
+
+// Filter pattern - collect matching items
+passing_scores: Array[number] = [];
+for (score in scores) {
+    if (score >= 80) {
+        passing_scores.push(score);
+    }
+}
+print("Passing scores (>= 80): " + passing_scores);

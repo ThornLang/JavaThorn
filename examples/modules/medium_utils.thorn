@@ -1,0 +1,288 @@
+// Utility Modules - Common Functions and Data Structures
+// Learn how to create reusable utility modules
+
+// === String Utilities ===
+// Export functions for common string operations
+
+export $ capitalize(str: string): string {
+    if (str == null || str == "") {
+        return "";
+    }
+    // Simple capitalization (first letter uppercase)
+    return str;  // TODO: Implement proper capitalization when string methods are available
+}
+
+export $ repeat(str: string, count: number): string {
+    if (count <= 0) {
+        return "";
+    }
+    
+    result: string = "";
+    i: number = 0;
+    while (i < count) {
+        result = result + str;
+        i = i + 1;
+    }
+    return result;
+}
+
+export $ is_empty(str: string): boolean {
+    return str == null || str == "";
+}
+
+// === Array Utilities ===
+// Export functions for common array operations
+
+export $ find_max(arr: Array[number]): number {
+    if (arr.length == 0) {
+        return 0;
+    }
+    
+    max: number = arr[0];
+    for (num in arr) {
+        if (num > max) {
+            max = num;
+        }
+    }
+    return max;
+}
+
+export $ find_min(arr: Array[number]): number {
+    if (arr.length == 0) {
+        return 0;
+    }
+    
+    min: number = arr[0];
+    for (num in arr) {
+        if (num < min) {
+            min = num;
+        }
+    }
+    return min;
+}
+
+export $ sum_array(arr: Array[number]): number {
+    total: number = 0;
+    for (num in arr) {
+        total = total + num;
+    }
+    return total;
+}
+
+export $ average(arr: Array[number]): number {
+    if (arr.length == 0) {
+        return 0;
+    }
+    return sum_array(arr) / arr.length;
+}
+
+export $ filter_positive(arr: Array[number]): Array[number] {
+    result: Array[number] = [];
+    for (num in arr) {
+        if (num > 0) {
+            result.push(num);
+        }
+    }
+    return result;
+}
+
+// === Validation Utilities ===
+// Export validation functions
+
+export $ is_valid_email(email: string): boolean {
+    // Simplified email validation
+    if (email == null || email == "") {
+        return false;
+    }
+    
+    // Check for @ symbol (very basic validation)
+    // TODO: Implement proper email validation when string methods are available
+    return true;  // Placeholder
+}
+
+export $ is_valid_age(age: number): boolean {
+    return age >= 0 && age <= 150;
+}
+
+export $ is_valid_percentage(value: number): boolean {
+    return value >= 0 && value <= 100;
+}
+
+// === Configuration Utilities ===
+// Export configuration management functions
+
+export class Config {
+    $ init() {
+        this.settings = {};
+        this.defaults = {};
+    }
+    
+    $ set_default(key: string, value: Any): void {
+        this.defaults[key] = value;
+    }
+    
+    $ set(key: string, value: Any): void {
+        this.settings[key] = value;
+    }
+    
+    $ get(key: string): Any {
+        // Check user settings first
+        user_value: Any = this.settings[key];
+        if (user_value != null) {
+            return user_value;
+        }
+        
+        // Fall back to default
+        default_value: Any = this.defaults[key];
+        if (default_value != null) {
+            return default_value;
+        }
+        
+        return null;
+    }
+    
+    $ get_all(): Any {
+        // Merge defaults with user settings
+        result = {};
+        // TODO: Implement proper object merging when iteration is available
+        return result;
+    }
+}
+
+// === Logger Utility ===
+// Export logging functions
+
+export class Logger {
+    $ init(name: string) {
+        this.name = name;
+        this.enabled = true;
+    }
+    
+    $ info(message: string): void {
+        if (this.enabled) {
+            print("[INFO] " + this.name + ": " + message);
+        }
+    }
+    
+    $ warn(message: string): void {
+        if (this.enabled) {
+            print("[WARN] " + this.name + ": " + message);
+        }
+    }
+    
+    $ error(message: string): void {
+        if (this.enabled) {
+            print("[ERROR] " + this.name + ": " + message);
+        }
+    }
+    
+    $ debug(message: string): void {
+        if (this.enabled) {
+            print("[DEBUG] " + this.name + ": " + message);
+        }
+    }
+    
+    $ disable(): void {
+        this.enabled = false;
+    }
+    
+    $ enable(): void {
+        this.enabled = true;
+    }
+}
+
+// === Timer Utility ===
+// Export timing functions
+
+export class Timer {
+    $ init() {
+        this.start_time = 0;
+        this.end_time = 0;
+    }
+    
+    $ start(): void {
+        this.start_time = clock();
+    }
+    
+    $ stop(): number {
+        this.end_time = clock();
+        return this.end_time - this.start_time;
+    }
+    
+    $ reset(): void {
+        this.start_time = 0;
+        this.end_time = 0;
+    }
+}
+
+// === Testing the Utilities ===
+// Test the module when run directly
+if (true) {
+    print("=== Testing Utility Module ===");
+    
+    // Test string utilities
+    print("\\n--- String Utils ---");
+    print("Repeat 'Hi' 3 times: " + repeat("Hi", 3));
+    print("Is empty string empty? " + is_empty(""));
+    print("Is 'hello' empty? " + is_empty("hello"));
+    
+    // Test array utilities
+    print("\\n--- Array Utils ---");
+    numbers: Array[number] = [1, 5, 3, 9, 2, 8];
+    print("Array: " + numbers);
+    print("Max: " + find_max(numbers));
+    print("Min: " + find_min(numbers));
+    print("Sum: " + sum_array(numbers));
+    print("Average: " + average(numbers));
+    
+    mixed_numbers: Array[number] = [-2, 5, -1, 8, 0, 3];
+    print("Mixed array: " + mixed_numbers);
+    print("Positive numbers: " + filter_positive(mixed_numbers));
+    
+    // Test validation
+    print("\\n--- Validation Utils ---");
+    print("Is 25 valid age? " + is_valid_age(25));
+    print("Is -5 valid age? " + is_valid_age(-5));
+    print("Is 75 valid percentage? " + is_valid_percentage(75));
+    print("Is 150 valid percentage? " + is_valid_percentage(150));
+    
+    // Test config
+    print("\\n--- Config Utils ---");
+    config: Any = Config();
+    config.set_default("theme", "light");
+    config.set_default("notifications", true);
+    config.set("theme", "dark");
+    
+    print("Theme: " + config.get("theme"));
+    print("Notifications: " + config.get("notifications"));
+    print("Language: " + config.get("language"));  // Should be null
+    
+    // Test logger
+    print("\\n--- Logger Utils ---");
+    logger: Any = Logger("TestModule");
+    logger.info("This is an info message");
+    logger.warn("This is a warning message");
+    logger.error("This is an error message");
+    logger.debug("This is a debug message");
+    
+    logger.disable();
+    logger.info("This won't be shown");
+    logger.enable();
+    logger.info("This will be shown again");
+    
+    // Test timer
+    print("\\n--- Timer Utils ---");
+    timer: Any = Timer();
+    timer.start();
+    
+    // Simulate some work
+    i = 0;
+    while (i < 1000) {
+        i = i + 1;
+    }
+    
+    elapsed: number = timer.stop();
+    print("Elapsed time: " + elapsed + " seconds");
+    
+    print("\\n✅ All utility tests completed!");
+}

@@ -1,0 +1,125 @@
+// Data transformation functions with type hints
+// Real-world use case: Processing and analyzing sales data
+
+// Transform raw price string to number (e.g., "$29.99" -> 29.99)
+$ parse_price(price_str: string): number {
+    // Remove $ sign if present
+    clean_price: string = price_str;
+    if (price_str[0] == "$") {
+        // Extract substring from position 1 to end
+        // Note: substring not implemented, so we'll simulate
+        clean_price = "29.99";  // Simulated for demo
+    }
+    
+    // In real implementation, would parse string to number
+    // For now, return a fixed value
+    return 29.99;
+}
+
+// Calculate statistics from a list of numbers
+$ calculate_average(numbers: Array[number]): number {
+    if (numbers.length == 0) {
+        return 0;
+    }
+    
+    sum: number = 0;
+    for (num in numbers) {
+        sum = sum + num;
+    }
+    
+    return sum / numbers.length;
+}
+
+// Find minimum and maximum values
+// Returns a dictionary with min and max keys
+// Dict[T] return types coming in future versions
+$ find_min_max(values: Array[number]) {
+    if (values.length == 0) {
+        return {"min": 0, "max": 0};
+    }
+    
+    min_val: number = values[0];
+    max_val: number = values[0];
+    
+    for (val in values) {
+        if (val < min_val) {
+            min_val = val;
+        }
+        if (val > max_val) {
+            max_val = val;
+        }
+    }
+    
+    return {"min": min_val, "max": max_val};
+}
+
+// Process sales data to generate report
+$ process_sales_data(sales: Array[Any]): string {
+    // Extract amounts (in real app, would map over sales objects)
+    amounts = [150.50, 89.99, 210.00, 45.75, 178.25];
+    
+    avg: number = calculate_average(amounts);
+    stats = find_min_max(amounts);
+    total: number = 0;
+    
+    for (amount in amounts) {
+        total = total + amount;
+    }
+    
+    // Build report
+    report: string = "=== Sales Report ===\n";
+    report = report + "Total Sales: $" + total + "\n";
+    report = report + "Average Sale: $" + avg + "\n";
+    report = report + "Lowest Sale: $" + stats["min"] + "\n";
+    report = report + "Highest Sale: $" + stats["max"] + "\n";
+    
+    return report;
+}
+
+// Filter function - returns items meeting criteria
+$ filter_high_value_sales(sales: Array[number], threshold: number): Array[number] {
+    // In real implementation, would filter array
+    // For demo, return filtered sample data
+    high_value = [];
+    
+    test_values = [150.50, 89.99, 210.00, 45.75, 178.25];
+    for (val in test_values) {
+        if (val > threshold) {
+            high_value.push(val);
+        }
+    }
+    
+    return high_value;
+}
+
+// Function composition - combine multiple operations
+$ analyze_and_report(data: Array[Any]): string {
+    // Filter high value sales (> $100)
+    high_value_sales: Array[number] = filter_high_value_sales([150.50, 89.99, 210.00, 45.75, 178.25], 100);
+    
+    // Generate report on filtered data
+    report: string = "High Value Sales Analysis:\n";
+    report = report + "Count: " + high_value_sales.length + "\n";
+    
+    if (high_value_sales.length > 0) {
+        avg: number = calculate_average(high_value_sales);
+        report = report + "Average high-value sale: $" + avg;
+    }
+    
+    return report;
+}
+
+// === Demo usage ===
+
+// Process mock sales data
+sales_data = ["sale1", "sale2", "sale3"];  // Mock data
+report: string = process_sales_data(sales_data);
+print(report);
+
+// Analyze high-value sales
+print("\n" + analyze_and_report(sales_data));
+
+// Test individual functions
+test_prices = [29.99, 49.99, 19.99, 39.99, 59.99];
+average_price: number = calculate_average(test_prices);
+print("\nAverage price from test data: $" + average_price);

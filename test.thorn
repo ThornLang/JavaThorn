@@ -1,0 +1,4 @@
+c = $ (x) => {
+    a: number = 2;
+    print(x);
+}

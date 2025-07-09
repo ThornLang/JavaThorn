@@ -46,16 +46,20 @@ jobs:
               rm -rf tests
             fi
             
-            # Configure git
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            # Configure git with your credentials and co-author
+            git config user.name "brodycritchlow"
+            git config user.email "brody@critchlow.tech"
             
             # Commit and push the cleanup
             git add -A
             if git diff --staged --quiet; then
               echo "ℹ️  No changes to commit"
             else
-              git commit -m "chore: cleanup tests for merged PR #${{ github.event.pull_request.number }} (gh-$ISSUE_NUM)"
+              if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+                git commit -m "chore: cleanup tests for issue gh-$ISSUE_NUM (manual cleanup)" -m "Co-authored-by: thorn-lang[bot] <>"
+              else
+                git commit -m "chore: cleanup tests for merged PR #${{ github.event.pull_request.number }} (gh-$ISSUE_NUM)" -m "Co-authored-by: thorn-lang[bot] <>"
+              fi
               git push
               echo "✅ Test cleanup committed and pushed"
             fi

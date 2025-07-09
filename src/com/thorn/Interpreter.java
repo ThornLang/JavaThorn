@@ -778,7 +778,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Void visitImportStmt(Stmt.Import stmt) {
-        String modulePath = (String) stmt.module.literal;
+        String modulePath = stmt.module.lexeme;
         ModuleSystem.Module module = moduleSystem.loadModule(modulePath);
         
         if (stmt.names == null || stmt.names.isEmpty()) {

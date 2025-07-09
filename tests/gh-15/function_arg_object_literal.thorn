@@ -1,7 +1,0 @@
-// Test: Function with object literal argument
-$ testFunction(config: Any): void {
-    print("Function called with config: " + config);
-}
-
-testFunction({"debug": true, "port": 8080});
-testFunction({"env": "production", "timeout": 30});

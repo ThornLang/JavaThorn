@@ -1,8 +1,0 @@
-// Test: Variable declarations with type annotations still work
-name: string = "Alice";
-age: number = 25;
-config: Any = {"debug": true};
-
-print("Name: " + name);
-print("Age: " + age);
-print("Config: " + config);

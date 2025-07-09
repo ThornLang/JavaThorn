@@ -15,6 +15,7 @@ public abstract class Stmt {
         R visitClassStmt(Class stmt);
         R visitImportStmt(Import stmt);
         R visitExportStmt(Export stmt);
+        R visitExportIdentifierStmt(ExportIdentifier stmt);
     }
 
     abstract <R> R accept(Visitor<R> visitor);
@@ -188,6 +189,19 @@ public abstract class Stmt {
         }
 
         public final Stmt declaration;
+    }
+    
+    public static class ExportIdentifier extends Stmt {
+        ExportIdentifier(Token name) {
+            this.name = name;
+        }
+
+        @Override
+        <R> R accept(Visitor<R> visitor) {
+            return visitor.visitExportIdentifierStmt(this);
+        }
+
+        public final Token name;
     }
     
     // Parameter class for typed function parameters

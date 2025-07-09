@@ -56,19 +56,32 @@ class Parser {
     }
 
     private Stmt exportDeclaration() {
-        Stmt declaration;
         if (match(DOLLAR)) {
-            declaration = function("function");
+            Stmt declaration = function("function");
+            return new Stmt.Export(declaration);
         } else if (match(CLASS)) {
-            declaration = classDeclaration();
+            Stmt declaration = classDeclaration();
+            return new Stmt.Export(declaration);
         } else if (match(AT)) {
-            declaration = varDeclaration(true);
+            Stmt declaration = varDeclaration(true);
+            return new Stmt.Export(declaration);
         } else if (check(IDENTIFIER)) {
-            declaration = varDeclaration(false);
+            Token name = advance();
+            
+            // Check if this is a variable declaration (has : or =) or just an identifier export
+            if (match(COLON, EQUAL)) {
+                // This is a variable declaration, back up and parse it properly
+                current -= 2; // Back up past both the matched token and the identifier
+                Stmt declaration = varDeclaration(false);
+                return new Stmt.Export(declaration);
+            } else {
+                // This is just exporting an existing identifier
+                consume(SEMICOLON, "Expected ';' after export identifier.");
+                return new Stmt.ExportIdentifier(name);
+            }
         } else {
             throw error(previous(), "Expected function, class, or variable after 'export'.");
         }
-        return new Stmt.Export(declaration);
     }
 
     private Stmt importDeclaration() {

@@ -829,6 +829,22 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return null;
     }
 
+    @Override
+    public Void visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
+        // Check if we're in a module environment
+        if (environment instanceof ModuleSystem.ModuleEnvironment) {
+            ModuleSystem.ModuleEnvironment moduleEnv = (ModuleSystem.ModuleEnvironment) environment;
+            
+            // Get the existing value from the environment
+            Object value = environment.get(stmt.name);
+            
+            // Export it
+            moduleEnv.export(stmt.name.lexeme, value);
+        }
+        
+        return null;
+    }
+
     private void execute(Stmt stmt) {
         stmt.accept(this);
     }

@@ -173,6 +173,10 @@ public class FunctionInliningPass extends OptimizationPass {
                     analyzeFunctionDefinitions(stmt.declaration);
                     return null; 
                 }
+                
+                @Override public Void visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
+                    return null;
+                }
             });
         }
         
@@ -370,6 +374,11 @@ public class FunctionInliningPass extends OptimizationPass {
                 public Stmt visitExportStmt(Stmt.Export stmt) {
                     Stmt transformedDeclaration = transformStatement(stmt.declaration);
                     return new Stmt.Export(transformedDeclaration);
+                }
+                
+                @Override
+                public Stmt visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
+                    return stmt;
                 }
             });
         }
@@ -685,6 +694,11 @@ public class FunctionInliningPass extends OptimizationPass {
                         calculateStatementSize(stmt.declaration);
                         return null;
                     }
+                    
+                    @Override
+                    public Void visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
+                        return null;
+                    }
                 });
             }
             
@@ -771,6 +785,11 @@ public class FunctionInliningPass extends OptimizationPass {
                     @Override
                     public Boolean visitExportStmt(Stmt.Export stmt) {
                         return checkStatement(stmt.declaration);
+                    }
+                    
+                    @Override
+                    public Boolean visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
+                        return false;
                     }
                 });
             }
@@ -923,6 +942,11 @@ public class FunctionInliningPass extends OptimizationPass {
                     @Override
                     public Void visitExportStmt(Stmt.Export stmt) {
                         countCalls(stmt.declaration);
+                        return null;
+                    }
+                    
+                    @Override
+                    public Void visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
                         return null;
                     }
                 });
@@ -1083,6 +1107,11 @@ public class FunctionInliningPass extends OptimizationPass {
                     public Stmt visitExportStmt(Stmt.Export stmt) {
                         Stmt inlinedDeclaration = inlineStatement(stmt.declaration);
                         return new Stmt.Export(inlinedDeclaration);
+                    }
+                    
+                    @Override
+                    public Stmt visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
+                        return stmt;
                     }
                 });
             }

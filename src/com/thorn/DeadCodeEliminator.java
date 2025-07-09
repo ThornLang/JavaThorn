@@ -128,6 +128,11 @@ public class DeadCodeEliminator {
             }
             
             @Override
+            public Void visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
+                return null;
+            }
+            
+            @Override
             public Void visitBlockStmt(Stmt.Block stmt) {
                 for (Stmt blockStmt : stmt.statements) {
                     collectDefinitions(blockStmt);
@@ -386,6 +391,11 @@ public class DeadCodeEliminator {
             @Override
             public Void visitExportStmt(Stmt.Export stmt) {
                 collectUsages(stmt.declaration);
+                return null;
+            }
+            
+            @Override
+            public Void visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
                 return null;
             }
         });
@@ -691,6 +701,7 @@ public class DeadCodeEliminator {
             @Override public Void visitClassStmt(Stmt.Class stmt) { return null; }
             @Override public Void visitImportStmt(Stmt.Import stmt) { return null; }
             @Override public Void visitExportStmt(Stmt.Export stmt) { return null; }
+            @Override public Void visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) { return null; }
         });
     }
     

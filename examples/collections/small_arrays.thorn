@@ -20,7 +20,7 @@ mixed: Array[Any] = [42, "hello", true, 3.14];
 print("Mixed array: " + mixed);
 
 // Get array length with .length property
-count: number = numbers.length;W
+count: number = numbers.length;
 print("Array has " + count + " items");
 
 // Add items to the end with push()

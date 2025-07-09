@@ -1,6 +1,0 @@
-// Test: Import and use function that uses clock
-import { measureTime } from "tests/gh-29/clock_in_module";
-
-print("Testing clock function in module:");
-duration = measureTime();
-print("Operation took: " + duration + " milliseconds");

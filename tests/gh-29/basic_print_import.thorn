@@ -1,5 +1,0 @@
-// Test: Import and use function that uses print
-import { testPrint } from "tests/gh-29/basic_print_in_module";
-
-print("Testing imported function:");
-testPrint();

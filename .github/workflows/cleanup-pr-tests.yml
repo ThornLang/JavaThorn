@@ -48,7 +48,7 @@ jobs:
             
             # Configure git with your credentials and co-author
             git config user.name "brodycritchlow"
-            git config user.email "brody@critchlow.tech"
+            git config user.email "brodycritchlow@gmail.com"
             
             # Commit and push the cleanup
             git add -A

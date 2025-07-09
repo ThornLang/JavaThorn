@@ -29,164 +29,33 @@ jobs:
     - name: Build ThornLang
       run: ./build.sh
     
-    - name: Create test files for syntax validation
-      run: |
-        # Create comprehensive syntax test
-        cat > test_ci_syntax.thorn << 'EOF'
-        // Test basic variables
-        x = 5;
-        name = "ThornLang";
-        active = true;
-        
-        // Test type hints
-        typed_num: number = 42;
-        typed_str: string = "Hello";
-        typed_bool: boolean = false;
-        
-        // Test immutable variables
-        @immut PI = 3.14159;
-        @immut MESSAGE: string = "Constant message";
-        
-        // Test function definition
-        $ add(a: number, b: number): number {
-            return a + b;
-        }
-        
-        // Test lambda functions
-        square = $(x: number): number => x * x;
-        multiply = $(a, b) => a * b;
-        
-        // Test classes
-        class Calculator {
-            value: number;
-            
-            $ init(initial: number) {
-                this.value = initial;
-            }
-            
-            $ add(n: number): number {
-                this.value = this.value + n;
-                return this.value;
-            }
-            
-            $ get_value(): number {
-                return this.value;
-            }
-        }
-        
-        // Test control flow
-        if (typed_num > 0) {
-            print("Positive number");
-        } else {
-            print("Non-positive number");
-        }
-        
-        // Test loops
-        for (i in [1, 2, 3]) {
-            print("Item: " + i);
-        }
-        
-        counter = 0;
-        while (counter < 3) {
-            counter = counter + 1;
-        }
-        
-        // Test arrays and indexing
-        numbers = [1, 2, 3, 4, 5];
-        first = numbers[0];
-        numbers[1] = 10;
-        
-        // Test dictionaries
-        person = {"name": "Alice", "age": 30};
-        person_name = person["name"];
-        person["city"] = "New York";
-        
-        // Test null coalescing
-        maybe_null = null;
-        default_value = maybe_null ?? "default";
-        
-        // Test pattern matching
-        result = match (typed_num) {
-            case 0 => "zero";
-            case 1 => "one";
-            case _ => "other";
-        };
-        
-        // Test function calls
-        sum = add(5, 3);
-        squared = square(4);
-        
-        // Test class instantiation and method calls
-        calc = Calculator(10);
-        calc.add(5);
-        final_value = calc.get_value();
-        
-        print("All syntax tests completed successfully!");
-        EOF
-        
-        # Create simple arithmetic test
-        cat > test_ci_arithmetic.thorn << 'EOF'
-        // Basic arithmetic operations
-        a = 10;
-        b = 5;
-        
-        sum = a + b;
-        diff = a - b;
-        product = a * b;
-        quotient = a / b;
-        remainder = a % b;
-        
-        // Comparison operations
-        greater = a > b;
-        less = a < b;
-        equal = a == b;
-        not_equal = a != b;
-        
-        // Logical operations
-        and_result = true && false;
-        or_result = true || false;
-        not_result = !true;
-        
-        print("Arithmetic tests passed!");
-        EOF
-        
-        # Create import test
-        cat > test_ci_imports.thorn << 'EOF'
-        // Test module imports
-        import { map, range } from "collections";
-        
-        // Test imported functions
-        numbers = range(5);
-        doubled = map(numbers, $(x) => x * 2);
-        
-        print("Import tests passed!");
-        EOF
+    # Test files are now stored in .github/workflows/tests/ directory
     
     - name: Test basic ThornLang execution (interpreter mode)
       run: |
         echo "Testing interpreter mode..."
-        java com.thorn.Thorn test_ci_syntax.thorn
-        java com.thorn.Thorn test_ci_arithmetic.thorn
-        java com.thorn.Thorn test_ci_imports.thorn
+        java com.thorn.Thorn .github/workflows/tests/test_syntax.thorn
+        java com.thorn.Thorn .github/workflows/tests/test_arithmetic.thorn
+        java com.thorn.Thorn .github/workflows/tests/test_imports.thorn
     
     - name: Test ThornLang VM execution
       run: |
         echo "Testing VM mode..."
-        java com.thorn.Thorn test_ci_syntax.thorn --vm
-        java com.thorn.Thorn test_ci_arithmetic.thorn --vm
-        java com.thorn.Thorn test_ci_imports.thorn --vm
+        java com.thorn.Thorn .github/workflows/tests/test_syntax.thorn --vm
+        java com.thorn.Thorn .github/workflows/tests/test_arithmetic.thorn --vm
+        java com.thorn.Thorn .github/workflows/tests/test_imports.thorn --vm
     
     - name: Test AST generation
       run: |
         echo "Testing AST generation..."
-        java com.thorn.Thorn test_ci_syntax.thorn --ast > /dev/null
-        java com.thorn.Thorn test_ci_arithmetic.thorn --ast > /dev/null
+        java com.thorn.Thorn .github/workflows/tests/test_syntax.thorn --ast > /dev/null
+        java com.thorn.Thorn .github/workflows/tests/test_arithmetic.thorn --ast > /dev/null
     
     - name: Test optimization features
       run: |
         echo "Testing optimization features..."
-        java -Doptimize.thorn.ast=true com.thorn.Thorn test_ci_syntax.thorn
-        java -Doptimize.thorn.ast=true com.thorn.Thorn test_ci_syntax.thorn --vm
+        java -Doptimize.thorn.ast=true com.thorn.Thorn .github/workflows/tests/test_syntax.thorn
+        java -Doptimize.thorn.ast=true com.thorn.Thorn .github/workflows/tests/test_syntax.thorn --vm
     
     - name: Test REPL startup
       run: |
@@ -205,6 +74,4 @@ jobs:
           fi
         done
     
-    - name: Clean up test files
-      run: |
-        rm -f test_ci_*.thorn
+    # Test files are stored in version control, no cleanup needed

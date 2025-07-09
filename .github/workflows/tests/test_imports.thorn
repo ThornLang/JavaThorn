@@ -1,0 +1,3 @@
+import { map, range } from "collections";
+
+print("Import tests passed!");

@@ -1,4 +1,4 @@
-You// Classes in ThornLang demonstrate object-oriented programming
+// Classes in ThornLang demonstrate object-oriented programming
 // Classes use 'class' keyword and methods use $ prefix
 
 // Basic class with constructor and methods

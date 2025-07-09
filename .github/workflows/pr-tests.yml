@@ -19,10 +19,10 @@ jobs:
         distribution: 'temurin'
         
     - name: Make build script executable
-      run: chmod +x ./build.sh
+      run: chmod +x ./scripts/build.sh
       
     - name: Build ThornLang
-      run: ./build.sh
+      run: ./scripts/build.sh
       
     - name: Extract PR number
       id: pr-number

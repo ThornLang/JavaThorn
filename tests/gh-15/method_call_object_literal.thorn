@@ -1,0 +1,10 @@
+// Test: Method call with object literal argument
+class TestClass {
+    $ method(data: Any): void {
+        print("Method called with: " + data);
+    }
+}
+
+obj = TestClass();
+obj.method({"key": "value"});
+obj.method({"name": "Alice", "age": 25});

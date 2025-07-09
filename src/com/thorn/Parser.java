@@ -636,10 +636,36 @@ class Parser {
 
     private boolean checkAhead(TokenType type) {
         int i = current;
+        int braceDepth = 0;
+        int parenDepth = 0;
+        int bracketDepth = 0;
+        
         while (i < tokens.size() - 1) {
             i++;
-            if (tokens.get(i).type == type) return true;
-            if (tokens.get(i).type == SEMICOLON) return false;
+            TokenType currentType = tokens.get(i).type;
+            
+            // Track nesting levels
+            if (currentType == LEFT_BRACE) braceDepth++;
+            else if (currentType == RIGHT_BRACE) braceDepth--;
+            else if (currentType == LEFT_PAREN) parenDepth++;
+            else if (currentType == RIGHT_PAREN) parenDepth--;
+            else if (currentType == LEFT_BRACKET) bracketDepth++;
+            else if (currentType == RIGHT_BRACKET) bracketDepth--;
+            
+            // Only consider colons at top level (not nested)
+            if (currentType == type && braceDepth == 0 && parenDepth == 0 && bracketDepth == 0) {
+                return true;
+            }
+            
+            // Stop at semicolon (end of statement)
+            if (currentType == SEMICOLON) return false;
+            
+            // Stop at expression boundaries that indicate this isn't a variable declaration
+            if (braceDepth == 0 && parenDepth == 0 && bracketDepth == 0) {
+                if (currentType == DOT || currentType == LEFT_PAREN || currentType == LEFT_BRACKET) {
+                    return false;
+                }
+            }
         }
         return false;
     }

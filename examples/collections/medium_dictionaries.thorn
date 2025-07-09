@@ -1,0 +1,221 @@
+// Dictionaries (Maps) - key-value pairs for organizing data
+// Think of a dictionary like a phone book: you look up a name (key) to find a number (value)
+
+// Creating dictionaries with {} syntax
+// Keys must be strings when using object literal syntax
+person = {};
+person["name"] = "Alice";
+person["age"] = 30;
+person["city"] = "New York";
+print("Person: " + person);
+
+// Access values using bracket notation
+name = person["name"];
+age = person["age"];
+print(name + " is " + age + " years old");
+
+// Check if key exists by comparing to null
+if (person["phone"] == null) {
+    print("No phone number on file");
+}
+
+// Update existing values
+person["age"] = 31;
+print("After birthday: " + person["age"]);
+
+// Dictionary with initial values
+// Note: Object literal syntax would be {"key": value} but that's not working yet
+inventory = {};
+inventory["apples"] = 10;
+inventory["bananas"] = 5;
+inventory["oranges"] = 8;
+print("\nInventory: " + inventory);
+
+// Using dictionaries for word counting
+$ count_words(text: string): Any {
+    counts = {};
+    
+    // For now, count some predefined words
+    // (Full implementation would need string split)
+    words = ["hello", "world", "hello", "thorn", "world", "world"];
+    
+    for (word in words) {
+        current = counts[word];
+        if (current == null) {
+            counts[word] = 1;
+        } else {
+            counts[word] = current + 1;
+        }
+    }
+    
+    return counts;
+}
+
+word_counts = count_words("dummy text");
+print("\nWord counts: " + word_counts);
+
+// Dictionary as a simple database
+$ create_user(id: number, name: string, email: string): Any {
+    user = {};
+    user["id"] = id;
+    user["name"] = name;
+    user["email"] = email;
+    user["created_at"] = clock();
+    return user;
+}
+
+// Store users in a dictionary keyed by ID
+users = {};
+users["1"] = create_user(1, "Alice", "alice@example.com");
+users["2"] = create_user(2, "Bob", "bob@example.com");
+users["3"] = create_user(3, "Charlie", "charlie@example.com");
+
+print("\nUser database:");
+// Note: Can't iterate over dictionary keys yet, so we'll access manually
+print("User 1: " + users["1"]);
+print("User 2: " + users["2"]);
+print("User 3: " + users["3"]);
+
+// Nested dictionaries for complex data
+company = {};
+company["name"] = "TechCorp";
+company["founded"] = 2020;
+
+// Create departments
+engineering = {};
+engineering["head"] = "Alice";
+engineering["employees"] = 25;
+
+sales = {};
+sales["head"] = "Bob";
+sales["employees"] = 15;
+
+// Add departments to company
+departments = {};
+departments["engineering"] = engineering;
+departments["sales"] = sales;
+company["departments"] = departments;
+
+print("\nCompany structure: " + company);
+
+// Configuration dictionary
+config = {};
+config["debug"] = true;
+config["port"] = 8080;
+config["host"] = "localhost";
+config["timeout"] = 30;
+
+$ get_config(key: string, default_value: Any): Any {
+    value = config[key];
+    if (value == null) {
+        return default_value;
+    }
+    return value;
+}
+
+// Safe config access with defaults
+debug_mode = get_config("debug", false);
+api_key = get_config("api_key", "default-key");
+print("\nDebug mode: " + debug_mode);
+print("API key: " + api_key);
+
+// Dictionary for caching expensive computations
+cache = {};
+
+$ expensive_calculation(n: number): number {
+    key = "" + n;  // Convert to string for key
+    
+    // Check cache first
+    cached = cache[key];
+    if (cached != null) {
+        print("Cache hit for " + n);
+        return cached;
+    }
+    
+    // Simulate expensive computation
+    print("Computing for " + n + "...");
+    result = n * n * n;  // Just an example
+    
+    // Store in cache
+    cache[key] = result;
+    return result;
+}
+
+// First calls compute, subsequent calls use cache
+print("\nExpensive calculations:");
+print("Result: " + expensive_calculation(5));
+print("Result: " + expensive_calculation(5));  // From cache
+print("Result: " + expensive_calculation(10));
+print("Result: " + expensive_calculation(10)); // From cache
+
+// Dictionary for grouping data
+$ group_by_category(items: Array[Any]): Any {
+    groups = {};
+    
+    for (item in items) {
+        category = item["category"];
+        if (groups[category] == null) {
+            groups[category] = [];
+        }
+        groups[category].push(item);
+    }
+    
+    return groups;
+}
+
+// Create some items
+item1 = {};
+item1["name"] = "Apple";
+item1["category"] = "fruit";
+
+item2 = {};
+item2["name"] = "Carrot";
+item2["category"] = "vegetable";
+
+item3 = {};
+item3["name"] = "Banana";
+item3["category"] = "fruit";
+
+item4 = {};
+item4["name"] = "Broccoli";
+item4["category"] = "vegetable";
+
+items = [item1, item2, item3, item4];
+grouped = group_by_category(items);
+print("\nGrouped items: " + grouped);
+
+// Dictionary operations patterns
+print("\n=== Common Dictionary Patterns ===");
+
+// Pattern 1: Merge dictionaries
+$ merge_dicts(dict1: Any, dict2: Any): Any {
+    result = {};
+    
+    // Note: Without key iteration, we'd need to know keys in advance
+    // This is a limitation that would be solved with proper iteration
+    // For now, showing the pattern conceptually
+    
+    return result;
+}
+
+// Pattern 2: Dictionary with default values
+$ create_counter(): Any {
+    counter = {};
+    counter["_default"] = 0;
+    return counter;
+}
+
+$ increment_counter(counter: Any, key: string): void {
+    current = counter[key];
+    if (current == null) {
+        counter[key] = 1;
+    } else {
+        counter[key] = current + 1;
+    }
+}
+
+word_counter = create_counter();
+increment_counter(word_counter, "hello");
+increment_counter(word_counter, "world");
+increment_counter(word_counter, "hello");
+print("\nWord counts: " + word_counter);

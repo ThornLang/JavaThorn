@@ -1,6 +1,0 @@
-$ greet(name) {
-    return "Hello, " + name;
-}
-
-result = greet("World");
-print(result);

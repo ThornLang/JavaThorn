@@ -1,0 +1,206 @@
+// Let's explore functional programming - a style where functions are the stars!
+// We'll build utilities that take functions as inputs and return functions as outputs
+
+// "Compose" means chain functions together: first do g, then do f with that result
+// Like assembly line workers: g does step 1, f does step 2
+$ compose(f: Function[Any], g: Function[Any]): Function[Any] {
+    return $(x) => f(g(x));  // Returns a NEW function!
+}
+
+// "Currying" transforms a 2-parameter function into nested 1-parameter functions
+// Why? It lets you "preset" the first parameter and reuse it!
+$ curry(f: Function[Any]): Function[Function[Any]] {
+    return $(x) => $(y) => f(x, y);  // A function that returns a function!
+}
+
+// "Reduce" combines all array elements into a single value
+// It's like folding a piece of paper - each fold combines with the previous result
+$ reduce(arr: Array[Any], reducer: Function[Any], initial: Any): Any {
+    accumulator: Any = initial;  // Start with this value
+    for (item in arr) {
+        accumulator = reducer(accumulator, item);  // Combine each item
+    }
+    return accumulator;
+}
+
+// Sometimes you need both the value AND its position in the array
+$ map_indexed(arr: Array[Any], transform: Function[Any]): Array[Any] {
+    result: Array[Any] = [];
+    index: number = 0;
+    for (item in arr) {
+        result.push(transform(item, index));  // Pass both item and index
+        index = index + 1;
+    }
+    return result;
+}
+
+// "FlatMap" transforms each item into an array, then flattens all arrays into one
+// Think of unpacking boxes of items, then putting all items in one big box
+$ flat_map(arr: Array[Any], transform: Function[Array[Any]]): Array[Any] {
+    result: Array[Any] = [];
+    for (item in arr) {
+        mapped = transform(item);  // Each item becomes an array
+        for (subitem in mapped) {
+            result.push(subitem);  // Flatten by pushing each sub-item
+        }
+    }
+    return result;
+}
+
+// "Memoization" = remembering previous results to avoid recalculating
+// Like keeping notes so you don't have to solve the same math problem twice
+$ memoize(f: Function[number]): Function[number] {
+    cache = {};  // Our "notebook" of previous results
+    
+    return $(x) => {
+        key: string = "" + x;  // Convert number to string for storage
+        cached_value: Any = cache[key];
+        if (cached_value != null) {
+            print("Cache hit for " + x);  // Found in our notes!
+            return cached_value;
+        }
+        
+        result: number = f(x);
+        cache[key] = result;  // Save for next time
+        print("Computed and cached for " + x);
+        return result;
+    };
+}
+
+// Let's see composition in action!
+add_one = $(x) => x + 1;
+double = $(x) => x * 2;
+add_one_then_double = compose(double, add_one);
+print("(5 + 1) * 2 = " + add_one_then_double(5));  // First add 1, then double
+
+// Currying example - creating specialized functions
+add = $(x, y) => x + y;
+add_curried = curry(add);
+add_five = add_curried(5);  // "Lock in" 5 as the first parameter
+print("5 + 3 = " + add_five(3));  // Now just provide the second parameter
+print("5 + 7 = " + add_five(7));  // Reuse with different second parameters!
+
+// Reduce is incredibly versatile - here are different ways to combine elements
+numbers: Array[number] = [1, 2, 3, 4, 5];
+
+// Sum: start at 0, keep adding each number
+sum = reduce(numbers, $(acc, n) => acc + n, 0);
+print("Sum: " + sum);
+
+// Product: start at 1, keep multiplying
+product = reduce(numbers, $(acc, n) => acc * n, 1);
+print("Product: " + product);
+
+// Find maximum: compare each number with current max
+max_value = reduce(numbers, $(acc, n) => {
+    if (n > acc) {
+        return n;  // New max found!
+    }
+    return acc;  // Keep current max
+}, numbers[0]);
+print("Max value: " + max_value);
+
+// Map with index - useful when position matters
+letters: Array[string] = ["a", "b", "c"];
+indexed_values = map_indexed(letters, $(item, idx) => item + idx);
+print("Indexed: " + indexed_values);  // Combines letter with its position
+
+// FlatMap examples - when each item produces multiple results
+// Example 1: Duplicate each element
+duplicated = flat_map([1, 2, 3], $(x) => [x, x]);
+print("Duplicated: " + duplicated);
+
+// Example 2: Generate counting sequences
+ranges = flat_map([2, 3, 4], $(n) => {
+    result: Array[number] = [];
+    i: number = 1;
+    while (i <= n) {
+        result.push(i);  // Create [1, 2, ...n]
+        i = i + 1;
+    }
+    return result;
+});
+print("Ranges: " + ranges);  // All sequences combined
+
+// Why memoization matters - watch this expensive calculation
+$ slow_fibonacci(n: number): number {
+    if (n <= 1) {
+        return n;
+    }
+    // This recalculates the same values many times!
+    return slow_fibonacci(n - 1) + slow_fibonacci(n - 2);
+}
+
+// Track how many times the function is called
+fib_calls: number = 0;
+$ fib_with_counting(n: number): number {
+    fib_calls = fib_calls + 1;
+    return slow_fibonacci(n);
+}
+
+// Without memoization - lots of redundant work
+fib_calls = 0;
+print("\nWithout memoization:");
+print("fib(10) = " + fib_with_counting(10));
+print("Function calls: " + fib_calls);
+
+// Chain operations together like Unix pipes!
+$ pipe(operations: Array[Function[Any]]): Function[Any] {
+    return $(initial) => {
+        result: Any = initial;
+        for (op in operations) {
+            result = op(result);  // Each operation feeds into the next
+        }
+        return result;
+    };
+}
+
+// Create a data processing pipeline
+process = pipe([
+    $(x) => x + 1,      // Step 1: add 1 (5 -> 6)
+    $(x) => x * 2,      // Step 2: double (6 -> 12)
+    $(x) => x - 3       // Step 3: subtract 3 (12 -> 9)
+]);
+print("\nPiped result: " + process(5));
+
+// Combine conditions with AND/OR logic
+$ and_predicates(p1: Function[boolean], p2: Function[boolean]): Function[boolean] {
+    return $(x) => p1(x) && p2(x);  // Both must be true
+}
+
+$ or_predicates(p1: Function[boolean], p2: Function[boolean]): Function[boolean] {
+    return $(x) => p1(x) || p2(x);  // At least one must be true
+}
+
+$ not_predicate(p: Function[boolean]): Function[boolean] {
+    return $(x) => !p(x);  // Flip true/false
+}
+
+// Build complex filters from simple pieces
+is_even = $(x) => x % 2 == 0;
+is_positive = $(x) => x > 0;
+is_even_and_positive = and_predicates(is_even, is_positive);
+
+test_numbers: Array[number] = [-2, -1, 0, 1, 2, 3, 4];
+$ filter(arr: Array[Any], pred: Function[boolean]): Array[Any] {
+    result: Array[Any] = [];
+    for (item in arr) {
+        if (pred(item)) {
+            result.push(item);
+        }
+    }
+    return result;
+}
+
+even_positives = filter(test_numbers, is_even_and_positive);
+print("Even positive numbers: " + even_positives);
+
+// Functions that create customized functions - like a function factory!
+$ make_multiplier(factor: number): Function[number] {
+    return $(x) => x * factor;  // The factor is "baked in" to the returned function
+}
+
+times_three = make_multiplier(3);   // Creates a "multiply by 3" function
+times_ten = make_multiplier(10);    // Creates a "multiply by 10" function
+print("\n5 * 3 = " + times_three(5));
+print("5 * 10 = " + times_ten(5));

@@ -1,0 +1,409 @@
+// Advanced Control Flow - Pattern Matching and Complex Decision Logic
+// Learn sophisticated control flow patterns for real-world applications
+
+// === Pattern Matching with Match Expression ===
+// Thorn supports pattern matching for elegant decision logic
+
+$ classify_value(value: Any): string {
+    return match (value) {
+        42 => "The answer to everything",
+        0 => "Zero",
+        1 => "One",
+        true => "Boolean true",
+        false => "Boolean false",
+        null => "Null value",
+        _ => "Something else: " + value,
+    };
+}
+
+// Test pattern matching
+test_values = [42, 0, 1, true, false, null, "hello", 99];
+print("=== Pattern Matching Demo ===");
+for (val in test_values) {
+    result = classify_value(val);
+    print("Value " + val + " -> " + result);
+}
+
+// === State Machine Implementation ===
+// Complex control flow using state pattern
+
+class StateMachine {
+    $ init(initial_state: string) {
+        this.state = initial_state;
+        this.transitions = {};
+        this.handlers = {};
+    }
+    
+    $ add_transition(from_state: string, event: string, to_state: string): void {
+        key = from_state + ":" + event;
+        this.transitions[key] = to_state;
+    }
+    
+    $ add_handler(state: string, handler: Function[void]): void {
+        this.handlers[state] = handler;
+    }
+    
+    $ handle_event(event: string): boolean {
+        key = this.state + ":" + event;
+        new_state = this.transitions[key];
+        
+        if (new_state != null) {
+            print("Transitioning from " + this.state + " to " + new_state + " on event: " + event);
+            this.state = new_state;
+            
+            // Execute handler for new state
+            handler = this.handlers[new_state];
+            if (handler != null) {
+                handler();
+            }
+            return true;
+        }
+        
+        print("No transition from " + this.state + " on event: " + event);
+        return false;
+    }
+    
+    $ get_state(): string {
+        return this.state;
+    }
+}
+
+// Traffic light state machine
+print("\n=== Traffic Light State Machine ===");
+traffic_light = StateMachine("RED");
+
+// Define transitions
+traffic_light.add_transition("RED", "timer", "GREEN");
+traffic_light.add_transition("GREEN", "timer", "YELLOW");
+traffic_light.add_transition("YELLOW", "timer", "RED");
+
+// Define state handlers
+traffic_light.add_handler("RED", $() => print("  🔴 STOP"));
+traffic_light.add_handler("GREEN", $() => print("  🟢 GO"));
+traffic_light.add_handler("YELLOW", $() => print("  🟡 CAUTION"));
+
+// Simulate traffic light cycle
+events = ["timer", "timer", "timer", "timer"];
+for (event in events) {
+    traffic_light.handle_event(event);
+}
+
+// === Command Pattern with Control Flow ===
+// Encapsulate operations as objects
+
+class Command {
+    $ init(name: string, action: Function[void]) {
+        this.name = name;
+        this.action = action;
+    }
+    
+    $ execute(): void {
+        this.action();
+    }
+}
+
+class CommandProcessor {
+    $ init() {
+        this.commands = {};
+        this.history = [];
+    }
+    
+    $ register(name: string, action: Function[void]): void {
+        this.commands[name] = Command(name, action);
+    }
+    
+    $ execute(command_name: string): boolean {
+        command = this.commands[command_name];
+        if (command != null) {
+            command.execute();
+            this.history.push(command_name);
+            return true;
+        }
+        
+        print("Unknown command: " + command_name);
+        return false;
+    }
+    
+    $ get_history(): Array[string] {
+        return this.history;
+    }
+}
+
+// Smart home controller
+print("\n=== Smart Home Command System ===");
+home_controller = CommandProcessor();
+
+// Register commands
+home_controller.register("lights_on", $() => print("  💡 Lights turned on"));
+home_controller.register("lights_off", $() => print("  💡 Lights turned off"));
+home_controller.register("ac_on", $() => print("  ❄️ AC turned on"));
+home_controller.register("ac_off", $() => print("  ❄️ AC turned off"));
+home_controller.register("music_play", $() => print("  🎵 Music playing"));
+home_controller.register("music_stop", $() => print("  🎵 Music stopped"));
+
+// Execute commands
+commands = ["lights_on", "ac_on", "music_play", "invalid_command", "lights_off"];
+for (cmd in commands) {
+    home_controller.execute(cmd);
+}
+
+print("Command history: " + home_controller.get_history());
+
+// === Recursive Control Flow ===
+// Functions that call themselves
+
+$ factorial(n: number): number {
+    if (n <= 1) {
+        return 1;
+    }
+    return n * factorial(n - 1);
+}
+
+$ fibonacci_recursive(n: number): number {
+    if (n <= 1) {
+        return n;
+    }
+    return fibonacci_recursive(n - 1) + fibonacci_recursive(n - 2);
+}
+
+// Tree traversal structure
+class TreeNode {
+    $ init(value: Any) {
+        this.value = value;
+        this.children = [];
+    }
+    
+    $ add_child(child: Any): void {
+        this.children.push(child);
+    }
+}
+
+$ traverse_tree(node: Any, depth: number): void {
+    // Create indentation
+    indent = "";
+    i = 0;
+    while (i < depth) {
+        indent = indent + "  ";
+        i = i + 1;
+    }
+    
+    print(indent + "- " + node.value);
+    
+    // Recursively traverse children
+    for (child in node.children) {
+        traverse_tree(child, depth + 1);
+    }
+}
+
+print("\n=== Recursive Examples ===");
+print("Factorial of 5: " + factorial(5));
+print("Fibonacci(8): " + fibonacci_recursive(8));
+
+// Build a tree
+root = TreeNode("Root");
+child1 = TreeNode("Child 1");
+child2 = TreeNode("Child 2");
+grandchild1 = TreeNode("Grandchild 1");
+grandchild2 = TreeNode("Grandchild 2");
+
+child1.add_child(grandchild1);
+child2.add_child(grandchild2);
+root.add_child(child1);
+root.add_child(child2);
+
+print("\nTree structure:");
+traverse_tree(root, 0);
+
+// === Error Handling Patterns ===
+// Graceful error handling with control flow
+
+class Result {
+    $ init(success: boolean, value: Any, error: Any) {
+        this.success = success;
+        this.value = value;
+        this.error = error;
+    }
+    
+    $ is_ok(): boolean {
+        return this.success;
+    }
+    
+    $ get_value(): Any {
+        return this.value;
+    }
+    
+    $ get_error(): string {
+        return this.error;
+    }
+}
+
+$ safe_divide(a: number, b: number): Any {
+    if (b == 0) {
+        return Result(false, null, "Division by zero");
+    }
+    return Result(true, a / b, null);
+}
+
+$ safe_sqrt(n: number): Any {
+    if (n < 0) {
+        return Result(false, null, "Cannot compute square root of negative number");
+    }
+    // Simplified square root
+    return Result(true, n, null);
+}
+
+print("\n=== Error Handling Demo ===");
+operations = [
+    $() => safe_divide(10, 2),
+    $() => safe_divide(10, 0),
+    $() => safe_sqrt(16),
+    $() => safe_sqrt(-4)
+];
+
+for (op in operations) {
+    result = op();
+    if (result.is_ok()) {
+        print("✅ Success: " + result.get_value());
+    } else {
+        print("❌ Error: " + result.get_error());
+    }
+}
+
+// === Algorithm Control Flow ===
+// Implementing classic algorithms
+
+// Binary search
+$ binary_search(arr: Array[number], target: number): number {
+    left = 0;
+    right = arr.length - 1;
+    
+    while (left <= right) {
+        mid = (left + right) / 2;
+        mid = mid - (mid % 1);  // Integer division
+        
+        if (arr[mid] == target) {
+            return mid;
+        } else if (arr[mid] < target) {
+            left = mid + 1;
+        } else {
+            right = mid - 1;
+        }
+    }
+    
+    return -1;  // Not found
+}
+
+// Bubble sort
+$ bubble_sort(arr: Array[number]): Array[number] {
+    result = arr.slice();  // Copy array
+    n = result.length;
+    
+    i = 0;
+    while (i < n - 1) {
+        j = 0;
+        while (j < n - i - 1) {
+            if (result[j] > result[j + 1]) {
+                // Swap elements
+                temp = result[j];
+                result[j] = result[j + 1];
+                result[j + 1] = temp;
+            }
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    
+    return result;
+}
+
+print("\n=== Algorithm Demos ===");
+sorted_array = [1, 3, 5, 7, 9, 11, 13, 15];
+print("Binary search for 7: " + binary_search(sorted_array, 7));
+print("Binary search for 6: " + binary_search(sorted_array, 6));
+
+unsorted_array = [64, 34, 25, 12, 22, 11, 90];
+print("Original array: " + unsorted_array);
+print("Sorted array: " + bubble_sort(unsorted_array));
+
+// === Game Loop Pattern ===
+// Complex game state management
+
+class GameState {
+    $ init() {
+        this.running = true;
+        this.score = 0;
+        this.lives = 3;
+        this.level = 1;
+        this.paused = false;
+    }
+    
+    $ update(): void {
+        if (this.paused) {
+            return;
+        }
+        
+        // Game logic
+        this.score = this.score + 10;
+        
+        // Level progression
+        if (this.score > 0 && this.score % 100 == 0) {
+            this.level = this.level + 1;
+            print("  🎮 Level up! Now on level " + this.level);
+        }
+        
+        // Random events
+        if (this.score % 30 == 0) {
+            this.lives = this.lives - 1;
+            print("  💔 Life lost! Lives remaining: " + this.lives);
+            
+            if (this.lives <= 0) {
+                this.running = false;
+                print("  💀 Game Over!");
+            }
+        }
+    }
+    
+    $ pause(): void {
+        this.paused = true;
+        print("  ⏸️ Game paused");
+    }
+    
+    $ resume(): void {
+        this.paused = false;
+        print("  ▶️ Game resumed");
+    }
+}
+
+print("\n=== Game Loop Simulation ===");
+game = GameState();
+frame = 0;
+
+while (game.running && frame < 20) {
+    frame = frame + 1;
+    
+    // Simulate pause/resume
+    if (frame == 8) {
+        game.pause();
+    } else if (frame == 12) {
+        game.resume();
+    }
+    
+    game.update();
+    
+    if (frame % 5 == 0) {
+        print("  📊 Frame " + frame + " - Score: " + game.score + ", Lives: " + game.lives);
+    }
+}
+
+// === Best Practices Summary ===
+print("\n=== Advanced Control Flow Best Practices ===");
+print("1. Use pattern matching for complex decision logic");
+print("2. Implement state machines for complex state management");
+print("3. Use command pattern for flexible operation handling");
+print("4. Handle errors gracefully with Result types");
+print("5. Prefer iteration over recursion for performance");
+print("6. Use early returns to reduce nesting");
+print("7. Break complex conditions into named variables");
+print("8. Consider using lookup tables for complex branching");
+print("9. Test edge cases thoroughly");
+print("10. Document complex control flow logic");

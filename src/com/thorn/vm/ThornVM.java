@@ -234,7 +234,7 @@ public class ThornVM {
                     // Function call implementation
                     Object function = currentFrame.getRegister(a);
                     int argCount = OpCode.getB(instruction);
-                    Object result = callFunction(function, argCount, currentFrame);
+                    Object result = callFunction(function, argCount, currentFrame, a);
                     // Put result in register 0 (standard calling convention)
                     currentFrame.setRegister(0, result);
                     break;
@@ -287,6 +287,37 @@ public class ThornVM {
                         @SuppressWarnings("unchecked")
                         java.util.Map<String, Object> map = (java.util.Map<String, Object>) obj;
                         currentFrame.setRegister(a, map.get(propName));
+                    } else if (obj instanceof java.util.List) {
+                        // Handle array methods
+                        java.util.List<Object> list = (java.util.List<Object>) obj;
+                        switch (propName) {
+                            case "length":
+                                currentFrame.setRegister(a, (double) list.size());
+                                break;
+                            case "push":
+                                currentFrame.setRegister(a, new ArrayMethod("push", list));
+                                break;
+                            case "pop":
+                                currentFrame.setRegister(a, new ArrayMethod("pop", list));
+                                break;
+                            case "shift":
+                                currentFrame.setRegister(a, new ArrayMethod("shift", list));
+                                break;
+                            case "unshift":
+                                currentFrame.setRegister(a, new ArrayMethod("unshift", list));
+                                break;
+                            case "includes":
+                                currentFrame.setRegister(a, new ArrayMethod("includes", list));
+                                break;
+                            case "indexOf":
+                                currentFrame.setRegister(a, new ArrayMethod("indexOf", list));
+                                break;
+                            case "slice":
+                                currentFrame.setRegister(a, new ArrayMethod("slice", list));
+                                break;
+                            default:
+                                throw new RuntimeException("Unknown array property: " + propName);
+                        }
                     } else {
                         throw new RuntimeException("Cannot access property on non-object");
                     }
@@ -612,7 +643,7 @@ public class ThornVM {
         frameCount--;
     }
     
-    private Object callFunction(Object function, int argCount, CallFrame callerFrame) {
+    private Object callFunction(Object function, int argCount, CallFrame callerFrame, int functionRegister) {
         if (function instanceof FunctionInfo) {
             FunctionInfo funcInfo = (FunctionInfo) function;
             
@@ -635,13 +666,19 @@ public class ThornVM {
         // Handle built-in functions
         if ("native_print".equals(function)) {
             if (argCount > 0) {
-                System.out.println(stringify(callerFrame.getRegister(0)));
+                System.out.println(stringify(callerFrame.getRegister(functionRegister + 1)));
             }
             return null;
         }
         
         if ("native_clock".equals(function)) {
             return (double) System.currentTimeMillis();
+        }
+        
+        // Handle array methods
+        if (function instanceof ArrayMethod) {
+            ArrayMethod method = (ArrayMethod) function;
+            return method.call(callerFrame, argCount, functionRegister);
         }
         
         throw new RuntimeException("Not a function: " + function);
@@ -651,5 +688,121 @@ public class ThornVM {
         // Add built-in functions and constants
         globals.put("clock", "native_clock");
         globals.put("print", "native_print");
+    }
+    
+    // Inner class for array methods
+    private class ArrayMethod {
+        private final String methodName;
+        private final java.util.List<Object> list;
+        
+        ArrayMethod(String methodName, java.util.List<Object> list) {
+            this.methodName = methodName;
+            this.list = list;
+        }
+        
+        Object call(CallFrame frame, int argCount, int functionRegister) {
+            switch (methodName) {
+                case "push":
+                    if (argCount != 1) {
+                        throw new RuntimeException("push() expects 1 argument");
+                    }
+                    list.add(frame.getRegister(functionRegister + 1));
+                    return (double) list.size();
+                    
+                case "pop":
+                    if (argCount != 0) {
+                        throw new RuntimeException("pop() expects 0 arguments");
+                    }
+                    if (list.isEmpty()) {
+                        return null;
+                    }
+                    return list.remove(list.size() - 1);
+                    
+                case "shift":
+                    if (argCount != 0) {
+                        throw new RuntimeException("shift() expects 0 arguments");
+                    }
+                    if (list.isEmpty()) {
+                        return null;
+                    }
+                    return list.remove(0);
+                    
+                case "unshift":
+                    if (argCount != 1) {
+                        throw new RuntimeException("unshift() expects 1 argument");
+                    }
+                    list.add(0, frame.getRegister(functionRegister + 1));
+                    return (double) list.size();
+                    
+                case "includes":
+                    if (argCount != 1) {
+                        throw new RuntimeException("includes() expects 1 argument");
+                    }
+                    Object searchValue = frame.getRegister(functionRegister + 1);
+                    for (Object element : list) {
+                        if (isEqual(element, searchValue)) {
+                            return true;
+                        }
+                    }
+                    return false;
+                    
+                case "indexOf":
+                    if (argCount != 1) {
+                        throw new RuntimeException("indexOf() expects 1 argument");
+                    }
+                    Object indexOfValue = frame.getRegister(functionRegister + 1);
+                    for (int i = 0; i < list.size(); i++) {
+                        if (isEqual(list.get(i), indexOfValue)) {
+                            return (double) i;
+                        }
+                    }
+                    return -1.0;
+                    
+                case "slice":
+                    int start = 0;
+                    int end = list.size();
+                    
+                    // Handle start parameter
+                    if (argCount >= 1) {
+                        Object startObj = frame.getRegister(functionRegister + 1);
+                        if (!(startObj instanceof Double)) {
+                            throw new RuntimeException("Slice start index must be a number");
+                        }
+                        start = ((Double) startObj).intValue();
+                        // Handle negative indices
+                        if (start < 0) {
+                            start = Math.max(0, list.size() + start);
+                        }
+                    }
+                    
+                    // Handle end parameter
+                    if (argCount >= 2) {
+                        Object endObj = frame.getRegister(functionRegister + 2);
+                        if (!(endObj instanceof Double)) {
+                            throw new RuntimeException("Slice end index must be a number");
+                        }
+                        end = ((Double) endObj).intValue();
+                        // Handle negative indices
+                        if (end < 0) {
+                            end = Math.max(0, list.size() + end);
+                        }
+                    }
+                    
+                    // Ensure valid range
+                    start = Math.max(0, Math.min(start, list.size()));
+                    end = Math.max(start, Math.min(end, list.size()));
+                    
+                    // Create new list with sliced elements
+                    return new ArrayList<>(list.subList(start, end));
+                    
+                default:
+                    throw new RuntimeException("Unknown array method: " + methodName);
+            }
+        }
+        
+        @Override
+        public String toString() {
+            return "<array method: " + methodName + ">";
+        }
     }
 }

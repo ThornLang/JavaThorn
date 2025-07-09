@@ -1,0 +1,178 @@
+// Complex validation system with type-hinted functions
+// Real-world use case: Form validation and data sanitization
+
+// Email validation using regex pattern
+$ is_valid_email(email: string): boolean {
+    // Check basic requirements
+    if (email == null || email == "") {
+        return false;
+    }
+    
+    // Simple check - just verify it's not empty and has reasonable length
+    // In real implementation would use regex or string methods
+    return email.length > 5;
+}
+
+// Password strength validation
+$ check_password_strength(password: string): string {
+    if (password == null || password.length < 8) {
+        return "weak";
+    }
+    
+    // Check for various character types
+    has_upper: boolean = false;
+    has_lower: boolean = false;
+    has_number: boolean = false;
+    has_special: boolean = false;
+    
+    // Simplified check - in real implementation would check each character
+    if (password.length >= 12) {
+        has_upper = true;
+        has_lower = true;
+        has_number = true;
+    }
+    
+    if (password.length >= 16) {
+        has_special = true;
+    }
+    
+    // Calculate strength
+    criteria_met: number = 0;
+    if (has_upper) { criteria_met = criteria_met + 1; }
+    if (has_lower) { criteria_met = criteria_met + 1; }
+    if (has_number) { criteria_met = criteria_met + 1; }
+    if (has_special) { criteria_met = criteria_met + 1; }
+    
+    if (criteria_met >= 3) {
+        return "strong";
+    } else if (criteria_met >= 2) {
+        return "medium";
+    }
+    
+    return "weak";
+}
+
+// Sanitize user input by removing dangerous characters
+$ sanitize_input(input: string): string {
+    if (input == null) {
+        return "";
+    }
+    
+    // In real implementation, would remove HTML tags, scripts, etc.
+    // For demo, just trim whitespace
+    return input;
+}
+
+// Validate numeric input within range
+$ validate_number_range(value: number, min: number, max: number): boolean {
+    return value >= min && value <= max;
+}
+
+// Complex validation for user registration
+$ validate_registration(username: string, email: string, password: string, age: number) {
+    errors: Array[string] = [];
+    
+    // Username validation
+    if (username == null || username.length < 3) {
+        errors.push("Username must be at least 3 characters");
+    }
+    if (username.length > 20) {
+        errors.push("Username must be 20 characters or less");
+    }
+    
+    // Email validation
+    if (!is_valid_email(email)) {
+        errors.push("Invalid email address");
+    }
+    
+    // Password validation
+    password_strength: string = check_password_strength(password);
+    if (password_strength == "weak") {
+        errors.push("Password is too weak");
+    }
+    
+    // Age validation
+    if (!validate_number_range(age, 13, 120)) {
+        errors.push("Age must be between 13 and 120");
+    }
+    
+    // Return validation result
+    is_valid: boolean = errors.length == 0;
+    
+    return {
+        "valid": is_valid,
+        "errors": errors,
+        "password_strength": password_strength
+    };
+}
+
+// Higher-order function: create custom validator
+$ create_length_validator(min_length: number, max_length: number): Function[boolean] {
+    // Return a function that validates string length
+    validator = $(input) => {
+        if (input == null) {
+            return false;
+        }
+        return input.length >= min_length && input.length <= max_length;
+    };
+    
+    return validator;
+}
+
+// Function composition: combine multiple validators
+$ combine_validators(validators: Array[Function[boolean]]): Function[boolean] {
+    // Return a function that runs all validators
+    combined = $(input) => {
+        for (validator in validators) {
+            if (!validator(input)) {
+                return false;
+            }
+        }
+        return true;
+    };
+    
+    return combined;
+}
+
+// === Demo usage ===
+
+print("=== Validation System Demo ===\n");
+
+// Test email validation
+test_emails: Array[string] = ["user@example.com", "invalid.email", "@no-user.com", ""];
+for (email in test_emails) {
+    valid: boolean = is_valid_email(email);
+    print("Email '" + email + "' is valid: " + valid);
+}
+
+print("\n--- Password Strength ---");
+test_passwords: Array[string] = ["short", "mediumpass", "VeryLongPassword123!", "weak"];
+for (password in test_passwords) {
+    strength: string = check_password_strength(password);
+    print("Password '" + password + "' strength: " + strength);
+}
+
+print("\n--- User Registration ---");
+// Test registration validation
+result1 = validate_registration("jo", "bad-email", "weak", 10);
+print("Registration 1 valid: " + result1["valid"]);
+print("Errors: " + result1["errors"].length);
+
+result2 = validate_registration("johndoe", "john@example.com", "SecurePass123!", 25);
+print("\nRegistration 2 valid: " + result2["valid"]);
+print("Password strength: " + result2["password_strength"]);
+
+// Test custom validators
+print("\n--- Custom Validators ---");
+username_validator: Function[boolean] = create_length_validator(3, 20);
+print("Username 'ab' valid: " + username_validator("ab"));
+print("Username 'john_doe' valid: " + username_validator("john_doe"));
+
+// Test validator composition
+not_empty = $(s) => s != null && s != "";
+max_50_chars = $(s) => s.length <= 50;
+validators: Array[Function[boolean]] = [not_empty, max_50_chars];
+
+combined_validator: Function[boolean] = combine_validators(validators);
+print("\nCombined validation of 'Hello': " + combined_validator("Hello"));
+print("Combined validation of '': " + combined_validator(""));

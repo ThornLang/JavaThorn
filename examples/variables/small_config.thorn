@@ -1,0 +1,33 @@
+// Variables in ThornLang can use type hints for clarity
+// Syntax: variable_name: type = value
+
+// String type hints
+host: string = "localhost";
+environment: string = "development";
+
+// Number type hints (number covers both int and float)
+port: number = 8080;
+timeout: number = 30.5;
+retry_count: number = 3;
+
+// Boolean type hints
+debug_mode: boolean = true;
+enable_caching: boolean = false;
+
+// Type hints help catch errors and document intent
+db_name: string = "myapp_db";
+// db_name = 12345;  // This would be flagged as wrong type in future versions
+
+// You can also declare without type hints (type is inferred)
+api_key = "secret123";  // Inferred as string
+
+// String concatenation with mixed types
+// Numbers are automatically converted to strings
+message: string = "Server running on " + host + ":" + port;
+print(message);
+
+// Type hints in calculations ensure type safety
+max_connections: number = 100;
+current_connections: number = 45;
+available: number = max_connections - current_connections;
+print("Available connections: " + available);

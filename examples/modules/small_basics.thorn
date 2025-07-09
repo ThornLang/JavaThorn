@@ -1,0 +1,91 @@
+// Basic Module System - Organizing Code into Reusable Modules
+// Learn how to break code into modules and import functionality
+
+// === Creating a Simple Module ===
+// Modules help organize code and promote reusability
+
+// Export a simple function
+export $ greet(name: string): string {
+    return "Hello, " + name + "!";
+}
+
+// Export a constant
+export PI: number = 3.14159;
+
+// Export a class
+export class Calculator {
+    $ init() {
+        this.version = "1.0";
+    }
+    
+    $ add(a: number, b: number): number {
+        return a + b;
+    }
+    
+    $ subtract(a: number, b: number): number {
+        return a - b;
+    }
+    
+    $ multiply(a: number, b: number): number {
+        return a * b;
+    }
+    
+    $ divide(a: number, b: number): number {
+        if (b == 0) {
+            print("Error: Division by zero");
+            return 0;
+        }
+        return a / b;
+    }
+}
+
+// Private function (not exported)
+$ private_helper(): string {
+    return "This is only available within this module";
+}
+
+// Export a function that uses private helper
+export $ get_module_info(): string {
+    return "Basic Calculator Module - " + private_helper();
+}
+
+// === Module Best Practices ===
+// When you use this module, you can import specific functions:
+// import { greet, PI, Calculator } from "modules/small_basics";
+//
+// Or import everything:
+// import "modules/small_basics";
+//
+// Key principles:
+// 1. Export only what's needed publicly
+// 2. Keep private functions/data internal
+// 3. Use clear, descriptive names
+// 4. Document exported functions
+// 5. Keep modules focused on a single responsibility
+
+// === Testing the Module Locally ===
+// You can test a module by running it directly
+if (true) {  // This would normally check if module is run directly
+    print("=== Testing Calculator Module ===");
+    
+    // Test basic function
+    message: string = greet("World");
+    print(message);
+    
+    // Test constant
+    print("Pi value: " + PI);
+    
+    // Test class
+    calc: Any = Calculator();
+    print("Calculator version: " + calc.version);
+    print("5 + 3 = " + calc.add(5, 3));
+    print("10 - 4 = " + calc.subtract(10, 4));
+    print("6 * 7 = " + calc.multiply(6, 7));
+    print("15 / 3 = " + calc.divide(15, 3));
+    print("10 / 0 = " + calc.divide(10, 0));
+    
+    // Test module info
+    print(get_module_info());
+    
+    print("✅ All tests passed!");
+}

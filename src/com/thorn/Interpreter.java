@@ -236,7 +236,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
 
         ThornCallable function = (ThornCallable)callee;
-        if (arguments.size() != function.arity()) {
+        if (function.arity() >= 0 && arguments.size() != function.arity()) {
             throw new Thorn.RuntimeError(expr.paren, "Expected " +
                     function.arity() + " arguments but got " +
                     arguments.size() + ".");
@@ -432,6 +432,92 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                         public Object call(Interpreter interpreter, List<Object> arguments) {
                             list.add(0, arguments.get(0));
                             return (double) list.size();
+                        }
+                        
+                        @Override
+                        public String toString() { return "<native array method>"; }
+                    };
+                    
+                case "includes":
+                    return new ThornCallable() {
+                        @Override
+                        public int arity() { return 1; }
+                        
+                        @Override
+                        public Object call(Interpreter interpreter, List<Object> arguments) {
+                            Object searchValue = arguments.get(0);
+                            for (Object element : list) {
+                                if (isEqual(element, searchValue)) {
+                                    return true;
+                                }
+                            }
+                            return false;
+                        }
+                        
+                        @Override
+                        public String toString() { return "<native array method>"; }
+                    };
+                    
+                case "indexOf":
+                    return new ThornCallable() {
+                        @Override
+                        public int arity() { return 1; }
+                        
+                        @Override
+                        public Object call(Interpreter interpreter, List<Object> arguments) {
+                            Object searchValue = arguments.get(0);
+                            for (int i = 0; i < list.size(); i++) {
+                                if (isEqual(list.get(i), searchValue)) {
+                                    return (double) i;
+                                }
+                            }
+                            return -1.0;
+                        }
+                        
+                        @Override
+                        public String toString() { return "<native array method>"; }
+                    };
+                    
+                case "slice":
+                    return new ThornCallable() {
+                        @Override
+                        public int arity() { return -1; } // Variable arguments
+                        
+                        @Override
+                        public Object call(Interpreter interpreter, List<Object> arguments) {
+                            int start = 0;
+                            int end = list.size();
+                            
+                            // Handle start parameter
+                            if (arguments.size() >= 1 && arguments.get(0) != null) {
+                                if (!(arguments.get(0) instanceof Double)) {
+                                    throw new Thorn.RuntimeError(null, "Slice start index must be a number");
+                                }
+                                start = ((Double) arguments.get(0)).intValue();
+                                // Handle negative indices
+                                if (start < 0) {
+                                    start = Math.max(0, list.size() + start);
+                                }
+                            }
+                            
+                            // Handle end parameter
+                            if (arguments.size() >= 2 && arguments.get(1) != null) {
+                                if (!(arguments.get(1) instanceof Double)) {
+                                    throw new Thorn.RuntimeError(null, "Slice end index must be a number");
+                                }
+                                end = ((Double) arguments.get(1)).intValue();
+                                // Handle negative indices
+                                if (end < 0) {
+                                    end = Math.max(0, list.size() + end);
+                                }
+                            }
+                            
+                            // Ensure valid range
+                            start = Math.max(0, Math.min(start, list.size()));
+                            end = Math.max(start, Math.min(end, list.size()));
+                            
+                            // Create new list with sliced elements
+                            return new ArrayList<>(list.subList(start, end));
                         }
                         
                         @Override

@@ -1,0 +1,453 @@
+// Advanced Data Processing Module System
+// Learn how to create complex, interconnected modules
+
+// === Data Processing Pipeline ===
+// A complete data processing system with multiple components
+
+// === Data Validation Module ===
+export class DataValidator {
+    $ init() {
+        this.rules = {};
+        this.errors = [];
+    }
+    
+    $ add_rule(field: string, rule: Function[boolean]): void {
+        if (this.rules[field] == null) {
+            this.rules[field] = [];
+        }
+        this.rules[field].push(rule);
+    }
+    
+    $ validate(data: Any): boolean {
+        this.errors = [];
+        all_valid = true;
+        
+        // Note: In a full implementation, we'd iterate over rule keys
+        // For now, demonstrate with known fields
+        
+        return all_valid;
+    }
+    
+    $ get_errors(): Array[string] {
+        return this.errors;
+    }
+}
+
+// === Data Transformer Module ===
+export class DataTransformer {
+    $ init() {
+        this.transformations = {};
+    }
+    
+    $ add_transformation(name: string, transform: Function[Any]): void {
+        this.transformations[name] = transform;
+    }
+    
+    $ transform(data: Any, transformation_name: string): Any {
+        transform_fn = this.transformations[transformation_name];
+        if (transform_fn == null) {
+            print("Unknown transformation: " + transformation_name);
+            return data;
+        }
+        
+        return transform_fn(data);
+    }
+    
+    $ chain_transforms(data: Any, transform_names: Array[string]): Any {
+        result = data;
+        for (name in transform_names) {
+            result = this.transform(result, name);
+        }
+        return result;
+    }
+}
+
+// === Data Aggregator Module ===
+export class DataAggregator {
+    $ init() {
+        this.data = [];
+        this.stats = {};
+    }
+    
+    $ add_data(item: Any): void {
+        this.data.push(item);
+        this.update_stats();
+    }
+    
+    $ add_batch(items: Array[Any]): void {
+        for (item in items) {
+            this.data.push(item);
+        }
+        this.update_stats();
+    }
+    
+    $ update_stats(): void {
+        this.stats["count"] = this.data.length;
+        
+        // Calculate numeric stats if data contains numbers
+        if (this.data.length > 0) {
+            numeric_values = [];
+            for (item in this.data) {
+                // In a real implementation, we'd check if item is numeric
+                numeric_values.push(item);
+            }
+            
+            if (numeric_values.length > 0) {
+                this.stats["sum"] = this.sum(numeric_values);
+                this.stats["average"] = this.stats["sum"] / numeric_values.length;
+                this.stats["min"] = this.min(numeric_values);
+                this.stats["max"] = this.max(numeric_values);
+            }
+        }
+    }
+    
+    $ sum(arr: Array[number]): number {
+        total = 0;
+        for (num in arr) {
+            total = total + num;
+        }
+        return total;
+    }
+    
+    $ min(arr: Array[number]): number {
+        if (arr.length == 0) return 0;
+        min_val = arr[0];
+        for (num in arr) {
+            if (num < min_val) {
+                min_val = num;
+            }
+        }
+        return min_val;
+    }
+    
+    $ max(arr: Array[number]): number {
+        if (arr.length == 0) return 0;
+        max_val = arr[0];
+        for (num in arr) {
+            if (num > max_val) {
+                max_val = num;
+            }
+        }
+        return max_val;
+    }
+    
+    $ get_stats(): Any {
+        return this.stats;
+    }
+    
+    $ get_data(): Array[Any] {
+        return this.data;
+    }
+    
+    $ clear(): void {
+        this.data = [];
+        this.stats = {};
+    }
+}
+
+// === Data Formatter Module ===
+export class DataFormatter {
+    $ init() {
+        this.formatters = {};
+        this.setup_default_formatters();
+    }
+    
+    $ setup_default_formatters(): void {
+        // Number formatting
+        this.formatters["currency"] = $(value) => "$" + value;
+        this.formatters["percentage"] = $(value) => value + "%";
+        this.formatters["rounded"] = $(value) => value - (value % 1);
+        
+        // String formatting
+        this.formatters["uppercase"] = $(value) => value;  // TODO: Implement when string methods available
+        this.formatters["lowercase"] = $(value) => value;  // TODO: Implement when string methods available
+        this.formatters["title"] = $(value) => value;      // TODO: Implement when string methods available
+    }
+    
+    $ format(value: Any, format_type: string): string {
+        formatter = this.formatters[format_type];
+        if (formatter == null) {
+            return "" + value;
+        }
+        return formatter(value);
+    }
+    
+    $ add_formatter(name: string, formatter: Function[string]): void {
+        this.formatters[name] = formatter;
+    }
+    
+    $ format_object(obj: Any, format_rules: Any): Any {
+        // Apply formatting rules to object properties
+        result = {};
+        // TODO: Implement when object iteration is available
+        return result;
+    }
+}
+
+// === Data Export Module ===
+export class DataExporter {
+    $ init() {
+        this.exporters = {};
+        this.setup_default_exporters();
+    }
+    
+    $ setup_default_exporters(): void {
+        // JSON-like export
+        this.exporters["json"] = $(data) => "" + data;
+        
+        // CSV-like export
+        this.exporters["csv"] = $(data) => this.to_csv(data);
+        
+        // Simple table export
+        this.exporters["table"] = $(data) => this.to_table(data);
+    }
+    
+    $ to_csv(data: Array[Any]): string {
+        if (data.length == 0) {
+            return "";
+        }
+        
+        // Simple CSV representation
+        result = "";
+        for (item in data) {
+            if (result != "") {
+                result = result + "\\n";
+            }
+            result = result + item;
+        }
+        return result;
+    }
+    
+    $ to_table(data: Array[Any]): string {
+        if (data.length == 0) {
+            return "| No data |";
+        }
+        
+        result = "| Data |\\n|------|\\n";
+        for (item in data) {
+            result = result + "| " + item + " |\\n";
+        }
+        return result;
+    }
+    
+    $ export_data(data: Array[Any], format: string): string {
+        exporter = this.exporters[format];
+        if (exporter == null) {
+            print("Unknown export format: " + format);
+            return "";
+        }
+        
+        return exporter(data);
+    }
+    
+    $ add_exporter(name: string, exporter: Function[string]): void {
+        this.exporters[name] = exporter;
+    }
+}
+
+// === Main Data Processing Pipeline ===
+export class DataProcessor {
+    $ init() {
+        this.validator = DataValidator();
+        this.transformer = DataTransformer();
+        this.aggregator = DataAggregator();
+        this.formatter = DataFormatter();
+        this.exporter = DataExporter();
+        this.pipeline_steps = [];
+    }
+    
+    $ add_pipeline_step(step_name: string, step_fn: Function[Any]): void {
+        step = {};
+        step["name"] = step_name;
+        step["function"] = step_fn;
+        this.pipeline_steps.push(step);
+    }
+    
+    $ process_data(raw_data: Array[Any]): Any {
+        print("Starting data processing pipeline...");
+        
+        // Step 1: Validation
+        print("Step 1: Validating data...");
+        valid_data: Array[Any] = [];
+        for (item in raw_data) {
+            if (this.validator.validate(item)) {
+                valid_data.push(item);
+            }
+        }
+        print("Validated " + valid_data.length + " items out of " + raw_data.length);
+        
+        // Step 2: Transformation
+        print("Step 2: Transforming data...");
+        transformed_data = valid_data;
+        // Apply transformations...
+        
+        // Step 3: Aggregation
+        print("Step 3: Aggregating data...");
+        this.aggregator.add_batch(transformed_data);
+        stats = this.aggregator.get_stats();
+        print("Aggregated " + stats["count"] + " items");
+        
+        // Step 4: Custom pipeline steps
+        print("Step 4: Running custom pipeline steps...");
+        processed_data = transformed_data;
+        for (step in this.pipeline_steps) {
+            print("  Running step: " + step["name"]);
+            processed_data = step["function"](processed_data);
+        }
+        
+        // Step 5: Formatting
+        print("Step 5: Formatting results...");
+        formatted_data: Array[Any] = [];
+        for (item in processed_data) {
+            formatted_data.push(this.formatter.format(item, "rounded"));
+        }
+        
+        result = {};
+        result["data"] = formatted_data;
+        result["stats"] = stats;
+        result["metadata"] = this.create_metadata(raw_data.length, formatted_data.length);
+        
+        print("Pipeline completed successfully!");
+        return result;
+    }
+    
+    $ create_metadata(input_count: number, output_count: number): Any {
+        metadata = {};
+        metadata["input_count"] = input_count;
+        metadata["output_count"] = output_count;
+        metadata["processing_time"] = clock();
+        metadata["success_rate"] = (output_count / input_count) * 100;
+        return metadata;
+    }
+    
+    $ export_results(results: Any, format: string): string {
+        return this.exporter.export_data(results["data"], format);
+    }
+}
+
+// === Advanced Configuration Module ===
+export class AdvancedConfig {
+    $ init() {
+        this.config = {};
+        this.listeners = {};
+        this.validation_rules = {};
+    }
+    
+    $ set_config(section: string, key: string, value: Any): void {
+        if (this.config[section] == null) {
+            this.config[section] = {};
+        }
+        
+        // Validate if rule exists
+        rule_key = section + "." + key;
+        rule = this.validation_rules[rule_key];
+        if (rule != null && !rule(value)) {
+            print("Invalid configuration value for " + rule_key);
+            return;
+        }
+        
+        old_value = this.config[section][key];
+        this.config[section][key] = value;
+        
+        // Notify listeners
+        this.notify_listeners(section, key, old_value, value);
+    }
+    
+    $ get_config(section: string, key: string): Any {
+        if (this.config[section] == null) {
+            return null;
+        }
+        return this.config[section][key];
+    }
+    
+    $ add_validation_rule(section: string, key: string, rule: Function[boolean]): void {
+        rule_key = section + "." + key;
+        this.validation_rules[rule_key] = rule;
+    }
+    
+    $ add_listener(section: string, key: string, listener: Function[void]): void {
+        listener_key = section + "." + key;
+        if (this.listeners[listener_key] == null) {
+            this.listeners[listener_key] = [];
+        }
+        this.listeners[listener_key].push(listener);
+    }
+    
+    $ notify_listeners(section: string, key: string, old_value: Any, new_value: Any): void {
+        listener_key = section + "." + key;
+        listener_list = this.listeners[listener_key];
+        if (listener_list != null) {
+            for (listener in listener_list) {
+                listener(old_value, new_value);
+            }
+        }
+    }
+}
+
+// === Testing the Complete System ===
+if (true) {
+    print("=== Testing Advanced Data Processing System ===");
+    
+    // Create processor
+    processor: Any = DataProcessor();
+    
+    // Set up custom transformations
+    processor.transformer.add_transformation("double", $(x) => x * 2);
+    processor.transformer.add_transformation("square", $(x) => x * x);
+    
+    // Set up custom formatting
+    processor.formatter.add_formatter("scientific", $(x) => x + "e0");
+    
+    // Add custom pipeline step
+    processor.add_pipeline_step("filter_large", $(data) => {
+        result = [];
+        for (item in data) {
+            if (item > 10) {
+                result.push(item);
+            }
+        }
+        return result;
+    });
+    
+    // Process sample data
+    sample_data: Array[number] = [1, 5, 10, 15, 20, 25, 30];
+    print("\\nProcessing sample data: " + sample_data);
+    
+    results: Any = processor.process_data(sample_data);
+    
+    print("\\n=== Results ===");
+    print("Processed data: " + results["data"]);
+    print("Statistics: " + results["stats"]);
+    print("Metadata: " + results["metadata"]);
+    
+    // Export results
+    print("\\n=== Export Results ===");
+    csv_export: string = processor.export_results(results, "csv");
+    print("CSV Export:\\n" + csv_export);
+    
+    table_export: string = processor.export_results(results, "table");
+    print("Table Export:\\n" + table_export);
+    
+    // Test advanced configuration
+    print("\\n=== Testing Advanced Configuration ===");
+    config: Any = AdvancedConfig();
+    
+    // Add validation rules
+    config.add_validation_rule("processing", "batch_size", $(value) => value > 0 && value <= 1000);
+    config.add_validation_rule("output", "format", $(value) => value == "json" || value == "csv");
+    
+    // Add listeners
+    config.add_listener("processing", "batch_size", $(old_val, new_val) => {
+        print("Batch size changed from " + old_val + " to " + new_val);
+    });
+    
+    // Test configuration
+    config.set_config("processing", "batch_size", 100);
+    config.set_config("output", "format", "json");
+    config.set_config("processing", "batch_size", 2000);  // Should fail validation
+    
+    print("Current batch size: " + config.get_config("processing", "batch_size"));
+    print("Current format: " + config.get_config("output", "format"));
+    
+    print("\\n✅ Advanced data processing system test completed!");
+}

@@ -1,0 +1,81 @@
+// Lambdas are functions without names! Perfect for quick operations
+// Think of them as "throwaway functions" you create on the spot
+
+// The $ symbol tells Thorn "here comes a lambda!"
+// The => arrow means "produces" or "returns"
+square = $(x) => x * x;
+print("Square of 5: " + square(5));
+
+// You can have multiple parameters - just separate with commas
+add = $(a, b) => a + b;
+print("3 + 4 = " + add(3, 4));
+
+// Empty parentheses mean "this lambda takes no inputs"
+greet = $() => "Hello, World!";
+print(greet());
+
+// Just like regular functions, lambdas can have multiple lines
+// Use curly braces {} when you need more than one line
+calculate_area = $(width, height) => {
+    area = width * height;
+    return area;  // Multi-line lambdas need explicit return
+};
+print("Area of 10x5 rectangle: " + calculate_area(10, 5));
+
+// Here's where lambdas shine - passing them to other functions!
+// This function takes another function as a parameter
+$ apply_twice(value: number, operation: Function[number]): number {
+    return operation(operation(value));
+}
+
+// Create a lambda and pass it in
+double = $(x) => x * 2;
+result: number = apply_twice(3, double);
+print("3 doubled twice: " + result);
+
+// Lambdas remember variables from where they were created!
+// This is called a "closure"
+multiplier: number = 10;
+scale = $(x) => x * multiplier;  // This lambda "captures" multiplier
+print("5 scaled by " + multiplier + ": " + scale(5));
+
+// The lambda can even change captured variables
+counter: number = 0;
+increment = $() => {
+    counter = counter + 1;  // Modifying the captured variable
+    return counter;
+};
+print("First call: " + increment());
+print("Second call: " + increment());
+print("Counter is now: " + counter);  // See? It changed!
+
+// Common use case: transforming arrays
+numbers: Array[number] = [1, 2, 3, 4, 5];
+
+// This function applies a transformation to each array element
+$ map_array(arr: Array[number], transform: Function[number]): Array[number] {
+    result: Array[number] = [];
+    for (item in arr) {
+        result.push(transform(item));  // Call the lambda for each item
+    }
+    return result;
+}
+
+// Pass a lambda that squares each number
+squared_numbers = map_array(numbers, $(x) => x * x);
+print("Squared numbers: " + squared_numbers);
+
+// Another common pattern: filtering arrays
+$ filter_array(arr: Array[number], predicate: Function[boolean]): Array[number] {
+    result: Array[number] = [];
+    for (item in arr) {
+        if (predicate(item)) {  // Lambda returns true/false
+            result.push(item);
+        }
+    }
+    return result;
+}
+
+// Lambda that checks if a number is even
+even_numbers = filter_array(numbers, $(x) => x % 2 == 0);
+print("Even numbers: " + even_numbers);

@@ -1,0 +1,489 @@
+// Advanced Data Structures using Collections
+// Building complex data structures with arrays and dictionaries
+
+// === Stack Implementation ===
+// LIFO (Last In, First Out) data structure
+class Stack {
+    $ init() {
+        this.items = [];
+    }
+    
+    $ push(item: Any): void {
+        this.items.push(item);
+    }
+    
+    $ pop(): Any {
+        if (this.is_empty()) {
+            print("Error: Stack is empty");
+            return null;
+        }
+        return this.items.pop();
+    }
+    
+    $ peek(): Any {
+        if (this.is_empty()) {
+            return null;
+        }
+        return this.items[this.items.length - 1];
+    }
+    
+    $ is_empty(): boolean {
+        return this.items.length == 0;
+    }
+    
+    $ size(): number {
+        return this.items.length;
+    }
+}
+
+// Test the stack
+print("=== Stack Demo ===");
+stack = Stack();
+stack.push(10);
+stack.push(20);
+stack.push(30);
+print("Stack after pushes: " + stack.items);
+print("Popped: " + stack.pop());
+print("Peek at top: " + stack.peek());
+print("Stack size: " + stack.size());
+
+// === Queue Implementation ===
+// FIFO (First In, First Out) data structure
+class Queue {
+    $ init() {
+        this.items = [];
+    }
+    
+    $ enqueue(item: Any): void {
+        this.items.push(item);
+    }
+    
+    $ dequeue(): Any {
+        if (this.is_empty()) {
+            print("Error: Queue is empty");
+            return null;
+        }
+        return this.items.shift();
+    }
+    
+    $ front(): Any {
+        if (this.is_empty()) {
+            return null;
+        }
+        return this.items[0];
+    }
+    
+    $ is_empty(): boolean {
+        return this.items.length == 0;
+    }
+    
+    $ size(): number {
+        return this.items.length;
+    }
+}
+
+// Test the queue
+print("\n=== Queue Demo ===");
+queue = Queue();
+queue.enqueue("First");
+queue.enqueue("Second");
+queue.enqueue("Third");
+print("Queue: " + queue.items);
+print("Dequeued: " + queue.dequeue());
+print("Front of queue: " + queue.front());
+print("Queue size: " + queue.size());
+
+// === Graph Implementation ===
+// Using adjacency list representation
+class Graph {
+    $ init() {
+        this.adjacency_list = {};
+    }
+    
+    $ add_vertex(vertex: string): void {
+        if (this.adjacency_list[vertex] == null) {
+            this.adjacency_list[vertex] = [];
+        }
+    }
+    
+    $ add_edge(vertex1: string, vertex2: string): void {
+        // Ensure vertices exist
+        this.add_vertex(vertex1);
+        this.add_vertex(vertex2);
+        
+        // Add edge (undirected graph)
+        this.adjacency_list[vertex1].push(vertex2);
+        this.adjacency_list[vertex2].push(vertex1);
+    }
+    
+    $ get_neighbors(vertex: string): Array[Any] {
+        neighbors = this.adjacency_list[vertex];
+        if (neighbors == null) {
+            return [];
+        }
+        return neighbors;
+    }
+    
+    // Breadth-first search
+    $ bfs(start: string): Array[string] {
+        visited = {};
+        result: Array[string] = [];
+        queue = Queue();
+        
+        visited[start] = true;
+        queue.enqueue(start);
+        
+        while (!queue.is_empty()) {
+            vertex = queue.dequeue();
+            result.push(vertex);
+            
+            neighbors = this.get_neighbors(vertex);
+            for (neighbor in neighbors) {
+                if (visited[neighbor] == null) {
+                    visited[neighbor] = true;
+                    queue.enqueue(neighbor);
+                }
+            }
+        }
+        
+        return result;
+    }
+}
+
+// Build a sample graph
+print("\n=== Graph Demo ===");
+graph = Graph();
+graph.add_edge("A", "B");
+graph.add_edge("A", "C");
+graph.add_edge("B", "D");
+graph.add_edge("C", "E");
+graph.add_edge("D", "E");
+graph.add_edge("D", "F");
+
+print("Neighbors of A: " + graph.get_neighbors("A"));
+print("Neighbors of D: " + graph.get_neighbors("D"));
+print("BFS traversal from A: " + graph.bfs("A"));
+
+// === Priority Queue (Min Heap) ===
+// Simple implementation using array
+class PriorityQueue {
+    $ init() {
+        this.items = [];
+    }
+    
+    $ enqueue(item: Any, priority: number): void {
+        element = {};
+        element["item"] = item;
+        element["priority"] = priority;
+        
+        // Find correct position to insert
+        added = false;
+        i = 0;
+        while (i < this.items.length && !added) {
+            if (priority < this.items[i]["priority"]) {
+                // Insert at position i
+                this.items.unshift(element);  // Note: inefficient, just for demo
+                added = true;
+            }
+            i = i + 1;
+        }
+        
+        if (!added) {
+            this.items.push(element);
+        }
+    }
+    
+    $ dequeue(): Any {
+        if (this.is_empty()) {
+            return null;
+        }
+        return this.items.shift()["item"];
+    }
+    
+    $ is_empty(): boolean {
+        return this.items.length == 0;
+    }
+}
+
+print("\n=== Priority Queue Demo ===");
+pq = PriorityQueue();
+pq.enqueue("Low priority task", 3);
+pq.enqueue("High priority task", 1);
+pq.enqueue("Medium priority task", 2);
+print("Processing tasks by priority:");
+while (!pq.is_empty()) {
+    print("  - " + pq.dequeue());
+}
+
+// === Trie (Prefix Tree) ===
+// For efficient string operations
+class TrieNode {
+    $ init() {
+        this.children = {};
+        this.is_end_of_word = false;
+    }
+}
+
+class Trie {
+    $ init() {
+        this.root = TrieNode();
+    }
+    
+    $ insert(word: string): void {
+        // Since we can't iterate over string characters yet,
+        // we'll use a predefined character array
+        print("Inserting: " + word);
+        // In a full implementation, we'd traverse the word character by character
+    }
+    
+    $ search(word: string): boolean {
+        // Simplified for demo
+        return true;
+    }
+}
+
+// === LRU Cache Implementation ===
+// Least Recently Used cache with capacity limit
+class LRUCache {
+    $ init(capacity: number) {
+        this.capacity = capacity;
+        this.cache = {};
+        this.usage_order = [];  // Track access order
+    }
+    
+    $ get(key: string): Any {
+        value = this.cache[key];
+        if (value != null) {
+            // Move to end (most recently used)
+            this._update_usage(key);
+        }
+        return value;
+    }
+    
+    $ put(key: string, value: Any): void {
+        // Check if key exists
+        if (this.cache[key] != null) {
+            this.cache[key] = value;
+            this._update_usage(key);
+            return;
+        }
+        
+        // Check capacity
+        if (this.usage_order.length >= this.capacity) {
+            // Remove least recently used
+            lru_key = this.usage_order.shift();
+            this.cache[lru_key] = null;  // Remove from cache
+        }
+        
+        // Add new item
+        this.cache[key] = value;
+        this.usage_order.push(key);
+    }
+    
+    $ _update_usage(key: string): void {
+        // Remove key from current position
+        new_order: Array[string] = [];
+        for (k in this.usage_order) {
+            if (k != key) {
+                new_order.push(k);
+            }
+        }
+        new_order.push(key);  // Add to end
+        this.usage_order = new_order;
+    }
+}
+
+print("\n=== LRU Cache Demo ===");
+lru = LRUCache(3);
+lru.put("a", 1);
+lru.put("b", 2);
+lru.put("c", 3);
+print("Cache after adding a,b,c: " + lru.cache);
+print("Access 'a': " + lru.get("a"));
+lru.put("d", 4);  // Should evict 'b'
+print("Cache after adding d (capacity 3): " + lru.cache);
+
+// === Frequency Counter ===
+// Track frequency of items efficiently
+class FrequencyCounter {
+    $ init() {
+        this.counts = {};
+        this.total = 0;
+    }
+    
+    $ add(item: Any): void {
+        key = "" + item;  // Convert to string
+        current = this.counts[key];
+        if (current == null) {
+            this.counts[key] = 1;
+        } else {
+            this.counts[key] = current + 1;
+        }
+        this.total = this.total + 1;
+    }
+    
+    $ get_count(item: Any): number {
+        key = "" + item;
+        count = this.counts[key];
+        if (count == null) {
+            return 0;
+        }
+        return count;
+    }
+    
+    $ get_frequency(item: Any): number {
+        if (this.total == 0) {
+            return 0;
+        }
+        return this.get_count(item) / this.total;
+    }
+}
+
+print("\n=== Frequency Counter Demo ===");
+freq = FrequencyCounter();
+items = ["apple", "banana", "apple", "orange", "banana", "apple"];
+for (item in items) {
+    freq.add(item);
+}
+print("Counts: " + freq.counts);
+print("Count of 'apple': " + freq.get_count("apple"));
+print("Frequency of 'apple': " + freq.get_frequency("apple"));
+
+// === Set Implementation ===
+// Collection of unique items
+class Set {
+    $ init() {
+        this.items = {};
+    }
+    
+    $ add(item: Any): void {
+        key = "" + item;
+        this.items[key] = true;
+    }
+    
+    $ contains(item: Any): boolean {
+        key = "" + item;
+        return this.items[key] != null;
+    }
+    
+    $ remove(item: Any): void {
+        key = "" + item;
+        this.items[key] = null;
+    }
+    
+    $ size(): number {
+        // Count non-null entries
+        count = 0;
+        // Would need key iteration to implement properly
+        return count;
+    }
+    
+    $ union(other_set: Set): Set {
+        result = Set();
+        // Would need key iteration to implement
+        return result;
+    }
+}
+
+print("\n=== Set Demo ===");
+set1 = Set();
+set1.add(1);
+set1.add(2);
+set1.add(3);
+set1.add(2);  // Duplicate, won't be added again
+print("Set items: " + set1.items);
+print("Contains 2? " + set1.contains(2));
+print("Contains 4? " + set1.contains(4));
+
+// === Performance Comparison ===
+print("\n=== Performance Tips ===");
+print("- Use arrays for ordered data and when you need index access");
+print("- Use dictionaries for key-value lookups (O(1) average)");
+print("- Stack operations (push/pop) are O(1)");
+print("- Queue with shift() is O(n), better to use circular buffer");
+print("- Choose data structure based on your access patterns");
+
+// === Advanced Pattern: Composite Data Structure ===
+// Combining multiple structures for complex requirements
+class IndexedCollection {
+    $ init() {
+        this.items = [];           // Maintain order
+        this.index_map = {};       // Fast lookup by ID
+        this.category_map = {};    // Group by category
+    }
+    
+    $ add(item: Any): void {
+        // Add to array
+        position = this.items.length;
+        this.items.push(item);
+        
+        // Index by ID
+        id = item["id"];
+        if (id != null) {
+            this.index_map[id] = position;
+        }
+        
+        // Group by category
+        category = item["category"];
+        if (category != null) {
+            if (this.category_map[category] == null) {
+                this.category_map[category] = [];
+            }
+            this.category_map[category].push(position);
+        }
+    }
+    
+    $ get_by_id(id: string): Any {
+        position = this.index_map[id];
+        if (position == null) {
+            return null;
+        }
+        return this.items[position];
+    }
+    
+    $ get_by_category(category: string): Array[Any] {
+        positions = this.category_map[category];
+        if (positions == null) {
+            return [];
+        }
+        
+        result: Array[Any] = [];
+        for (pos in positions) {
+            result.push(this.items[pos]);
+        }
+        return result;
+    }
+}
+
+print("\n=== Indexed Collection Demo ===");
+collection = IndexedCollection();
+
+// Add some items
+item1 = {};
+item1["id"] = "p1";
+item1["name"] = "Product 1";
+item1["category"] = "electronics";
+
+item2 = {};
+item2["id"] = "p2";
+item2["name"] = "Product 2";
+item2["category"] = "books";
+
+item3 = {};
+item3["id"] = "p3";
+item3["name"] = "Product 3";
+item3["category"] = "electronics";
+
+collection.add(item1);
+collection.add(item2);
+collection.add(item3);
+
+print("Get by ID 'p2': " + collection.get_by_id("p2"));
+print("Electronics: " + collection.get_by_category("electronics"));
+
+print("\n=== Collection Best Practices ===");
+print("1. Choose the right structure for your use case");
+print("2. Consider memory vs speed tradeoffs");
+print("3. Use type hints for clarity");
+print("4. Implement proper error handling");
+print("5. Document complexity of operations");

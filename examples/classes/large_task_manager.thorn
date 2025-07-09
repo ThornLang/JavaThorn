@@ -1,0 +1,299 @@
+// Task management system with multiple interacting classes
+// Real-world use case: Project task tracking with priorities and assignments
+
+// Enumeration-like constants for task status
+@immut STATUS_PENDING: string = "PENDING";
+@immut STATUS_IN_PROGRESS: string = "IN_PROGRESS";
+@immut STATUS_COMPLETED: string = "COMPLETED";
+@immut STATUS_CANCELLED: string = "CANCELLED";
+
+// Priority levels
+@immut PRIORITY_LOW: number = 1;
+@immut PRIORITY_MEDIUM: number = 2;
+@immut PRIORITY_HIGH: number = 3;
+@immut PRIORITY_CRITICAL: number = 4;
+
+// Task class representing a single work item
+class Task {
+    $ init(id: string, title: string, description: string) {
+        this.id = id;
+        this.title = title;
+        this.description = description;
+        this.status = STATUS_PENDING;
+        this.priority = PRIORITY_MEDIUM;
+        this.assigned_to = null;
+        this.created_date = "2024-01-09";
+        this.due_date = null;
+        this.completion_date = null;
+        this.subtasks = [];
+        this.comments = [];
+    }
+    
+    $ set_priority(priority: number): void {
+        if (priority >= PRIORITY_LOW && priority <= PRIORITY_CRITICAL) {
+            this.priority = priority;
+        } else {
+            print("Invalid priority level");
+        }
+    }
+    
+    $ assign_to(user): void {
+        this.assigned_to = user;
+        user.add_task(this);
+    }
+    
+    $ start_work(): void {
+        if (this.status == STATUS_PENDING) {
+            this.status = STATUS_IN_PROGRESS;
+            print("Task '" + this.title + "' started");
+        } else {
+            print("Task cannot be started from status: " + this.status);
+        }
+    }
+    
+    $ complete(): void {
+        if (this.status == STATUS_IN_PROGRESS) {
+            this.status = STATUS_COMPLETED;
+            this.completion_date = "2024-01-09";
+            print("Task '" + this.title + "' completed");
+            
+            // Notify assigned user
+            if (this.assigned_to != null) {
+                this.assigned_to.task_completed(this);
+            }
+        } else {
+            print("Task must be in progress to complete");
+        }
+    }
+    
+    $ add_comment(author: string, text: string): void {
+        comment = {
+            "author": author,
+            "text": text,
+            "timestamp": "2024-01-09"
+        };
+        this.comments.push(comment);
+    }
+    
+    $ add_subtask(subtask): void {
+        this.subtasks.push(subtask);
+    }
+    
+    $ get_priority_name(): string {
+        if (this.priority == PRIORITY_LOW) { return "Low"; }
+        if (this.priority == PRIORITY_MEDIUM) { return "Medium"; }
+        if (this.priority == PRIORITY_HIGH) { return "High"; }
+        if (this.priority == PRIORITY_CRITICAL) { return "Critical"; }
+        return "Unknown";
+    }
+    
+    $ print_details(): void {
+        print("\n--- Task Details ---");
+        print("ID: " + this.id);
+        print("Title: " + this.title);
+        print("Description: " + this.description);
+        print("Status: " + this.status);
+        print("Priority: " + this.get_priority_name());
+        
+        assigned_name: string = "Unassigned";
+        if (this.assigned_to != null) {
+            assigned_name = this.assigned_to.name;
+        }
+        print("Assigned to: " + assigned_name);
+        
+        print("Created: " + this.created_date);
+        if (this.due_date != null) {
+            print("Due: " + this.due_date);
+        }
+        
+        if (this.comments.length > 0) {
+            print("\nComments:");
+            for (comment in this.comments) {
+                print("  - " + comment["author"] + ": " + comment["text"]);
+            }
+        }
+    }
+}
+
+// User class representing team members
+class User {
+    $ init(id: string, name: string, email: string) {
+        this.id = id;
+        this.name = name;
+        this.email = email;
+        this.assigned_tasks = [];
+        this.completed_count = 0;
+    }
+    
+    $ add_task(task): void {
+        this.assigned_tasks.push(task);
+    }
+    
+    $ task_completed(task): void {
+        this.completed_count = this.completed_count + 1;
+        print(this.name + " completed task: " + task.title);
+    }
+    
+    $ get_active_tasks(): Array[Any] {
+        active = [];
+        for (task in this.assigned_tasks) {
+            if (task.status == STATUS_PENDING || task.status == STATUS_IN_PROGRESS) {
+                active.push(task);
+            }
+        }
+        return active;
+    }
+    
+    $ print_workload(): void {
+        print("\n=== " + this.name + "'s Workload ===");
+        active_tasks = this.get_active_tasks();
+        print("Active tasks: " + active_tasks.length);
+        print("Completed tasks: " + this.completed_count);
+        
+        // Count by priority
+        high_priority_count: number = 0;
+        for (task in active_tasks) {
+            if (task.priority >= PRIORITY_HIGH) {
+                high_priority_count = high_priority_count + 1;
+            }
+        }
+        print("High priority tasks: " + high_priority_count);
+    }
+}
+
+// Project class to manage multiple tasks
+class Project {
+    $ init(name: string, code: string) {
+        this.name = name;
+        this.code = code;
+        this.tasks = [];
+        this.users = [];
+        this.task_counter = 0;
+    }
+    
+    $ add_user(user): void {
+        this.users.push(user);
+    }
+    
+    $ create_task(title: string, description: string): Any {
+        this.task_counter = this.task_counter + 1;
+        task_id: string = this.code + "-" + this.task_counter;
+        task = Task(task_id, title, description);
+        this.tasks.push(task);
+        return task;
+    }
+    
+    $ get_tasks_by_status(status: string): Array[Any] {
+        filtered = [];
+        for (task in this.tasks) {
+            if (task.status == status) {
+                filtered.push(task);
+            }
+        }
+        return filtered;
+    }
+    
+    $ get_critical_tasks(): Array[Any] {
+        critical = [];
+        for (task in this.tasks) {
+            if (task.priority == PRIORITY_CRITICAL && 
+                task.status != STATUS_COMPLETED) {
+                critical.push(task);
+            }
+        }
+        return critical;
+    }
+    
+    $ print_summary(): void {
+        print("\n=== Project: " + this.name + " ===");
+        print("Total tasks: " + this.tasks.length);
+        
+        // Count by status
+        pending = this.get_tasks_by_status(STATUS_PENDING);
+        in_progress = this.get_tasks_by_status(STATUS_IN_PROGRESS);
+        completed = this.get_tasks_by_status(STATUS_COMPLETED);
+        
+        print("Pending: " + pending.length);
+        print("In Progress: " + in_progress.length);
+        print("Completed: " + completed.length);
+        
+        // Show critical tasks
+        critical = this.get_critical_tasks();
+        if (critical.length > 0) {
+            print("\n⚠️  Critical Tasks:");
+            for (task in critical) {
+                print("  - " + task.title);
+            }
+        }
+        
+        // Show team members
+        print("\nTeam Members:");
+        for (user in this.users) {
+            active_count: number = user.get_active_tasks().length;
+            print("  - " + user.name + " (" + active_count + " active tasks)");
+        }
+    }
+}
+
+// === Demo Usage ===
+
+// Create project and team
+project = Project("Website Redesign", "WEB");
+
+// Create team members
+alice = User("U001", "Alice Chen", "alice@example.com");
+bob = User("U002", "Bob Wilson", "bob@example.com");
+charlie = User("U003", "Charlie Davis", "charlie@example.com");
+
+project.add_user(alice);
+project.add_user(bob);
+project.add_user(charlie);
+
+// Create tasks
+task1 = project.create_task("Design homepage mockup", "Create initial design concepts");
+task1.set_priority(PRIORITY_HIGH);
+task1.assign_to(alice);
+
+task2 = project.create_task("Implement responsive navigation", "Mobile-friendly nav menu");
+task2.set_priority(PRIORITY_CRITICAL);
+task2.assign_to(bob);
+
+task3 = project.create_task("Set up CI/CD pipeline", "Automated testing and deployment");
+task3.assign_to(charlie);
+
+task4 = project.create_task("Write API documentation", "Document all REST endpoints");
+task4.set_priority(PRIORITY_LOW);
+
+// Add subtasks
+subtask1 = project.create_task("Design mobile layout", "Responsive design for mobile");
+task1.add_subtask(subtask1);
+subtask1.assign_to(alice);
+
+// Work on tasks
+task1.start_work();
+task1.add_comment("Alice", "Started working on wireframes");
+
+task2.start_work();
+task2.add_comment("Bob", "Found a good navigation library");
+task2.add_comment("Alice", "Make sure it's accessible");
+
+task3.start_work();
+task3.complete();
+
+// Print project overview
+project.print_summary();
+
+// Print individual workloads
+alice.print_workload();
+bob.print_workload();
+
+// Print task details
+task2.print_details();
+
+// Demonstrate task completion
+print("\n--- Completing task1 ---");
+task1.complete();
+
+// Final summary
+print("\n--- Final Status ---");
+project.print_summary();

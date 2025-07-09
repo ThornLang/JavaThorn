@@ -1,0 +1,159 @@
+// Banking system demonstrating encapsulation and business logic
+// Real-world use case: Managing bank accounts with transactions
+
+class BankAccount {
+    // Initialize account with owner details
+    $ init(account_number: string, owner_name: string, initial_balance: number) {
+        this.account_number = account_number;
+        this.owner_name = owner_name;
+        this.balance = initial_balance;
+        this.transaction_history = [];
+        this.is_active = true;
+        
+        // Log account creation
+        this.add_transaction("OPEN", initial_balance);
+    }
+    
+    // Deposit money into account
+    $ deposit(amount: number): boolean {
+        if (!this.is_active) {
+            print("Error: Account is inactive");
+            return false;
+        }
+        
+        if (amount <= 0) {
+            print("Error: Deposit amount must be positive");
+            return false;
+        }
+        
+        this.balance = this.balance + amount;
+        this.add_transaction("DEPOSIT", amount);
+        return true;
+    }
+    
+    // Withdraw money from account
+    $ withdraw(amount: number): boolean {
+        if (!this.is_active) {
+            print("Error: Account is inactive");
+            return false;
+        }
+        
+        if (amount <= 0) {
+            print("Error: Withdrawal amount must be positive");
+            return false;
+        }
+        
+        if (amount > this.balance) {
+            print("Error: Insufficient funds");
+            return false;
+        }
+        
+        this.balance = this.balance - amount;
+        this.add_transaction("WITHDRAW", amount);
+        return true;
+    }
+    
+    // Transfer money to another account
+    $ transfer(amount: number, recipient_account): boolean {
+        if (this.withdraw(amount)) {
+            if (recipient_account.deposit(amount)) {
+                this.add_transaction("TRANSFER_OUT", amount);
+                recipient_account.add_transaction("TRANSFER_IN", amount);
+                return true;
+            } else {
+                // Rollback withdrawal if deposit fails
+                this.balance = this.balance + amount;
+                this.transaction_history.pop();  // Remove withdraw record
+                return false;
+            }
+        }
+        return false;
+    }
+    
+    // Get current balance
+    $ get_balance(): number {
+        return this.balance;
+    }
+    
+    // Add transaction to history
+    $ add_transaction(type: string, amount: number) {
+        transaction = {
+            "type": type,
+            "amount": amount,
+            "balance": this.balance,
+            "timestamp": "2024-01-09"  // Simplified timestamp
+        };
+        this.transaction_history.push(transaction);
+    }
+    
+    // Print account statement
+    $ print_statement() {
+        print("\n=== Account Statement ===");
+        print("Account: " + this.account_number);
+        print("Owner: " + this.owner_name);
+        status_text: string = "Active";
+        if (!this.is_active) {
+            status_text = "Inactive";
+        }
+        print("Status: " + status_text);
+        print("Current Balance: $" + this.balance);
+        print("\nTransaction History:");
+        
+        for (transaction in this.transaction_history) {
+            type_str: string = transaction["type"];
+            amount_str: string = "$" + transaction["amount"];
+            balance_str: string = "$" + transaction["balance"];
+            print("  " + type_str + ": " + amount_str + " (Balance: " + balance_str + ")");
+        }
+        print("========================\n");
+    }
+    
+    // Close account
+    $ close_account() {
+        if (this.balance > 0) {
+            print("Warning: Account has remaining balance of $" + this.balance);
+        }
+        this.is_active = false;
+        this.add_transaction("CLOSE", 0);
+    }
+}
+
+// === Demo Usage ===
+
+// Create two bank accounts
+alice_account = BankAccount("ACC001", "Alice Johnson", 1000);
+bob_account = BankAccount("ACC002", "Bob Smith", 500);
+
+// Perform transactions
+print("Initial state:");
+alice_account.print_statement();
+
+// Alice deposits money
+success: boolean = alice_account.deposit(250);
+result_text: string = "Failed";
+if (success) { result_text = "Success"; }
+print("Deposit $250: " + result_text);
+
+// Alice withdraws money
+success = alice_account.withdraw(100);
+if (success) { result_text = "Success"; } else { result_text = "Failed"; }
+print("Withdraw $100: " + result_text);
+
+// Alice transfers to Bob
+print("\nTransferring $200 from Alice to Bob...");
+success = alice_account.transfer(200, bob_account);
+if (success) { result_text = "Success"; } else { result_text = "Failed"; }
+print("Transfer: " + result_text);
+
+// Try invalid operations
+print("\nTrying invalid operations:");
+success = alice_account.withdraw(2000);  // Insufficient funds
+success = alice_account.deposit(-50);    // Negative amount
+
+// Print final statements
+alice_account.print_statement();
+bob_account.print_statement();
+
+// Demonstrate encapsulation
+print("Direct balance access: $" + alice_account.get_balance());
+print("Transaction count: " + alice_account.transaction_history.length);

@@ -1,0 +1,382 @@
+// Let's build an event system to understand how lambdas enable powerful patterns!
+// You'll learn how lambdas can be stored, passed around, and called later.
+
+// Simple data classes for our events (workaround until object literals are fixed)
+class GameStartData {
+    $ init(time: string) {
+        this.time = time;
+    }
+}
+
+class PlayerScoreData {
+    $ init(player: string, points: number) {
+        this.player = player;
+        this.points = points;
+    }
+}
+
+class EventData {
+    $ init() {
+        this.data = {};
+    }
+    
+    $ set(key: string, value: Any): void {
+        this.data[key] = value;
+    }
+    
+    $ get(key: string): Any {
+        return this.data[key];
+    }
+}
+
+// Think of EventEmitter like a radio station - it broadcasts events to listeners
+class EventEmitter {
+    $ init() {
+        // This dictionary stores our "channels" - each event name has a list of listeners
+        // Key: "player_score" -> Value: [lambda1, lambda2, lambda3...]
+        this.listeners = {};
+    }
+    
+    // "on" means "when this event happens, do this"
+    // The handler parameter is a lambda that will be called later!
+    $ on(event_name: string, handler: Function[void]): void {
+        // First time seeing this event? Create an empty listener list
+        if (this.listeners[event_name] == null) {
+            this.listeners[event_name] = [];
+        }
+        
+        // Store the lambda in our list - we're not calling it yet!
+        listeners_array = this.listeners[event_name];
+        listeners_array.push(handler);
+    }
+    
+    // "emit" means "this event just happened! Tell everyone who's listening!"
+    $ emit(event_name: string, data: Any): void {
+        listeners_array = this.listeners[event_name];
+        if (listeners_array != null) {
+            // NOW we call each stored lambda, passing the event data
+            for (handler in listeners_array) {
+                handler(data);  // Each lambda runs with the same data
+            }
+        }
+    }
+    
+    // Stop listening - removes a specific lambda from the list
+    $ off(event_name: string, handler: Function[void]): void {
+        listeners_array = this.listeners[event_name];
+        if (listeners_array != null) {
+            // We need to compare lambdas to find which one to remove
+            new_listeners: Array[Function[void]] = [];
+            for (h in listeners_array) {
+                if (h != handler) {  // Keep all except the one we want to remove
+                    new_listeners.push(h);
+                }
+            }
+            this.listeners[event_name] = new_listeners;
+        }
+    }
+    
+    // "once" is clever - it creates a self-removing lambda!
+    $ once(event_name: string, handler: Function[void]): void {
+        // This lambda calls the original handler, then removes itself
+        wrapper = $(data) => {
+            handler(data);              // Do what we wanted
+            this.off(event_name, wrapper);  // Then unsubscribe ourselves
+        };
+        this.on(event_name, wrapper);
+    }
+}
+
+// Observable is like a special variable that tells you when it changes
+class Observable {
+    $ init(initial_value: Any) {
+        this.value = initial_value;
+        this.observers = [];  // Lambdas that want to know about changes
+    }
+    
+    $ get(): Any {
+        return this.value;
+    }
+    
+    // When value changes, call all the watching lambdas
+    $ set(new_value: Any): void {
+        old_value = this.value;
+        this.value = new_value;
+        
+        // Each observer lambda gets both old and new values
+        for (observer in this.observers) {
+            observer(old_value, new_value);
+        }
+    }
+    
+    // "subscribe" returns a lambda that unsubscribes - this is a common pattern!
+    $ subscribe(observer: Function[void]): Function[void] {
+        this.observers.push(observer);
+        
+        // The returned lambda "remembers" which observer to remove
+        return $() => {
+            new_observers: Array[Function[void]] = [];
+            for (obs in this.observers) {
+                if (obs != observer) {
+                    new_observers.push(obs);
+                }
+            }
+            this.observers = new_observers;
+        };
+    }
+    
+    // Create a new Observable that transforms our values
+    $ map(transform: Function[Any]): Any {
+        // Start with transformed initial value
+        mapped = Observable(transform(this.value));
+        
+        // Whenever we change, update the mapped observable too
+        this.subscribe($(old, new) => {
+            mapped.set(transform(new));
+        });
+        
+        return mapped;
+    }
+    
+    // Combine two observables into one - like Excel formulas!
+    $ combine_with(other: Any, combiner: Function[Any]): Any {
+        // The combined value depends on BOTH observables
+        combined = Observable(combiner(this.value, other.get()));
+        
+        // If either input changes, recalculate
+        this.subscribe($(old, new) => {
+            combined.set(combiner(new, other.get()));
+        });
+        
+        other.subscribe($(old, new) => {
+            combined.set(combiner(this.value, new));
+        });
+        
+        return combined;
+    }
+}
+
+// Debounce prevents a function from being called too often
+// Like waiting for someone to finish typing before searching
+$ debounce(fn: Function[void], delay_ms: number): Function[void] {
+    timer_id = null;
+    
+    // Return a new lambda that manages timing
+    return $(args) => {
+        // Each call cancels the previous timer
+        if (timer_id != null) {
+            print("(Cancelling previous timer)");
+        }
+        
+        // In real code, this would delay the call
+        print("(Setting timer for " + delay_ms + "ms)");
+        fn(args);
+    };
+}
+
+// Throttle ensures minimum time between calls
+// Like limiting how fast a gun can fire
+$ throttle(fn: Function[void], limit_ms: number): Function[void] {
+    last_call_time: number = 0;
+    
+    // The returned lambda tracks time between calls
+    return $(args) => {
+        current_time: number = 1000;  // Simulated time
+        
+        // Has enough time passed since last call?
+        if (current_time - last_call_time >= limit_ms) {
+            last_call_time = current_time;
+            fn(args);
+        } else {
+            print("(Throttled - too soon since last call)");
+        }
+    };
+}
+
+// Now let's see these patterns in action!
+
+print("=== Event System Demo ===\n");
+
+game_events = EventEmitter();
+
+// Register multiple handlers for the same event
+// Each lambda will be called when "player_score" is emitted
+game_events.on("player_score", $(data) => {
+    print("Score updated! Player: " + data.player + ", Points: " + data.points);
+});
+
+// This lambda checks for high scores
+game_events.on("player_score", $(data) => {
+    if (data.points >= 100) {
+        print("🎉 " + data.player + " reached 100 points!");
+    }
+});
+
+// This lambda only runs once, then removes itself
+game_events.once("game_start", $(data) => {
+    print("Game started at: " + data.time);
+    print("(This message only appears once)\n");
+});
+
+// Trigger the events and watch our lambdas respond
+game_events.emit("game_start", GameStartData("10:00 AM"));
+game_events.emit("game_start", GameStartData("10:01 AM"));  // Won't print - handler removed itself
+
+game_events.emit("player_score", PlayerScoreData("Alice", 50));
+game_events.emit("player_score", PlayerScoreData("Bob", 120));  // Triggers high score message
+
+print("\n=== Observable Pattern Demo ===\n");
+
+// Create reactive variables
+temperature = Observable(20);
+is_fahrenheit = Observable(false);
+
+// This lambda runs whenever temperature changes
+// Notice we store the unsubscribe function!
+unsubscribe_temp = temperature.subscribe($(old, new) => {
+    print("Temperature changed from " + old + " to " + new);
+});
+
+// Create a computed value that depends on TWO observables
+// The lambda inside map() creates the dependency
+display_temp = temperature.map($(temp) => {
+    if (is_fahrenheit.get()) {
+        return (temp * 9/5) + 32 + "°F";
+    }
+    return temp + "°C";
+});
+
+// Watch the display temperature too
+display_temp.subscribe($(old, new) => {
+    print("Display updated: " + new);
+});
+
+// Change values and see the chain reaction!
+print("\nSetting temperature to 25:");
+temperature.set(25);  // Both subscribers fire
+
+print("\nSwitching to Fahrenheit:");
+is_fahrenheit.set(true);  // Display updates even though temperature didn't change!
+
+// Combine two observables - like a spreadsheet formula
+width = Observable(10);
+height = Observable(5);
+
+// This lambda calculates area from width and height
+area = width.combine_with(height, $(w, h) => w * h);
+area.subscribe($(old, new) => {
+    print("Area changed from " + old + " to " + new);
+});
+
+print("\n=== Combined Observable Demo ===");
+print("Initial area: " + area.get());
+print("\nChanging width to 15:");
+width.set(15);  // Area recalculates automatically
+print("\nChanging height to 8:");
+height.set(8);   // Area recalculates again
+
+print("\n=== Function Modifiers Demo ===\n");
+
+// A simple search function
+search = $(query) => {
+    print("Searching for: " + query);
+};
+
+// Wrap it with debounce - the returned lambda manages timing
+debounced_search = debounce(search, 300);
+print("Debounced search (simulated):");
+debounced_search("h");     // Would be cancelled
+debounced_search("he");    // Would be cancelled
+debounced_search("hello"); // Only this would run after 300ms
+
+// Throttling for scroll events
+handle_scroll = $(position) => {
+    print("Scroll position: " + position);
+};
+
+throttled_scroll = throttle(handle_scroll, 100);
+print("\nThrottled scroll (simulated):");
+throttled_scroll(10);   // Runs immediately
+throttled_scroll(20);   // Too soon - blocked
+throttled_scroll(30);   // Too soon - blocked
+
+print("\n=== Cleanup Demo ===");
+print("Unsubscribing from temperature...");
+unsubscribe_temp();  // Call the lambda that was returned by subscribe()
+
+print("Changing temperature to 30:");
+temperature.set(30);  // Our handler won't run - we unsubscribed!
+
+print("\n=== Transformation Chain ===");
+
+// Watch how changes cascade through connected observables
+source = Observable(5);
+
+// Each transformation is a separate observable
+doubled = source.map($(x) => x * 2);        // 5 -> 10
+plus_one = doubled.map($(x) => x + 1);      // 10 -> 11
+as_string = plus_one.map($(x) => "Result: " + x);  // 11 -> "Result: 11"
+
+// Subscribe to the end of the chain
+as_string.subscribe($(old, new) => {
+    print("Final output: " + new);
+});
+
+print("\nChanging source to 10:");
+source.set(10);  // Triggers: 10 -> 20 -> 21 -> "Result: 21"
+
+// Build a processing pipeline where each lambda transforms the data
+$ create_event_pipeline(processors: Array[Function[Any]]): Function[Any] {
+    // Return a lambda that runs all processors in sequence
+    return $(event) => {
+        current: Any = event;
+        for (processor in processors) {
+            current = processor(current);
+            if (current == null) {
+                return null;  // A processor rejected the event
+            }
+        }
+        return current;
+    };
+}
+
+// Each processor is a lambda with a specific job
+validate_event = $(event) => {
+    if (event.get("type") == null) {
+        print("  [Validator] Rejected - no type");
+        return null;  // Returning null stops the pipeline
+    }
+    print("  [Validator] Passed");
+    return event;
+};
+
+enrich_event = $(event) => {
+    // Add extra data to the event
+    event.set("timestamp", "2024-01-01 12:00:00");
+    event.set("enriched", true);
+    print("  [Enricher] Added metadata");
+    return event;
+};
+
+log_event = $(event) => {
+    print("  [Logger] Event: " + event.get("type"));
+    return event;
+};
+
+// Combine processors into a single function
+pipeline = create_event_pipeline([validate_event, enrich_event, log_event]);
+
+print("\n=== Event Pipeline Demo ===");
+print("\nProcessing valid event:");
+// Create event data objects
+valid_event = EventData();
+valid_event.set("type", "click");
+valid_event.set("x", 100);
+valid_event.set("y", 200);
+pipeline(valid_event);
+
+print("\nProcessing invalid event:");
+invalid_event = EventData();
+invalid_event.set("x", 100);
+invalid_event.set("y", 200);
+pipeline(invalid_event);  // Missing 'type' - validator will reject

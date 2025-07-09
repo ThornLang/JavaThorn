@@ -1,0 +1,54 @@
+name: Cleanup PR Tests
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  cleanup-tests:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Extract issue number and cleanup
+      run: |
+        # Extract issue number from PR title (format: gh-XX: description)
+        ISSUE_NUM=$(echo "${{ github.event.pull_request.title }}" | grep -o "gh-[0-9]*" | grep -o "[0-9]*" || echo "")
+        
+        if [ -n "$ISSUE_NUM" ]; then
+          TEST_DIR="tests/gh-$ISSUE_NUM"
+          
+          if [ -d "$TEST_DIR" ]; then
+            echo "🧹 Cleaning up test directory: $TEST_DIR"
+            rm -rf "$TEST_DIR"
+            
+            # Check if tests directory is empty and remove it if so
+            if [ -d "tests" ] && [ -z "$(ls -A tests)" ]; then
+              echo "🧹 Removing empty tests directory"
+              rm -rf tests
+            fi
+            
+            # Configure git
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            
+            # Commit and push the cleanup
+            git add -A
+            if git diff --staged --quiet; then
+              echo "ℹ️  No changes to commit"
+            else
+              git commit -m "chore: cleanup tests for merged PR #${{ github.event.pull_request.number }} (gh-$ISSUE_NUM)"
+              git push
+              echo "✅ Test cleanup committed and pushed"
+            fi
+          else
+            echo "ℹ️  No test directory found for Issue #$ISSUE_NUM"
+          fi
+        else
+          echo "ℹ️  Could not extract issue number from PR title: ${{ github.event.pull_request.title }}"
+        fi

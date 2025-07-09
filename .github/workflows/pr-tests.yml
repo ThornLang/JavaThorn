@@ -1,0 +1,125 @@
+name: PR-Specific Tests
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  pr-tests:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        
+    - name: Make build script executable
+      run: chmod +x ./build.sh
+      
+    - name: Build ThornLang
+      run: ./build.sh
+      
+    - name: Extract PR number
+      id: pr-number
+      run: echo "pr_number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+      
+    - name: Check for PR-specific tests
+      id: check-tests
+      run: |
+        PR_NUM=${{ steps.pr-number.outputs.pr_number }}
+        # Get the issue number from PR title (format: gh-XX: description)
+        ISSUE_NUM=$(echo "${{ github.event.pull_request.title }}" | grep -o "gh-[0-9]*" | grep -o "[0-9]*" || echo "")
+        
+        if [ -n "$ISSUE_NUM" ]; then
+          echo "issue_number=$ISSUE_NUM" >> $GITHUB_OUTPUT
+          if [ -d "tests/gh-$ISSUE_NUM" ]; then
+            echo "tests_exist=true" >> $GITHUB_OUTPUT
+            echo "test_dir=tests/gh-$ISSUE_NUM" >> $GITHUB_OUTPUT
+          else
+            echo "tests_exist=false" >> $GITHUB_OUTPUT
+          fi
+        else
+          echo "tests_exist=false" >> $GITHUB_OUTPUT
+        fi
+        
+    - name: Run PR-specific tests
+      if: steps.check-tests.outputs.tests_exist == 'true'
+      run: |
+        TEST_DIR=${{ steps.check-tests.outputs.test_dir }}
+        ISSUE_NUM=${{ steps.check-tests.outputs.issue_number }}
+        
+        echo "🧪 Running tests for Issue #$ISSUE_NUM"
+        echo "============================================"
+        
+        # Find all .thorn files in the test directory
+        test_files=$(find "$TEST_DIR" -name "*.thorn" -type f | sort)
+        
+        if [ -z "$test_files" ]; then
+          echo "No test files found in $TEST_DIR"
+          exit 0
+        fi
+        
+        passed=0
+        failed=0
+        
+        for test_file in $test_files; do
+          echo ""
+          echo "🔍 Testing: $(basename $test_file)"
+          echo "----------------------------------------"
+          
+          # Test interpreter mode
+          echo "   Interpreter mode:"
+          if timeout 30s java com.thorn.Thorn "$test_file" > /dev/null 2>&1; then
+            echo "   ✅ PASSED"
+            ((passed++))
+          else
+            echo "   ❌ FAILED"
+            ((failed++))
+            echo "   Error output:"
+            timeout 30s java com.thorn.Thorn "$test_file" 2>&1 | head -5 | sed 's/^/     /'
+          fi
+          
+          # Test VM mode
+          echo "   VM mode:"
+          if timeout 30s java com.thorn.Thorn "$test_file" --vm > /dev/null 2>&1; then
+            echo "   ✅ PASSED"
+            ((passed++))
+          else
+            echo "   ❌ FAILED"
+            ((failed++))
+            echo "   Error output:"
+            timeout 30s java com.thorn.Thorn "$test_file" --vm 2>&1 | head -5 | sed 's/^/     /'
+          fi
+        done
+        
+        echo ""
+        echo "📊 Test Summary for Issue #$ISSUE_NUM"
+        echo "======================================"
+        echo "✅ Passed: $passed"
+        echo "❌ Failed: $failed"
+        
+        if [ $failed -eq 0 ]; then
+          echo ""
+          echo "🎉 All PR-specific tests passed!"
+        else
+          echo ""
+          echo "💥 Some tests failed!"
+          exit 1
+        fi
+        
+    - name: No PR-specific tests
+      if: steps.check-tests.outputs.tests_exist == 'false'
+      run: |
+        ISSUE_NUM=${{ steps.check-tests.outputs.issue_number }}
+        if [ -n "$ISSUE_NUM" ]; then
+          echo "ℹ️  No specific tests found for Issue #$ISSUE_NUM"
+          echo "   Tests directory tests/gh-$ISSUE_NUM does not exist"
+        else
+          echo "ℹ️  PR title doesn't follow gh-XX format, skipping PR-specific tests"
+        fi
+        echo "   Regular CI tests will still run"

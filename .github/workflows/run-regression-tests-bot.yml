@@ -52,7 +52,7 @@ jobs:
     - name: Build project
       run: |
         echo "🔨 Building ThornLang..."
-        cd scripts && chmod +x build.sh && ./build.sh && cd ..
+        chmod +x scripts/build.sh && ./scripts/build.sh
     
     - name: Run regression tests
       id: regression-tests

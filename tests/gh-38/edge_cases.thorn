@@ -1,0 +1,107 @@
+// Test: Edge cases and boundary conditions
+// Expected: Result type handles edge cases gracefully
+
+// Test with empty strings
+empty_ok = Ok("");
+empty_error = Error("");
+
+print("Empty string Ok: " + empty_ok);
+print("Empty string Error: " + empty_error);
+
+// Test with zero values
+zero_ok = Ok(0);
+zero_error = Error(0);
+
+print("Zero Ok: " + zero_ok);
+print("Zero Error: " + zero_error);
+
+// Test with large numbers
+large_ok = Ok(999999999);
+large_error = Error(999999999);
+
+print("Large number Ok: " + large_ok);
+print("Large number Error: " + large_error);
+
+// Test with special values
+infinity_ok = Ok(1/0);  // Infinity
+neg_infinity_error = Error(-1/0);  // -Infinity
+
+print("Infinity Ok: " + infinity_ok);
+print("Negative Infinity Error: " + neg_infinity_error);
+
+// Test pattern matching with special values
+special_match = match (infinity_ok) {
+    Ok(value) => "Got infinity: " + value,
+    Error(err) => "Got error: " + err,
+};
+print("Special match: " + special_match);
+
+// Test deeply nested Results
+deep_nested = Ok(Ok(Ok("deep")));
+deep_result = match (deep_nested) {
+    Ok(level1) => match (level1) {
+        Ok(level2) => match (level2) {
+            Ok(value) => "Deep value: " + value,
+            Error(err) => "Deep error level 2: " + err,
+        },
+        Error(err) => "Deep error level 1: " + err,
+    },
+    Error(err) => "Deep error level 0: " + err,
+};
+print("Deep nested: " + deep_result);
+
+// Test with arrays containing Results
+result_array = [Ok(1), Error("err"), Ok(2)];
+print("Result array: " + result_array);
+
+// Test array access with Results
+first_result = result_array[0];
+second_result = result_array[1];
+
+first_value = match (first_result) {
+    Ok(value) => "First: " + value,
+    Error(err) => "First error: " + err,
+};
+
+second_value = match (second_result) {
+    Ok(value) => "Second: " + value,
+    Error(err) => "Second error: " + err,
+};
+
+print("First array result: " + first_value);
+print("Second array result: " + second_value);
+
+// Test Results in dictionaries
+result_dict = {
+    "success": Ok("worked"),
+    "failure": Error("failed")
+};
+
+dict_success = result_dict["success"];
+dict_failure = result_dict["failure"];
+
+print("Dict success: " + dict_success);
+print("Dict failure: " + dict_failure);
+
+// Test pattern matching with default case
+unknown_result = Ok("unknown");
+default_match = match (unknown_result) {
+    Ok(value) if value == "known" => "Known value",
+    Ok(value) => "Unknown value: " + value,
+    Error(err) => "Error: " + err,
+    _ => "Default case",
+};
+print("Default match: " + default_match);
+
+// Verify edge cases work
+if (empty_ok.is_ok() && zero_ok.is_ok()) {
+    print("✅ Edge case values work");
+} else {
+    print("❌ Edge case values failed");
+}
+
+if (deep_result == "Deep value: deep") {
+    print("✅ Deep nesting works");
+} else {
+    print("❌ Deep nesting failed");
+}

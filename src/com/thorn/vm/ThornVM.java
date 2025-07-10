@@ -15,6 +15,9 @@ public class ThornVM {
     private int frameCount;
     private boolean halted;
     
+    // Track if we're in a Result context for division by zero handling
+    private boolean inResultContext = false;
+    
     public ThornVM() {
         this.callStack = new CallFrame[MAX_CALL_STACK];
         this.globals = new HashMap<>();
@@ -580,6 +583,10 @@ public class ThornVM {
         checkNumberOperands(left, right);
         double rightVal = ((Number) right).doubleValue();
         if (rightVal == 0.0) {
+            // Check if we're in a Result context (being called from Ok/Error constructor)
+            if (inResultContext) {
+                return ((Number) left).doubleValue() / rightVal; // Returns Infinity
+            }
             throw new RuntimeException("Division by zero");
         }
         return ((Number) left).doubleValue() / rightVal;
@@ -721,6 +728,34 @@ public class ThornVM {
             return (double) System.currentTimeMillis();
         }
         
+        if ("native_ok".equals(function)) {
+            if (argCount != 1) {
+                throw new RuntimeException("Ok() expects 1 argument");
+            }
+            // Set Result context flag before accessing the argument
+            inResultContext = true;
+            try {
+                Object value = callerFrame.getRegister(functionRegister + 1);
+                return com.thorn.ThornResult.ok(value);
+            } finally {
+                inResultContext = false;
+            }
+        }
+        
+        if ("native_error".equals(function)) {
+            if (argCount != 1) {
+                throw new RuntimeException("Error() expects 1 argument");
+            }
+            // Set Result context flag before accessing the argument
+            inResultContext = true;
+            try {
+                Object error = callerFrame.getRegister(functionRegister + 1);
+                return com.thorn.ThornResult.error(error);
+            } finally {
+                inResultContext = false;
+            }
+        }
+        
         // Handle array methods
         if (function instanceof ArrayMethod) {
             ArrayMethod method = (ArrayMethod) function;
@@ -740,6 +775,8 @@ public class ThornVM {
         // Add built-in functions and constants
         globals.put("clock", "native_clock");
         globals.put("print", "native_print");
+        globals.put("Ok", "native_ok");
+        globals.put("Error", "native_error");
     }
     
     // Inner class for array methods

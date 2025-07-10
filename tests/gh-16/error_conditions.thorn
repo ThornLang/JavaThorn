@@ -1,0 +1,39 @@
+// Test: Error conditions for dictionary methods
+// Expected: Appropriate errors for invalid usage
+
+print("Testing error conditions:");
+
+// This file tests that errors are handled gracefully
+// We'll use defensive programming to check behavior
+
+dict = {"key": "value"};
+
+// Test wrong number of arguments
+// Note: Since Thorn doesn't have try/catch, we'll test what happens
+// The VM/interpreter should give appropriate error messages
+
+// For documentation purposes, these would fail:
+// dict.get();          // Should error: get() expects 1 or 2 arguments
+// dict.get(1, 2, 3);   // Should error: get() expects 1 or 2 arguments  
+// dict.set();          // Should error: set() expects 2 arguments
+// dict.set("key");     // Should error: set() expects 2 arguments
+// dict.set(1, 2, 3);   // Should error: set() expects 2 arguments
+
+// Test type compatibility
+dict.set("mixedTypes", [1, 2, 3]);
+arr = dict.get("mixedTypes");
+if (arr[0] == 1 && arr[1] == 2) {
+    print("✅ Different value types handled correctly");
+} else {
+    print("❌ Type handling failed");
+}
+
+// Test method calls on non-dictionaries
+// These would error if uncommented:
+// list = [1, 2, 3];
+// list.get(0);        // Should error: lists don't have get()
+// num = 42;
+// num.set("x", 1);    // Should error: numbers don't have set()
+
+print("✅ Error condition tests documented");
+print("   (Actual error tests commented out to avoid stopping execution)");

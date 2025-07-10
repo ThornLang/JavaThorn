@@ -525,6 +525,123 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                     };
             }
         }
+        
+        // Handle dictionary/map methods
+        if (object instanceof Map) {
+            Map<Object, Object> map = (Map<Object, Object>) object;
+            
+            switch (expr.name.lexeme) {
+                case "keys":
+                    return new ThornCallable() {
+                        @Override
+                        public int arity() { return 0; }
+                        
+                        @Override
+                        public Object call(Interpreter interpreter, List<Object> arguments) {
+                            return new ArrayList<>(map.keySet());
+                        }
+                        
+                        @Override
+                        public String toString() { return "<native dictionary method>"; }
+                    };
+                    
+                case "values":
+                    return new ThornCallable() {
+                        @Override
+                        public int arity() { return 0; }
+                        
+                        @Override
+                        public Object call(Interpreter interpreter, List<Object> arguments) {
+                            return new ArrayList<>(map.values());
+                        }
+                        
+                        @Override
+                        public String toString() { return "<native dictionary method>"; }
+                    };
+                    
+                case "has":
+                    return new ThornCallable() {
+                        @Override
+                        public int arity() { return 1; }
+                        
+                        @Override
+                        public Object call(Interpreter interpreter, List<Object> arguments) {
+                            return map.containsKey(arguments.get(0));
+                        }
+                        
+                        @Override
+                        public String toString() { return "<native dictionary method>"; }
+                    };
+                    
+                case "size":
+                    return new ThornCallable() {
+                        @Override
+                        public int arity() { return 0; }
+                        
+                        @Override
+                        public Object call(Interpreter interpreter, List<Object> arguments) {
+                            return (double) map.size();
+                        }
+                        
+                        @Override
+                        public String toString() { return "<native dictionary method>"; }
+                    };
+                    
+                case "remove":
+                    return new ThornCallable() {
+                        @Override
+                        public int arity() { return 1; }
+                        
+                        @Override
+                        public Object call(Interpreter interpreter, List<Object> arguments) {
+                            return map.remove(arguments.get(0));
+                        }
+                        
+                        @Override
+                        public String toString() { return "<native dictionary method>"; }
+                    };
+                    
+                case "get":
+                    return new ThornCallable() {
+                        @Override
+                        public int arity() { return -1; } // Variable arguments (1 or 2)
+                        
+                        @Override
+                        public Object call(Interpreter interpreter, List<Object> arguments) {
+                            if (arguments.size() < 1 || arguments.size() > 2) {
+                                throw new Thorn.RuntimeError(null, 
+                                    "get() takes 1 or 2 arguments (key, optional default).");
+                            }
+                            Object key = arguments.get(0);
+                            Object result = map.get(key);
+                            if (result == null && arguments.size() == 2) {
+                                return arguments.get(1); // Return default value
+                            }
+                            return result;
+                        }
+                        
+                        @Override
+                        public String toString() { return "<native dictionary method>"; }
+                    };
+                    
+                case "set":
+                    return new ThornCallable() {
+                        @Override
+                        public int arity() { return 2; }
+                        
+                        @Override
+                        public Object call(Interpreter interpreter, List<Object> arguments) {
+                            Object key = arguments.get(0);
+                            Object value = arguments.get(1);
+                            map.put(key, value);
+                            return map; // Return the map for method chaining
+                        }
+                        
+                        @Override
+                        public String toString() { return "<native dictionary method>"; }
+                    };
+            }
+        }
 
         // Generate type-specific error messages
         String typeName = getTypeName(object);
@@ -533,6 +650,9 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         if (object instanceof List) {
             errorMessage = "Array method '" + expr.name.lexeme + "' is not defined.\n" +
                           "Available array methods: length, push, pop, shift, unshift, includes, slice";
+        } else if (object instanceof Map) {
+            errorMessage = "Dictionary method '" + expr.name.lexeme + "' is not defined.\n" +
+                          "Available dictionary methods: keys, values, has, size, remove, get, set";
         } else if (object instanceof String) {
             errorMessage = "String property '" + expr.name.lexeme + "' is not defined.\n" +
                           "Available string properties: length";

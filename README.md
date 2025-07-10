@@ -1,6 +1,6 @@
 <div align="center">
 
-# Thorn
+<img src="assets/thorn-logo-text.svg" alt="Thorn" width="300">
 
 ### A modern language blending functional elegance with practical simplicity
 

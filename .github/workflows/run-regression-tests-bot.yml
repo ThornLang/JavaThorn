@@ -132,7 +132,6 @@ jobs:
               echo "  ❌ FAILED"
               echo "  First 10 lines of output:"
               head -10 "/tmp/test_logs/${test_name}.log" | sed 's/^/    /'
-              echo "    ... (use @get_fail_log $test_name to see full output)"
               FAILED=$(cat /tmp/failed_count)
               FAILED=$((FAILED + 1))
               echo "$FAILED" > /tmp/failed_count
@@ -229,98 +228,4 @@ jobs:
             repo: context.repo.repo,
             comment_id: context.payload.comment.id,
             content: reaction
-          });
-  
-  get-fail-log:
-    runs-on: ubuntu-latest
-    if: |
-      github.event.issue.pull_request && 
-      contains(github.event.comment.body, '@get_fail_log')
-    
-    steps:
-    - name: Generate token
-      id: generate-token
-      uses: tibdex/github-app-token@v2
-      with:
-        app_id: ${{ secrets.THORN_LANG_APP_ID }}
-        private_key: ${{ secrets.THORN_LANG_APP_PRIVATE_KEY }}
-    
-    - name: Extract test name
-      id: extract-test
-      run: |
-        COMMENT="${{ github.event.comment.body }}"
-        # Extract test name after @get_fail_log
-        TEST_NAME=$(echo "$COMMENT" | grep -oP '@get_fail_log\s+\K\S+' || echo "")
-        
-        if [ -z "$TEST_NAME" ]; then
-          echo "error=true" >> $GITHUB_OUTPUT
-          echo "message=❌ Usage: @get_fail_log <test_name>" >> $GITHUB_OUTPUT
-        else
-          echo "test_name=$TEST_NAME" >> $GITHUB_OUTPUT
-          echo "error=false" >> $GITHUB_OUTPUT
-        fi
-    
-    - name: Download test logs
-      if: steps.extract-test.outputs.error == 'false'
-      uses: actions/download-artifact@v4
-      with:
-        name: regression-test-logs-${{ github.event.issue.number }}
-        path: /tmp/test_logs/
-      continue-on-error: true
-    
-    - name: Check and format log
-      if: steps.extract-test.outputs.error == 'false'
-      id: format-log
-      run: |
-        TEST_NAME="${{ steps.extract-test.outputs.test_name }}"
-        LOG_FILE="/tmp/test_logs/${TEST_NAME}"
-        
-        if [ ! -f "$LOG_FILE" ]; then
-          # Try with .thorn extension if not already included
-          if [[ ! "$TEST_NAME" == *.thorn ]]; then
-            LOG_FILE="/tmp/test_logs/${TEST_NAME}.thorn.log"
-          fi
-        fi
-        
-        if [ -f "$LOG_FILE" ]; then
-          echo "found=true" >> $GITHUB_OUTPUT
-          # Format the log content for GitHub comment
-          {
-            echo "log_content<<EOF"
-            echo "## 📋 Test Log: $TEST_NAME"
-            echo ""
-            echo '```'
-            cat "$LOG_FILE"
-            echo '```'
-            echo "EOF"
-          } >> $GITHUB_OUTPUT
-        else
-          echo "found=false" >> $GITHUB_OUTPUT
-          echo "message=❌ No log found for test: $TEST_NAME" >> $GITHUB_OUTPUT
-        fi
-    
-    - name: Post log comment
-      if: always()
-      uses: actions/github-script@v6
-      with:
-        github-token: ${{ steps.generate-token.outputs.token }}
-        script: |
-          let message = '';
-          
-          if ('${{ steps.extract-test.outputs.error }}' === 'true') {
-            message = '${{ steps.extract-test.outputs.message }}';
-          } else if ('${{ steps.format-log.outputs.found }}' === 'false') {
-            message = '${{ steps.format-log.outputs.message }}';
-            message += '\n\n**Available test logs:** Check artifacts or ensure tests have been run with @run_regression first.';
-          } else {
-            message = `${{ steps.format-log.outputs.log_content }}`;
-          }
-          
-          message += '\n\n<sub>Triggered by @' + context.payload.comment.user.login + '</sub>';
-          
-          github.rest.issues.createComment({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            issue_number: context.issue.number,
-            body: message
           });

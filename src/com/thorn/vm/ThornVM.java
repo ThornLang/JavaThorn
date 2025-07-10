@@ -316,6 +316,7 @@ public class ThornVM {
                         }
                     } else if (obj instanceof java.util.List) {
                         // Handle array methods
+                        @SuppressWarnings("unchecked")
                         java.util.List<Object> list = (java.util.List<Object>) obj;
                         switch (propName) {
                             case "length":

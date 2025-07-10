@@ -1,0 +1,7 @@
+// Test improved error messages for arrays
+
+numbers = [1, 2, 3];
+print("Testing array error messages...");
+
+// This should give a helpful error message - map() doesn't exist
+result = numbers.map($(x) => x * 2);

@@ -316,10 +316,25 @@ public class ThornVM {
                                 currentFrame.setRegister(a, new ArrayMethod("slice", list));
                                 break;
                             default:
-                                throw new RuntimeException("Unknown array property: " + propName);
+                                throw new RuntimeException("Array method '" + propName + "' is not defined.\n" +
+                                    "Available array methods: length, push, pop, shift, unshift, includes, indexOf, slice");
                         }
+                    } else if (obj instanceof String) {
+                        switch (propName) {
+                            case "length":
+                                currentFrame.setRegister(a, (double) ((String) obj).length());
+                                break;
+                            default:
+                                throw new RuntimeException("String property '" + propName + "' is not defined.\n" +
+                                    "Available string properties: length");
+                        }
+                    } else if (obj instanceof Double || obj instanceof Boolean) {
+                        String typeName = obj instanceof Double ? "number" : "boolean";
+                        throw new RuntimeException("Cannot access property '" + propName + "' on primitive type '" + typeName + "'.");
+                    } else if (obj == null) {
+                        throw new RuntimeException("Cannot access property '" + propName + "' on null.");
                     } else {
-                        throw new RuntimeException("Cannot access property on non-object");
+                        throw new RuntimeException("Property '" + propName + "' is not defined on object.");
                     }
                     break;
                     

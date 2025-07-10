@@ -1,0 +1,11 @@
+// Test improved error messages for primitives
+
+// Number primitive
+num = 42;
+print("Testing number primitive error...");
+prop = num.someProperty;
+
+// Boolean primitive
+bool = true;
+print("Testing boolean primitive error...");
+method = bool.toString();

@@ -1,0 +1,13 @@
+// Test improved error messages for class instances
+
+class Person {
+    $ init(name: string) {
+        this.name = name;
+    }
+}
+
+person = Person("Alice");
+print("Testing class instance error messages...");
+
+// This should give a helpful error message
+age = person.age;  // Property doesn't exist

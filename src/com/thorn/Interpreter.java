@@ -526,8 +526,25 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             }
         }
 
-        throw new Thorn.RuntimeError(expr.name,
-                "Only instances have properties.");
+        // Generate type-specific error messages
+        String typeName = getTypeName(object);
+        String errorMessage;
+        
+        if (object instanceof List) {
+            errorMessage = "Array method '" + expr.name.lexeme + "' is not defined.\n" +
+                          "Available array methods: length, push, pop, shift, unshift, includes, slice";
+        } else if (object instanceof String) {
+            errorMessage = "String property '" + expr.name.lexeme + "' is not defined.\n" +
+                          "Available string properties: length";
+        } else if (object instanceof Double || object instanceof Boolean) {
+            errorMessage = "Cannot access property '" + expr.name.lexeme + "' on primitive type '" + typeName + "'.";
+        } else if (object == null) {
+            errorMessage = "Cannot access property '" + expr.name.lexeme + "' on null.";
+        } else {
+            errorMessage = "Property '" + expr.name.lexeme + "' is not defined on type '" + typeName + "'.";
+        }
+        
+        throw new Thorn.RuntimeError(expr.name, errorMessage);
     }
 
     @Override
@@ -649,8 +666,11 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         if (value instanceof String) return "string";
         if (value instanceof Double) return "number";
         if (value instanceof Boolean) return "boolean";
-        if (value instanceof List) return "Array";
-        if (value instanceof ThornCallable) return "Function";
+        if (value instanceof List) return "array";
+        if (value instanceof ThornInstance) {
+            return ((ThornInstance) value).getKlass().name;
+        }
+        if (value instanceof ThornCallable) return "function";
         return value.getClass().getSimpleName();
     }
 

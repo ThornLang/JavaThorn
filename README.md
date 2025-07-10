@@ -1,6 +1,36 @@
-# Thorn Programming Language
+<div align="center">
 
-A modern, dynamically-typed programming language built in Java, featuring clean syntax and powerful features.
+# Thorn
+
+### A modern language blending functional elegance with practical simplicity
+
+  <p align="center">
+    <a href="https://github.com/ThornLang/JavaThorn/releases">
+      <img src="https://img.shields.io/github/v/release/ThornLang/JavaThorn?style=flat-square" alt="Release">
+    </a>
+    <a href="https://github.com/ThornLang/JavaThorn/blob/main/LICENSE">
+      <img src="https://img.shields.io/github/license/ThornLang/JavaThorn?style=flat-square" alt="License">
+    </a>
+    <a href="https://github.com/ThornLang/JavaThorn/issues">
+      <img src="https://img.shields.io/github/issues/ThornLang/JavaThorn?style=flat-square" alt="Issues">
+    </a>
+    <a href="https://github.com/ThornLang/JavaThorn/wiki">
+      <img src="https://img.shields.io/badge/docs-wiki-blue?style=flat-square" alt="Documentation">
+    </a>
+  </p>
+
+  <p align="center">
+    <a href="#features">Features</a> •
+    <a href="#quick-start">Quick Start</a> •
+    <a href="#syntax">Syntax</a> •
+    <a href="#documentation">Documentation</a> •
+    <a href="#contributing">Contributing</a>
+  </p>
+</div>
+
+---
+
+> **Thorn** is a modern, dynamically-typed programming language that combines the expressiveness of functional programming with the simplicity of imperative code. With its unique `$` function syntax, pattern matching, and dual execution modes, Thorn makes programming both powerful and enjoyable.
 
 ## Features
 
@@ -31,7 +61,7 @@ java com.thorn.Thorn script.thorn
 java com.thorn.Thorn
 ```
 
-## Syntax Examples
+## Syntax
 
 ### Variables
 ```thorn

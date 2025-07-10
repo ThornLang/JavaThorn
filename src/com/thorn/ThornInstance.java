@@ -26,6 +26,10 @@ class ThornInstance {
     void set(Token name, Object value) {
         fields.put(name.lexeme, value);
     }
+    
+    ThornClass getKlass() {
+        return klass;
+    }
 
     @Override
     public String toString() {

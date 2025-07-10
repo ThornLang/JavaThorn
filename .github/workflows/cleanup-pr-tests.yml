@@ -56,9 +56,9 @@ jobs:
               echo "ℹ️  No changes to commit"
             else
               if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-                git commit -m "chore: cleanup tests for issue gh-$ISSUE_NUM (manual cleanup)" -m "Co-authored-by: thorn-lang[bot] <>"
+                git commit -m "gh-41: cleanup tests for issue gh-$ISSUE_NUM (manual cleanup)"
               else
-                git commit -m "chore: cleanup tests for merged PR #${{ github.event.pull_request.number }} (gh-$ISSUE_NUM)" -m "Co-authored-by: thorn-lang[bot] <>"
+                git commit -m "gh-41: cleanup tests for merged PR #${{ github.event.pull_request.number }} (gh-$ISSUE_NUM)"
               fi
               git push
               echo "✅ Test cleanup committed and pushed"

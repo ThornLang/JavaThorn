@@ -1,0 +1,182 @@
+name: Run Regression Tests (Bot)
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  run-regression:
+    runs-on: ubuntu-latest
+    if: |
+      github.event.issue.pull_request && 
+      contains(github.event.comment.body, '@run_regression')
+    
+    steps:
+    - name: Generate token
+      id: generate-token
+      uses: tibdex/github-app-token@v2
+      with:
+        app_id: ${{ secrets.THORN_LANG_APP_ID }}
+        private_key: ${{ secrets.THORN_LANG_APP_PRIVATE_KEY }}
+    
+    - name: Add acknowledgment reaction
+      uses: actions/github-script@v6
+      with:
+        github-token: ${{ steps.generate-token.outputs.token }}
+        script: |
+          github.rest.reactions.createForIssueComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            comment_id: context.payload.comment.id,
+            content: 'rocket'
+          });
+    
+    - name: Checkout PR
+      uses: actions/checkout@v3
+      with:
+        token: ${{ steps.generate-token.outputs.token }}
+        # Checkout the PR branch
+        ref: refs/pull/${{ github.event.issue.number }}/head
+    
+    - name: Set up Java
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    
+    - name: Build project
+      run: |
+        echo "🔨 Building ThornLang..."
+        cd scripts && chmod +x build.sh && ./build.sh && cd ..
+    
+    - name: Run regression tests
+      id: regression-tests
+      run: |
+        echo "🧪 Running regression tests..."
+        REGRESSION_DIR="tests/regression"
+        
+        if [ ! -d "$REGRESSION_DIR" ]; then
+          echo "❌ No regression directory found at $REGRESSION_DIR"
+          echo "status=no-tests" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        
+        # Count total test files
+        TOTAL_TESTS=$(find "$REGRESSION_DIR" -name "*.thorn" -type f | wc -l)
+        
+        if [ "$TOTAL_TESTS" -eq 0 ]; then
+          echo "❌ No regression tests found in $REGRESSION_DIR"
+          echo "status=no-tests" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        
+        echo "📊 Found $TOTAL_TESTS regression tests"
+        echo ""
+        
+        # Initialize counters
+        PASSED=0
+        FAILED=0
+        FAILED_TESTS=""
+        
+        # Run each test file
+        find "$REGRESSION_DIR" -name "*.thorn" -type f | sort | while read -r test_file; do
+          test_name=$(basename "$test_file")
+          echo "Running: $test_name"
+          
+          # Run the test and capture output
+          if java com.thorn.Thorn "$test_file" > /tmp/test_output.txt 2>&1; then
+            echo "  ✅ PASSED"
+            PASSED=$((PASSED + 1))
+          else
+            echo "  ❌ FAILED"
+            echo "  Output:"
+            cat /tmp/test_output.txt | sed 's/^/    /'
+            FAILED=$((FAILED + 1))
+            FAILED_TESTS="$FAILED_TESTS\n- $test_name"
+          fi
+          echo ""
+          
+          # Save counters to file since we're in a subshell
+          echo "$PASSED" > /tmp/passed_count
+          echo "$FAILED" > /tmp/failed_count
+          echo -e "$FAILED_TESTS" > /tmp/failed_tests
+        done
+        
+        # Read counters from files
+        PASSED=$(cat /tmp/passed_count 2>/dev/null || echo 0)
+        FAILED=$(cat /tmp/failed_count 2>/dev/null || echo 0)
+        FAILED_TESTS=$(cat /tmp/failed_tests 2>/dev/null || echo "")
+        
+        # Summary
+        echo "========================================"
+        echo "📊 Regression Test Summary"
+        echo "========================================"
+        echo "Total: $TOTAL_TESTS"
+        echo "Passed: $PASSED ✅"
+        echo "Failed: $FAILED ❌"
+        
+        if [ "$FAILED" -gt 0 ]; then
+          echo ""
+          echo "Failed tests:$FAILED_TESTS"
+          echo "status=failed" >> $GITHUB_OUTPUT
+          echo "failed_count=$FAILED" >> $GITHUB_OUTPUT
+          echo "passed_count=$PASSED" >> $GITHUB_OUTPUT
+          echo "total_count=$TOTAL_TESTS" >> $GITHUB_OUTPUT
+          exit 1
+        else
+          echo ""
+          echo "🎉 All regression tests passed!"
+          echo "status=passed" >> $GITHUB_OUTPUT
+          echo "failed_count=0" >> $GITHUB_OUTPUT
+          echo "passed_count=$PASSED" >> $GITHUB_OUTPUT
+          echo "total_count=$TOTAL_TESTS" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Post results comment
+      if: always()
+      uses: actions/github-script@v6
+      with:
+        github-token: ${{ steps.generate-token.outputs.token }}
+        script: |
+          const status = '${{ steps.regression-tests.outputs.status }}';
+          const passed = '${{ steps.regression-tests.outputs.passed_count }}' || '0';
+          const failed = '${{ steps.regression-tests.outputs.failed_count }}' || '0';
+          const total = '${{ steps.regression-tests.outputs.total_count }}' || '0';
+          
+          let message = '## 🧪 Regression Test Results\n\n';
+          
+          if (status === 'no-tests') {
+            message += '❌ No regression tests found in `tests/regression/`\n';
+          } else if (status === 'passed') {
+            message += `✅ **All ${total} regression tests passed!**\n\n`;
+            message += `- Passed: ${passed} ✅\n`;
+            message += `- Failed: ${failed} ❌\n`;
+          } else {
+            message += `❌ **${failed} of ${total} regression tests failed**\n\n`;
+            message += `- Passed: ${passed} ✅\n`;
+            message += `- Failed: ${failed} ❌\n\n`;
+            message += 'Check the workflow logs for detailed failure information.';
+          }
+          
+          message += '\n\n<sub>Triggered by @' + context.payload.comment.user.login + '</sub>';
+          
+          github.rest.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            body: message
+          });
+          
+          // Add reaction to indicate completion
+          const reaction = status === 'passed' ? '+1' : (status === 'no-tests' ? 'confused' : '-1');
+          github.rest.reactions.createForIssueComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            comment_id: context.payload.comment.id,
+            content: reaction
+          });

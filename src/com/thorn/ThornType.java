@@ -226,11 +226,69 @@ class ThornArrayType extends ThornType {
 }
 
 /**
+ * Class type
+ */
+class ThornClassType extends ThornType {
+    private final String className;
+    
+    public ThornClassType(String className) {
+        this.className = className;
+    }
+    
+    @Override
+    public String getName() {
+        return className;
+    }
+    
+    @Override
+    public boolean matches(Object value) {
+        if (!(value instanceof ThornInstance)) return false;
+        ThornInstance instance = (ThornInstance) value;
+        return instance.getKlass().name.equals(className);
+    }
+    
+    @Override
+    public boolean isAssignableFrom(ThornType other) {
+        if (other instanceof ThornClassType) {
+            // For now, just check exact class match
+            // Future: support inheritance
+            return className.equals(((ThornClassType) other).className);
+        }
+        return false;
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        ThornClassType that = (ThornClassType) obj;
+        return Objects.equals(className, that.className);
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(className);
+    }
+}
+
+/**
  * Helper class for creating type instances
  */
 class ThornTypeFactory {
     public static ThornType createType(String name) {
-        return new ThornPrimitiveType(name);
+        // Check if this is a known primitive type
+        switch (name) {
+            case "string":
+            case "number":
+            case "boolean":
+            case "null":
+            case "Any":
+            case "void":
+                return new ThornPrimitiveType(name);
+            default:
+                // Assume it's a class type
+                return new ThornClassType(name);
+        }
     }
     
     public static ThornType createGenericType(String name, List<Object> typeArgs) {

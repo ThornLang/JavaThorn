@@ -1,0 +1,30 @@
+// Test functions accepting and returning class instances
+
+class Person {
+    $ init(name: string, age: number) {
+        this.name = name;
+        this.age = age;
+    }
+    
+    $ greet() {
+        return "Hello, I'm " + this.name;
+    }
+}
+
+// Function accepting class instance
+$ process_person(p: Person): void {
+    print("Processing: " + p.name);
+    print("Age: " + p.age);
+}
+
+// Function returning class instance
+$ create_person(name: string, age: number): Person {
+    return Person(name, age);
+}
+
+// Test the functions
+alice: Person = Person("Alice", 25);
+process_person(alice);
+
+bob: Person = create_person("Bob", 30);
+print("Created: " + bob.greet());

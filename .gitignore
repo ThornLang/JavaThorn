@@ -21,3 +21,6 @@ build/
 
 # Private scripts with credentials
 commit.sh
+
+# Wiki directory
+wiki/

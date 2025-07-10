@@ -1,0 +1,95 @@
+// Test: Integration with functions and real-world scenarios
+// Expected: Result type works seamlessly with function definitions and complex logic
+
+// Test function returning Result
+$ divide(a: number, b: number) {
+    if (b == 0) {
+        return Error("Division by zero");
+    }
+    return Ok(a / b);
+}
+
+// Test the function
+good_result = divide(10, 2);
+bad_result = divide(10, 0);
+
+print("Good division: " + good_result);
+print("Bad division: " + bad_result);
+
+// Test chaining operations
+$ safe_sqrt(x: number) {
+    if (x < 0) {
+        return Error("Cannot compute square root of negative number");
+    }
+    return Ok(x ** 0.5);
+}
+
+$ divide_and_sqrt(a: number, b: number) {
+    div_result = divide(a, b);
+    return match (div_result) {
+        Ok(quotient) => safe_sqrt(quotient),
+        Error(err) => Error(err),
+    };
+}
+
+// Test chaining
+chain_good = divide_and_sqrt(16, 4);  // 16/4 = 4, sqrt(4) = 2
+chain_bad1 = divide_and_sqrt(16, 0);  // Division by zero
+chain_bad2 = divide_and_sqrt(-16, 4); // Negative sqrt
+
+print("Chain good: " + chain_good);
+print("Chain bad1: " + chain_bad1);
+print("Chain bad2: " + chain_bad2);
+
+// Test validation pattern
+$ validate_user(name: string, age: number) {
+    if (name == "") {
+        return Error("Name cannot be empty");
+    }
+    if (age < 0) {
+        return Error("Age cannot be negative");
+    }
+    if (age > 150) {
+        return Error("Age cannot exceed 150");
+    }
+    return Ok("User valid: " + name + " (age " + age + ")");
+}
+
+// Test validation
+valid_user = validate_user("Alice", 25);
+invalid_name = validate_user("", 25);
+invalid_age = validate_user("Bob", -5);
+
+print("Valid user: " + valid_user);
+print("Invalid name: " + invalid_name);
+print("Invalid age: " + invalid_age);
+
+// Test with match expressions in functions
+$ handle_user_creation(name: string, age: number) {
+    result = validate_user(name, age);
+    return match (result) {
+        Ok(msg) => "✅ " + msg,
+        Error(err) => "❌ " + err,
+    };
+}
+
+creation_result = handle_user_creation("Charlie", 30);
+print("Creation result: " + creation_result);
+
+// Verify integration works
+if (good_result.is_ok() && bad_result.is_error()) {
+    print("✅ Function integration works");
+} else {
+    print("❌ Function integration failed");
+}
+
+chain_ok = match (chain_good) {
+    Ok(value) => true,
+    Error(err) => false,
+};
+
+if (chain_ok) {
+    print("✅ Result chaining works");
+} else {
+    print("❌ Result chaining failed");
+}

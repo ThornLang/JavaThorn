@@ -272,6 +272,59 @@ class ThornClassType extends ThornType {
 }
 
 /**
+ * Result type for error handling
+ */
+class ThornResultType extends ThornType {
+    private final Object valueType;
+    private final Object errorType;
+    
+    public ThornResultType(Object valueType, Object errorType) {
+        this.valueType = valueType;
+        this.errorType = errorType;
+    }
+    
+    @Override
+    public String getName() {
+        return "Result[" + valueType + ", " + errorType + "]";
+    }
+    
+    @Override
+    public boolean matches(Object value) {
+        return value instanceof ThornResult;
+    }
+    
+    @Override
+    public boolean isAssignableFrom(ThornType other) {
+        if (other instanceof ThornResultType) {
+            ThornResultType otherResult = (ThornResultType) other;
+            return valueType.equals(otherResult.valueType) && errorType.equals(otherResult.errorType);
+        }
+        return false;
+    }
+    
+    public Object getValueType() {
+        return valueType;
+    }
+    
+    public Object getErrorType() {
+        return errorType;
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        ThornResultType that = (ThornResultType) obj;
+        return Objects.equals(valueType, that.valueType) && Objects.equals(errorType, that.errorType);
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(valueType, errorType);
+    }
+}
+
+/**
  * Helper class for creating type instances
  */
 class ThornTypeFactory {
@@ -301,5 +354,9 @@ class ThornTypeFactory {
     
     public static ThornType createArrayType(Object elementType) {
         return new ThornArrayType(elementType);
+    }
+    
+    public static ThornType createResultType(Object valueType, Object errorType) {
+        return new ThornResultType(valueType, errorType);
     }
 }

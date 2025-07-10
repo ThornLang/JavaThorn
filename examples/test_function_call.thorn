@@ -1,8 +1,0 @@
-// Test user-defined function call
-$ add(a, b) {
-    return a + b;
-}
-
-result = add(10, 20);
-print("Result:");
-print(result);

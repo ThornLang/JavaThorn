@@ -752,12 +752,21 @@ public class ThornVM {
         }
         
         Object call(CallFrame frame, int argCount, int functionRegister) {
+            // Debug: print register contents
+            if ("slice".equals(methodName)) {
+                System.err.println("ArrayMethod.call: functionRegister=" + functionRegister + ", argCount=" + argCount);
+                for (int i = 0; i < 10; i++) {
+                    System.err.println("  Register " + i + ": " + frame.getRegister(i));
+                }
+            }
+            
             switch (methodName) {
                 case "push":
                     if (argCount != 1) {
                         throw new RuntimeException("push() expects 1 argument");
                     }
-                    list.add(frame.getRegister(functionRegister + 1));
+                    // Use consistent calling convention - arguments start at register 1
+                    list.add(frame.getRegister(1));
                     return (double) list.size();
                     
                 case "pop":
@@ -817,7 +826,9 @@ public class ThornVM {
                     if (argCount >= 1) {
                         Object startObj = frame.getRegister(functionRegister + 1);
                         if (!(startObj instanceof Double)) {
-                            throw new RuntimeException("Slice start index must be a number");
+                            throw new RuntimeException("Slice start index must be a number (got: " + 
+                                (startObj == null ? "null" : startObj.getClass().getSimpleName()) + 
+                                " from register " + (functionRegister + 1) + ")");
                         }
                         start = ((Double) startObj).intValue();
                         // Handle negative indices
@@ -830,7 +841,9 @@ public class ThornVM {
                     if (argCount >= 2) {
                         Object endObj = frame.getRegister(functionRegister + 2);
                         if (!(endObj instanceof Double)) {
-                            throw new RuntimeException("Slice end index must be a number");
+                            throw new RuntimeException("Slice end index must be a number (got: " + 
+                                (endObj == null ? "null" : endObj.getClass().getSimpleName()) + 
+                                " from register " + (functionRegister + 2) + ")");
                         }
                         end = ((Double) endObj).intValue();
                         // Handle negative indices

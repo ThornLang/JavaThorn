@@ -270,6 +270,18 @@ public class DeadCodeEliminator {
             }
             
             @Override
+            public Void visitSliceExpr(Expr.Slice expr) {
+                collectDefinitionsFromExpr(expr.object);
+                if (expr.start != null) {
+                    collectDefinitionsFromExpr(expr.start);
+                }
+                if (expr.end != null) {
+                    collectDefinitionsFromExpr(expr.end);
+                }
+                return null;
+            }
+            
+            @Override
             public Void visitMatchExpr(Expr.Match expr) {
                 collectDefinitionsFromExpr(expr.expr);
                 for (Expr.Match.Case matchCase : expr.cases) {
@@ -494,6 +506,18 @@ public class DeadCodeEliminator {
                 collectUsagesFromExpr(expr.object);
                 collectUsagesFromExpr(expr.index);
                 collectUsagesFromExpr(expr.value);
+                return null;
+            }
+            
+            @Override
+            public Void visitSliceExpr(Expr.Slice expr) {
+                collectUsagesFromExpr(expr.object);
+                if (expr.start != null) {
+                    collectUsagesFromExpr(expr.start);
+                }
+                if (expr.end != null) {
+                    collectUsagesFromExpr(expr.end);
+                }
                 return null;
             }
             
@@ -787,6 +811,18 @@ public class DeadCodeEliminator {
             }
             
             @Override
+            public Void visitSliceExpr(Expr.Slice expr) {
+                analyzeLocalExpression(expr.object, scope);
+                if (expr.start != null) {
+                    analyzeLocalExpression(expr.start, scope);
+                }
+                if (expr.end != null) {
+                    analyzeLocalExpression(expr.end, scope);
+                }
+                return null;
+            }
+            
+            @Override
             public Void visitListExpr(Expr.ListExpr expr) {
                 for (Expr element : expr.elements) {
                     analyzeLocalExpression(element, scope);
@@ -951,6 +987,13 @@ public class DeadCodeEliminator {
             @Override
             public Boolean visitIndexSetExpr(Expr.IndexSet expr) {
                 return true; // Index assignments have side effects
+            }
+            
+            @Override
+            public Boolean visitSliceExpr(Expr.Slice expr) {
+                return hasSideEffects(expr.object) || 
+                       (expr.start != null && hasSideEffects(expr.start)) ||
+                       (expr.end != null && hasSideEffects(expr.end));
             }
             
             @Override

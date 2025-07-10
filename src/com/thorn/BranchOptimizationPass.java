@@ -334,6 +334,7 @@ public class BranchOptimizationPass extends OptimizationPass {
                 @Override public Expr visitGetExpr(Expr.Get expr) { return expr; }
                 @Override public Expr visitSetExpr(Expr.Set expr) { return expr; }
                 @Override public Expr visitIndexSetExpr(Expr.IndexSet expr) { return expr; }
+                @Override public Expr visitSliceExpr(Expr.Slice expr) { return expr; }
                 @Override public Expr visitLambdaExpr(Expr.Lambda expr) { return expr; }
                 @Override public Expr visitMatchExpr(Expr.Match expr) { return expr; }
                 @Override public Expr visitTypeExpr(Expr.Type expr) { return expr; }

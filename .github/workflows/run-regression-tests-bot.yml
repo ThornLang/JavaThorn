@@ -83,6 +83,7 @@ jobs:
         echo "0" > /tmp/passed_count
         echo "0" > /tmp/failed_count
         echo "" > /tmp/failed_tests
+        echo "" > /tmp/unexpected_results
         
         # Create logs directory
         mkdir -p /tmp/test_logs
@@ -92,21 +93,51 @@ jobs:
           test_name=$(basename "$test_file")
           echo "Running: $test_name"
           
+          # Determine expected behavior based on filename
+          if [[ "$test_name" == *"_expectError"* ]]; then
+            EXPECT_FAILURE=true
+            echo "  (expecting error)"
+          elif [[ "$test_name" == *"_expectNoError"* ]]; then
+            EXPECT_FAILURE=false
+            echo "  (expecting success)"
+          else
+            # Default behavior - expect success
+            EXPECT_FAILURE=false
+          fi
+          
           # Run the test and capture output
           if java com.thorn.Thorn "$test_file" > "/tmp/test_logs/${test_name}.log" 2>&1; then
-            echo "  ✅ PASSED"
-            PASSED=$(cat /tmp/passed_count)
-            PASSED=$((PASSED + 1))
-            echo "$PASSED" > /tmp/passed_count
+            # Test executed successfully
+            if [ "$EXPECT_FAILURE" = true ]; then
+              echo "  ❌ UNEXPECTED PASS (expected to fail)"
+              echo "    Test succeeded but was expected to fail"
+              FAILED=$(cat /tmp/failed_count)
+              FAILED=$((FAILED + 1))
+              echo "$FAILED" > /tmp/failed_count
+              echo "- $test_name (unexpected pass)" >> /tmp/unexpected_results
+            else
+              echo "  ✅ PASSED"
+              PASSED=$(cat /tmp/passed_count)
+              PASSED=$((PASSED + 1))
+              echo "$PASSED" > /tmp/passed_count
+            fi
           else
-            echo "  ❌ FAILED"
-            echo "  First 10 lines of output:"
-            head -10 "/tmp/test_logs/${test_name}.log" | sed 's/^/    /'
-            echo "    ... (use @get_fail_log $test_name to see full output)"
-            FAILED=$(cat /tmp/failed_count)
-            FAILED=$((FAILED + 1))
-            echo "$FAILED" > /tmp/failed_count
-            echo "- $test_name" >> /tmp/failed_tests
+            # Test failed
+            if [ "$EXPECT_FAILURE" = true ]; then
+              echo "  ✅ EXPECTED FAILURE"
+              PASSED=$(cat /tmp/passed_count)
+              PASSED=$((PASSED + 1))
+              echo "$PASSED" > /tmp/passed_count
+            else
+              echo "  ❌ FAILED"
+              echo "  First 10 lines of output:"
+              head -10 "/tmp/test_logs/${test_name}.log" | sed 's/^/    /'
+              echo "    ... (use @get_fail_log $test_name to see full output)"
+              FAILED=$(cat /tmp/failed_count)
+              FAILED=$((FAILED + 1))
+              echo "$FAILED" > /tmp/failed_count
+              echo "- $test_name" >> /tmp/failed_tests
+            fi
           fi
           echo ""
         done
@@ -126,8 +157,14 @@ jobs:
         
         if [ "$FAILED" -gt 0 ]; then
           echo ""
-          echo "Failed tests:"
-          cat /tmp/failed_tests | grep -v '^$'
+          if [ -s /tmp/failed_tests ]; then
+            echo "Failed tests:"
+            cat /tmp/failed_tests | grep -v '^$'
+          fi
+          if [ -s /tmp/unexpected_results ]; then
+            echo "Unexpected results:"
+            cat /tmp/unexpected_results | grep -v '^$'
+          fi
           echo "status=failed" >> $GITHUB_OUTPUT
           echo "failed_count=$FAILED" >> $GITHUB_OUTPUT
           echo "passed_count=$PASSED" >> $GITHUB_OUTPUT

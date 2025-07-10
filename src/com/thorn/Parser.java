@@ -542,9 +542,27 @@ class Parser {
                 Token name = consume(IDENTIFIER, "Expected property name after '.'.");
                 expr = new Expr.Get(expr, name);
             } else if (match(LEFT_BRACKET)) {
-                Expr index = expression();
-                consume(RIGHT_BRACKET, "Expected ']' after index.");
-                expr = new Expr.Index(expr, previous(), index);
+                Token bracket = previous();
+                
+                // Check for slice notation
+                Expr start = null;
+                if (!check(COLON)) {
+                    start = expression();
+                }
+                
+                if (match(COLON)) {
+                    // This is a slice
+                    Expr end = null;
+                    if (!check(RIGHT_BRACKET)) {
+                        end = expression();
+                    }
+                    consume(RIGHT_BRACKET, "Expected ']' after slice.");
+                    expr = new Expr.Slice(expr, bracket, start, end);
+                } else {
+                    // Regular index
+                    consume(RIGHT_BRACKET, "Expected ']' after index.");
+                    expr = new Expr.Index(expr, bracket, start);
+                }
             } else {
                 break;
             }

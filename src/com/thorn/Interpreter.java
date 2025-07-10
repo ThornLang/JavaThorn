@@ -297,6 +297,49 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     @Override
+    public Object visitSliceExpr(Expr.Slice expr) {
+        Object object = evaluate(expr.object);
+        
+        if (!(object instanceof List)) {
+            throw new Thorn.RuntimeError(expr.bracket,
+                    "Only lists support slicing.");
+        }
+        
+        List<?> list = (List<?>)object;
+        int size = list.size();
+        
+        // Evaluate start index (default to 0)
+        int start = 0;
+        if (expr.start != null) {
+            Object startObj = evaluate(expr.start);
+            if (!(startObj instanceof Double)) {
+                throw new Thorn.RuntimeError(expr.bracket,
+                        "Slice start index must be a number.");
+            }
+            start = ((Double)startObj).intValue();
+            if (start < 0) start = size + start;  // Handle negative indices
+            start = Math.max(0, Math.min(start, size));
+        }
+        
+        // Evaluate end index (default to size)
+        int end = size;
+        if (expr.end != null) {
+            Object endObj = evaluate(expr.end);
+            if (!(endObj instanceof Double)) {
+                throw new Thorn.RuntimeError(expr.bracket,
+                        "Slice end index must be a number.");
+            }
+            end = ((Double)endObj).intValue();
+            if (end < 0) end = size + end;  // Handle negative indices
+            end = Math.max(0, Math.min(end, size));
+        }
+        
+        // Create the slice
+        if (start > end) start = end;
+        return new ArrayList<>(list.subList(start, end));
+    }
+
+    @Override
     public Object visitIndexSetExpr(Expr.IndexSet expr) {
         Object object = evaluate(expr.object);
         Object index = evaluate(expr.index);

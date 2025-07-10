@@ -150,6 +150,12 @@ public class DeadCodeEliminationPass extends OptimizationPass {
             @Override
             public Boolean visitIndexSetExpr(Expr.IndexSet expr) { return true; }
             @Override
+            public Boolean visitSliceExpr(Expr.Slice expr) { 
+                return hasSideEffects(expr.object) || 
+                       (expr.start != null && hasSideEffects(expr.start)) ||
+                       (expr.end != null && hasSideEffects(expr.end));
+            }
+            @Override
             public Boolean visitLambdaExpr(Expr.Lambda expr) { return false; }
             @Override
             public Boolean visitMatchExpr(Expr.Match expr) { return true; }
@@ -364,6 +370,17 @@ public class DeadCodeEliminationPass extends OptimizationPass {
                     collectUsageFromExpression(expr.object);
                     collectUsageFromExpression(expr.index);
                     collectUsageFromExpression(expr.value);
+                    return null;
+                }
+                @Override
+                public Void visitSliceExpr(Expr.Slice expr) {
+                    collectUsageFromExpression(expr.object);
+                    if (expr.start != null) {
+                        collectUsageFromExpression(expr.start);
+                    }
+                    if (expr.end != null) {
+                        collectUsageFromExpression(expr.end);
+                    }
                     return null;
                 }
                 @Override

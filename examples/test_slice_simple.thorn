@@ -1,0 +1,9 @@
+// Simple slice notation test
+
+arr = [1, 2, 3, 4, 5];
+print("Array:");
+print(arr);
+
+print("arr[1:3]:");
+result = arr[1:3];
+print(result);

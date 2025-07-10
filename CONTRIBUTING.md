@@ -315,9 +315,7 @@ JavaThorn/
 │       ├── Parser.java      # Syntax analysis
 │       ├── Interpreter.java # Tree-walking interpreter
 │       └── vm/              # Bytecode VM
-├── tests/                    # Test files
-│   ├── features/            # Feature tests
-│   └── regression/          # Regression tests
+├── tests/                    # Test files (organized by issue numbers)
 ├── examples/                 # Example programs
 ├── benchmarks/              # Performance tests
 ├── scripts/                 # Build and utility scripts
@@ -336,33 +334,31 @@ JavaThorn/
 
 ### Writing Tests
 
-1. **Unit tests** for specific features:
+1. **Feature tests** organized by issue:
    ```thorn
-   // tests/features/test_arrays.thorn
-   arr = [1, 2, 3];
-   assert(arr.length == 3);
-   arr.push(4);
-   assert(arr.length == 4);
+   // tests/gh-16/dictionary_methods.thorn
+   dict = {"key": "value"};
+   // Test dictionary functionality
    ```
 
 2. **Integration tests** for complex scenarios:
    ```thorn
-   // tests/integration/test_class_system.thorn
+   // tests/gh-14/class_type_hinting.thorn
    class Person {
        $ init(name: string) {
            name = name;
        }
    }
    
-   p = Person("Alice");
-   assert(p.name == "Alice");
+   p: Person = Person("Alice");
    ```
 
 3. **Error tests** for error handling:
    ```thorn
-   // tests/errors/test_type_errors.thorn
-   // Should fail with type error
-   x: number = "string";
+   // tests/gh-18/error_messages.thorn
+   // Test improved error messages
+   arr = [1, 2, 3];
+   arr.unknownMethod(); // Should give helpful error
    ```
 
 ### Running Tests
@@ -371,12 +367,11 @@ JavaThorn/
 # Run all tests
 ./scripts/test.sh
 
-# Run specific category
-./scripts/test.sh features
-./scripts/test.sh regression
+# Run tests for specific issue
+./scripts/test.sh gh-18
 
-# Run with coverage (future)
-./scripts/test.sh --coverage
+# Run individual test file
+java com.thorn.Thorn tests/gh-18/error_messages.thorn
 ```
 
 ## Documentation

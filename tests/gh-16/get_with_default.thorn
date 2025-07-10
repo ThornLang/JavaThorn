@@ -1,0 +1,46 @@
+// Test: Dictionary .get() with default value
+// Expected: Default values work correctly when key is missing
+
+dict = {
+    "name": "Bob",
+    "score": 95,
+    "active": true
+};
+
+print("Testing get with default value:");
+
+// Test default value when key doesn't exist
+country = dict.get("country", "USA");
+if (country == "USA") {
+    print("✅ Default value returned for missing key");
+} else {
+    print("❌ Default value not working");
+}
+
+// Test that existing key returns actual value, not default
+name = dict.get("name", "Unknown");
+if (name == "Bob") {
+    print("✅ Existing key returns actual value");
+} else {
+    print("❌ Existing key incorrectly returned default");
+}
+
+// Test with null value explicitly set
+dict.set("nullKey", null);
+result = dict.get("nullKey", "default");
+if (result == "default") {
+    print("✅ Default returned when value is null");
+} else {
+    print("❌ Default not returned for null value");
+}
+
+// Test with various default types
+numDefault = dict.get("missing", 42);
+boolDefault = dict.get("nothere", false);
+listDefault = dict.get("nolist", [1, 2, 3]);
+
+if (numDefault == 42 && boolDefault == false) {
+    print("✅ Different default types work");
+} else {
+    print("❌ Default types not working correctly");
+}

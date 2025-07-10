@@ -1,0 +1,62 @@
+// Test: Edge cases for dictionary .get() and .set()
+// Expected: Handle edge cases gracefully
+
+print("Testing edge cases:");
+
+// Empty dictionary
+empty = {};
+result = empty.get("anything", "default");
+if (result == "default") {
+    print("✅ Empty dictionary get with default works");
+} else {
+    print("❌ Empty dictionary get failed");
+}
+
+// Set and get with various key types
+dict = {};
+
+// String keys (already tested, but for completeness)
+dict.set("string", "value");
+
+// Number keys
+dict.set(42, "number key");
+dict.set(3.14, "float key");
+
+// Boolean keys
+dict.set(true, "bool true");
+dict.set(false, "bool false");
+
+// Null key
+dict.set(null, "null key");
+
+// Verify all key types work
+if (dict.get(42) == "number key" && 
+    dict.get(3.14) == "float key" &&
+    dict.get(true) == "bool true" &&
+    dict.get(false) == "bool false" &&
+    dict.get(null) == "null key") {
+    print("✅ Various key types work");
+} else {
+    print("❌ Some key types failed");
+}
+
+// Overwriting existing values
+dict.set("test", "first");
+dict.set("test", "second");
+dict.set("test", "third");
+if (dict.get("test") == "third") {
+    print("✅ Overwriting values works");
+} else {
+    print("❌ Overwriting failed");
+}
+
+// Large dictionary performance (basic check)
+big = {};
+for (i = 0; i < 100; i = i + 1) {
+    big.set("key" + i, i);
+}
+if (big.get("key50") == 50 && big.get("key99") == 99) {
+    print("✅ Large dictionary operations work");
+} else {
+    print("❌ Large dictionary failed");
+}

@@ -285,8 +285,35 @@ public class ThornVM {
                     String propName = (String) constantPool.getConstant(OpCode.getCValue(instruction));
                     if (obj instanceof java.util.Map) {
                         @SuppressWarnings("unchecked")
-                        java.util.Map<String, Object> map = (java.util.Map<String, Object>) obj;
-                        currentFrame.setRegister(a, map.get(propName));
+                        java.util.Map<Object, Object> map = (java.util.Map<Object, Object>) obj;
+                        // Handle dictionary methods
+                        switch (propName) {
+                            case "keys":
+                                currentFrame.setRegister(a, new DictMethod("keys", map));
+                                break;
+                            case "values":
+                                currentFrame.setRegister(a, new DictMethod("values", map));
+                                break;
+                            case "has":
+                                currentFrame.setRegister(a, new DictMethod("has", map));
+                                break;
+                            case "size":
+                                currentFrame.setRegister(a, new DictMethod("size", map));
+                                break;
+                            case "remove":
+                                currentFrame.setRegister(a, new DictMethod("remove", map));
+                                break;
+                            case "get":
+                                currentFrame.setRegister(a, new DictMethod("get", map));
+                                break;
+                            case "set":
+                                currentFrame.setRegister(a, new DictMethod("set", map));
+                                break;
+                            default:
+                                // Regular property access for dictionaries
+                                currentFrame.setRegister(a, map.get(propName));
+                                break;
+                        }
                     } else if (obj instanceof java.util.List) {
                         // Handle array methods
                         java.util.List<Object> list = (java.util.List<Object>) obj;
@@ -333,6 +360,9 @@ public class ThornVM {
                         throw new RuntimeException("Cannot access property '" + propName + "' on primitive type '" + typeName + "'.");
                     } else if (obj == null) {
                         throw new RuntimeException("Cannot access property '" + propName + "' on null.");
+                    } else if (obj instanceof java.util.Map) {
+                        throw new RuntimeException("Dictionary method '" + propName + "' is not defined.\n" +
+                            "Available dictionary methods: keys, values, has, size, remove, get, set");
                     } else {
                         throw new RuntimeException("Property '" + propName + "' is not defined on object.");
                     }
@@ -696,6 +726,12 @@ public class ThornVM {
             return method.call(callerFrame, argCount, functionRegister);
         }
         
+        // Handle dictionary methods
+        if (function instanceof DictMethod) {
+            DictMethod method = (DictMethod) function;
+            return method.call(callerFrame, argCount, functionRegister);
+        }
+        
         throw new RuntimeException("Not a function: " + function);
     }
     
@@ -818,6 +854,76 @@ public class ThornVM {
         @Override
         public String toString() {
             return "<array method: " + methodName + ">";
+        }
+    }
+    
+    // Inner class for dictionary methods
+    private class DictMethod {
+        private final String methodName;
+        private final java.util.Map<Object, Object> map;
+        
+        DictMethod(String methodName, java.util.Map<Object, Object> map) {
+            this.methodName = methodName;
+            this.map = map;
+        }
+        
+        Object call(CallFrame frame, int argCount, int functionRegister) {
+            switch (methodName) {
+                case "keys":
+                    if (argCount != 0) {
+                        throw new RuntimeException("keys() expects 0 arguments");
+                    }
+                    return new java.util.ArrayList<>(map.keySet());
+                    
+                case "values":
+                    if (argCount != 0) {
+                        throw new RuntimeException("values() expects 0 arguments");
+                    }
+                    return new java.util.ArrayList<>(map.values());
+                    
+                case "has":
+                    if (argCount != 1) {
+                        throw new RuntimeException("has() expects 1 argument");
+                    }
+                    Object key = frame.getRegister(functionRegister + 1);
+                    return map.containsKey(key);
+                    
+                case "size":
+                    if (argCount != 0) {
+                        throw new RuntimeException("size() expects 0 arguments");
+                    }
+                    return (double) map.size();
+                    
+                case "remove":
+                    if (argCount != 1) {
+                        throw new RuntimeException("remove() expects 1 argument");
+                    }
+                    Object removeKey = frame.getRegister(functionRegister + 1);
+                    return map.remove(removeKey);
+                    
+                case "get":
+                    if (argCount < 1 || argCount > 2) {
+                        throw new RuntimeException("get() expects 1 or 2 arguments (key, optional default)");
+                    }
+                    Object getKey = frame.getRegister(functionRegister + 1);
+                    Object result = map.get(getKey);
+                    if (result == null && argCount == 2) {
+                        return frame.getRegister(functionRegister + 2); // Return default value
+                    }
+                    return result;
+                    
+                case "set":
+                    if (argCount != 2) {
+                        throw new RuntimeException("set() expects 2 arguments (key, value)");
+                    }
+                    Object setKey = frame.getRegister(functionRegister + 1);
+                    Object setValue = frame.getRegister(functionRegister + 2);
+                    map.put(setKey, setValue);
+                    return map; // Return the map for method chaining
+                    
+                default:
+                    throw new RuntimeException("Unknown dictionary method: " + methodName);
+            }
         }
     }
 }

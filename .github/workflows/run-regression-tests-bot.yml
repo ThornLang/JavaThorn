@@ -8,6 +8,7 @@ permissions:
   contents: read
   issues: write
   pull-requests: write
+  actions: write
 
 jobs:
   run-regression:
@@ -52,7 +53,7 @@ jobs:
     - name: Build project
       run: |
         echo "🔨 Building ThornLang..."
-        cd scripts && chmod +x build.sh && ./build.sh && cd ..
+        chmod +x scripts/build.sh && ./scripts/build.sh
     
     - name: Run regression tests
       id: regression-tests
@@ -78,39 +79,72 @@ jobs:
         echo "📊 Found $TOTAL_TESTS regression tests"
         echo ""
         
-        # Initialize counters
-        PASSED=0
-        FAILED=0
-        FAILED_TESTS=""
+        # Initialize counters and files
+        echo "0" > /tmp/passed_count
+        echo "0" > /tmp/failed_count
+        echo "" > /tmp/failed_tests
+        echo "" > /tmp/unexpected_results
+        
+        # Create logs directory
+        mkdir -p /tmp/test_logs
         
         # Run each test file
-        find "$REGRESSION_DIR" -name "*.thorn" -type f | sort | while read -r test_file; do
+        for test_file in $(find "$REGRESSION_DIR" -name "*.thorn" -type f | sort); do
           test_name=$(basename "$test_file")
           echo "Running: $test_name"
           
-          # Run the test and capture output
-          if java com.thorn.Thorn "$test_file" > /tmp/test_output.txt 2>&1; then
-            echo "  ✅ PASSED"
-            PASSED=$((PASSED + 1))
+          # Determine expected behavior based on filename
+          if [[ "$test_name" == *"_expectError"* ]]; then
+            EXPECT_FAILURE=true
+            echo "  (expecting error)"
+          elif [[ "$test_name" == *"_expectNoError"* ]]; then
+            EXPECT_FAILURE=false
+            echo "  (expecting success)"
           else
-            echo "  ❌ FAILED"
-            echo "  Output:"
-            cat /tmp/test_output.txt | sed 's/^/    /'
-            FAILED=$((FAILED + 1))
-            FAILED_TESTS="$FAILED_TESTS\n- $test_name"
+            # Default behavior - expect success
+            EXPECT_FAILURE=false
+          fi
+          
+          # Run the test and capture output
+          if java com.thorn.Thorn "$test_file" > "/tmp/test_logs/${test_name}.log" 2>&1; then
+            # Test executed successfully
+            if [ "$EXPECT_FAILURE" = true ]; then
+              echo "  ❌ UNEXPECTED PASS (expected to fail)"
+              echo "    Test succeeded but was expected to fail"
+              FAILED=$(cat /tmp/failed_count)
+              FAILED=$((FAILED + 1))
+              echo "$FAILED" > /tmp/failed_count
+              echo "- $test_name (unexpected pass)" >> /tmp/unexpected_results
+            else
+              echo "  ✅ PASSED"
+              PASSED=$(cat /tmp/passed_count)
+              PASSED=$((PASSED + 1))
+              echo "$PASSED" > /tmp/passed_count
+            fi
+          else
+            # Test failed
+            if [ "$EXPECT_FAILURE" = true ]; then
+              echo "  ✅ EXPECTED FAILURE"
+              PASSED=$(cat /tmp/passed_count)
+              PASSED=$((PASSED + 1))
+              echo "$PASSED" > /tmp/passed_count
+            else
+              echo "  ❌ FAILED"
+              echo "  First 10 lines of output:"
+              head -10 "/tmp/test_logs/${test_name}.log" | sed 's/^/    /'
+              FAILED=$(cat /tmp/failed_count)
+              FAILED=$((FAILED + 1))
+              echo "$FAILED" > /tmp/failed_count
+              echo "- $test_name" >> /tmp/failed_tests
+            fi
           fi
           echo ""
-          
-          # Save counters to file since we're in a subshell
-          echo "$PASSED" > /tmp/passed_count
-          echo "$FAILED" > /tmp/failed_count
-          echo -e "$FAILED_TESTS" > /tmp/failed_tests
         done
         
-        # Read counters from files
-        PASSED=$(cat /tmp/passed_count 2>/dev/null || echo 0)
-        FAILED=$(cat /tmp/failed_count 2>/dev/null || echo 0)
-        FAILED_TESTS=$(cat /tmp/failed_tests 2>/dev/null || echo "")
+        # Read final counters from files
+        PASSED=$(cat /tmp/passed_count)
+        FAILED=$(cat /tmp/failed_count)
+        FAILED_TESTS=$(cat /tmp/failed_tests | grep -v '^$' | tr '\n' ' ')
         
         # Summary
         echo "========================================"
@@ -122,7 +156,14 @@ jobs:
         
         if [ "$FAILED" -gt 0 ]; then
           echo ""
-          echo "Failed tests:$FAILED_TESTS"
+          if [ -s /tmp/failed_tests ]; then
+            echo "Failed tests:"
+            cat /tmp/failed_tests | grep -v '^$'
+          fi
+          if [ -s /tmp/unexpected_results ]; then
+            echo "Unexpected results:"
+            cat /tmp/unexpected_results | grep -v '^$'
+          fi
           echo "status=failed" >> $GITHUB_OUTPUT
           echo "failed_count=$FAILED" >> $GITHUB_OUTPUT
           echo "passed_count=$PASSED" >> $GITHUB_OUTPUT
@@ -136,6 +177,14 @@ jobs:
           echo "passed_count=$PASSED" >> $GITHUB_OUTPUT
           echo "total_count=$TOTAL_TESTS" >> $GITHUB_OUTPUT
         fi
+    
+    - name: Upload test logs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: regression-test-logs-${{ github.event.issue.number }}
+        path: /tmp/test_logs/
+        retention-days: 7
     
     - name: Post results comment
       if: always()

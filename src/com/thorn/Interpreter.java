@@ -411,6 +411,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
 
         if (object instanceof List) {
+            @SuppressWarnings("unchecked")
             List<Object> list = (List<Object>) object;
             
             switch (expr.name.lexeme) {
@@ -571,6 +572,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         
         // Handle dictionary/map methods
         if (object instanceof Map) {
+            @SuppressWarnings("unchecked")
             Map<Object, Object> map = (Map<Object, Object>) object;
             
             switch (expr.name.lexeme) {

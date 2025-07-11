@@ -147,4 +147,10 @@ class Environment {
     Map<String, Object> getValues() {
         return values;
     }
+    
+    // Copy this environment's values to another environment (for thread safety)
+    void copyTo(Environment target) {
+        target.values.putAll(this.values);
+        target.immutables.putAll(this.immutables);
+    }
 }

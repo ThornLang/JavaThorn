@@ -1,0 +1,238 @@
+// Comprehensive integration test for concurrent module
+import { 
+    start_thread, run_async, schedule_after, schedule_repeat, 
+    sleep, current_thread_id, available_cores, create_counter,
+    shutdown 
+} from "concurrent";
+
+// Test complex producer-consumer scenario
+$ test_producer_consumer() {
+    buffer = [];
+    counter = create_counter(0);
+    max_items = 20;
+    
+    $ producer() {
+        for (i = 0; i < 10; i = i + 1) {
+            item = "item_" + i;
+            buffer.push(item);
+            counter.increment();
+            sleep(10); // Simulate work
+        }
+    }
+    
+    $ consumer() {
+        consumed = 0;
+        while (consumed < 10) {
+            if (buffer.length > 0) {
+                item = buffer.pop();
+                consumed = consumed + 1;
+                counter.decrement();
+            }
+            sleep(5);
+        }
+        return consumed;
+    }
+    
+    producer_handle = start_thread(producer);
+    consumer_handle = run_async(consumer);
+    
+    producer_handle.join();
+    consumed_count = consumer_handle.get();
+    
+    if (consumed_count != 10) {
+        print("ERROR: Expected to consume 10 items, got " + consumed_count);
+        return false;
+    }
+    
+    return true;
+}
+
+// Test worker pool pattern
+$ test_worker_pool() {
+    work_queue = [];
+    results = [];
+    counter = create_counter(0);
+    
+    // Add work items
+    for (i = 1; i <= 12; i = i + 1) {
+        work_queue.push(i);
+    }
+    
+    $ worker() {
+        while (work_queue.length > 0) {
+            if (work_queue.length > 0) {
+                item = work_queue.pop();
+                if (item != null) {
+                    result = item * item;
+                    results.push(result);
+                    counter.increment();
+                }
+            }
+            sleep(5);
+        }
+    }
+    
+    // Start worker threads
+    num_workers = 4;
+    handles = [];
+    for (i = 0; i < num_workers; i = i + 1) {
+        handle = start_thread(worker);
+        handles.push(handle);
+    }
+    
+    // Wait for all workers
+    for (handle in handles) {
+        handle.join();
+    }
+    
+    processed_count = counter.get_value();
+    if (processed_count != 12) {
+        print("ERROR: Expected 12 items processed, got " + processed_count);
+        return false;
+    }
+    
+    if (results.length != 12) {
+        print("ERROR: Expected 12 results, got " + results.length);
+        return false;
+    }
+    
+    return true;
+}
+
+// Test mixed async and threading
+$ test_mixed_operations() {
+    shared_data = {"value": 0};
+    
+    $ thread_worker() {
+        for (i = 0; i < 5; i = i + 1) {
+            shared_data["value"] = shared_data["value"] + 1;
+            sleep(10);
+        }
+    }
+    
+    $ async_worker() {
+        total = 0;
+        for (i = 0; i < 5; i = i + 1) {
+            total = total + i;
+            sleep(5);
+        }
+        return total;
+    }
+    
+    thread_handle = start_thread(thread_worker);
+    async_handle = run_async(async_worker);
+    
+    // Also schedule some work
+    schedule_counter = create_counter(0);
+    
+    $ scheduled_work() {
+        schedule_counter.increment();
+    }
+    
+    sched_handle = schedule_repeat(scheduled_work, 20, 30);
+    
+    sleep(150); // Let everything run
+    
+    thread_handle.join();
+    async_result = async_handle.get();
+    sched_handle.cancel();
+    
+    if (shared_data["value"] != 5) {
+        print("ERROR: Expected shared_data value to be 5, got " + shared_data["value"]);
+        return false;
+    }
+    
+    if (async_result != 10) { // 0+1+2+3+4 = 10
+        print("ERROR: Expected async result to be 10, got " + async_result);
+        return false;
+    }
+    
+    scheduled_count = schedule_counter.get_value();
+    if (scheduled_count < 3) {
+        print("ERROR: Expected at least 3 scheduled executions, got " + scheduled_count);
+        return false;
+    }
+    
+    return true;
+}
+
+// Test performance under load
+$ test_performance_load() {
+    start_time = clock();
+    num_tasks = 50;
+    counter = create_counter(0);
+    
+    $ light_work() {
+        for (i = 0; i < 100; i = i + 1) {
+            counter.increment();
+        }
+    }
+    
+    handles = [];
+    for (i = 0; i < num_tasks; i = i + 1) {
+        handle = start_thread(light_work);
+        handles.push(handle);
+    }
+    
+    for (handle in handles) {
+        handle.join();
+    }
+    
+    elapsed = clock() - start_time;
+    total_operations = counter.get_value();
+    
+    if (total_operations != num_tasks * 100) {
+        print("ERROR: Expected " + (num_tasks * 100) + " operations, got " + total_operations);
+        return false;
+    }
+    
+    if (elapsed > 5000) { // 5 seconds should be more than enough
+        print("WARNING: Performance test took longer than expected: " + elapsed + "ms");
+    }
+    
+    return true;
+}
+
+// Test graceful shutdown
+$ test_graceful_shutdown() {
+    counter = create_counter(0);
+    
+    $ background_work() {
+        for (i = 0; i < 10; i = i + 1) {
+            counter.increment();
+            sleep(20);
+        }
+    }
+    
+    // Start some background work
+    handle1 = start_thread(background_work);
+    handle2 = start_thread(background_work);
+    
+    sleep(100); // Let some work happen
+    
+    // Shutdown should wait for running tasks
+    start_shutdown = clock();
+    // Note: In a real test, we might call shutdown() here,
+    // but it's a global operation that affects other tests
+    
+    handle1.join();
+    handle2.join();
+    
+    operations = counter.get_value();
+    if (operations < 2) {
+        print("ERROR: Expected some operations to complete, got " + operations);
+        return false;
+    }
+    
+    return true;
+}
+
+// Run all integration tests
+print("Running integration tests...");
+if (!test_producer_consumer()) print("test_producer_consumer FAILED");
+if (!test_worker_pool()) print("test_worker_pool FAILED");
+if (!test_mixed_operations()) print("test_mixed_operations FAILED");
+if (!test_performance_load()) print("test_performance_load FAILED");
+if (!test_graceful_shutdown()) print("test_graceful_shutdown FAILED");
+print("Integration tests completed");
+print("Available CPU cores: " + available_cores());

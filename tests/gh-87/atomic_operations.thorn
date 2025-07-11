@@ -1,0 +1,173 @@
+// Test atomic operations and thread-safe data structures
+import { create_counter, start_thread, available_cores } from "concurrent";
+
+// Test atomic counter basic operations
+$ test_atomic_counter_basic() {
+    counter = create_counter(10);
+    
+    if (counter.getValue() != 10) {
+        print("ERROR: Initial value should be 10, got " + counter.getValue());
+        return false;
+    }
+    
+    result = counter.increment();
+    if (result != 11) {
+        print("ERROR: Increment should return 11, got " + result);
+        return false;
+    }
+    
+    if (counter.getValue() != 11) {
+        print("ERROR: Value should be 11 after increment, got " + counter.getValue());
+        return false;
+    }
+    
+    result = counter.decrement();
+    if (result != 10) {
+        print("ERROR: Decrement should return 10, got " + result);
+        return false;
+    }
+    
+    result = counter.addAndGet(5);
+    if (result != 15) {
+        print("ERROR: add_and_get(5) should return 15, got " + result);
+        return false;
+    }
+    
+    counter.setValue(20);
+    if (counter.getValue() != 20) {
+        print("ERROR: Value should be 20 after set, got " + counter.getValue());
+        return false;
+    }
+    
+    return true;
+}
+
+// Test compare and swap
+$ test_compare_and_swap() {
+    counter = create_counter(5);
+    
+    // Successful CAS
+    result = counter.compareAndSwap(5, 10);
+    if (result != 10) {
+        print("ERROR: CAS should succeed and return 10, got " + result);
+        return false;
+    }
+    
+    if (counter.getValue() != 10) {
+        print("ERROR: Value should be 10 after successful CAS, got " + counter.getValue());
+        return false;
+    }
+    
+    // Failed CAS
+    result = counter.compareAndSwap(5, 15); // Expected 5, but value is 10
+    if (result == 15) {
+        print("ERROR: CAS should fail when expected value doesn't match");
+        return false;
+    }
+    
+    if (counter.getValue() != 10) {
+        print("ERROR: Value should remain 10 after failed CAS, got " + counter.getValue());
+        return false;
+    }
+    
+    return true;
+}
+
+// Test concurrent access to atomic counter
+$ test_concurrent_atomic_counter() {
+    counter = create_counter(0);
+    num_threads = 3;
+    increments_per_thread = 50;
+    
+    $ increment_task() {
+        for (i = 0; i < increments_per_thread; i = i + 1) {
+            counter.increment();
+        }
+    }
+    
+    handles = [];
+    for (i = 0; i < num_threads; i = i + 1) {
+        handle = start_thread(increment_task);
+        handles.push(handle);
+    }
+    
+    // Wait for all threads to complete
+    for (handle in handles) {
+        handle.join();
+    }
+    
+    expected = num_threads * increments_per_thread;
+    actual = counter.getValue();
+    
+    if (actual != expected) {
+        print("ERROR: Expected " + expected + " but got " + actual);
+        return false;
+    }
+    
+    return true;
+}
+
+// Test system information
+$ test_system_info() {
+    cores = available_cores();
+    
+    if (cores < 1) {
+        print("ERROR: Available cores should be at least 1, got " + cores);
+        return false;
+    }
+    
+    if (cores > 128) { // Reasonable upper bound
+        print("ERROR: Available cores seems too high: " + cores);
+        return false;
+    }
+    
+    // Should be a number
+    if (cores != cores + 0) {
+        print("ERROR: Available cores should be a number");
+        return false;
+    }
+    
+    return true;
+}
+
+// Test counter operations under contention
+$ test_counter_contention() {
+    counter = create_counter(1000);
+    num_threads = 4;
+    
+    $ contention_task() {
+        for (i = 0; i < 50; i = i + 1) {
+            counter.increment();
+            counter.decrement();
+            counter.addAndGet(1);
+            counter.addAndGet(-1);
+        }
+    }
+    
+    handles = [];
+    for (i = 0; i < num_threads; i = i + 1) {
+        handle = start_thread(contention_task);
+        handles.push(handle);
+    }
+    
+    for (handle in handles) {
+        handle.join();
+    }
+    
+    // Should end up back at 1000 due to balanced operations
+    if (counter.getValue() != 1000) {
+        print("ERROR: Expected 1000 after balanced operations, got " + counter.getValue());
+        return false;
+    }
+    
+    return true;
+}
+
+// Run all tests
+print("Testing atomic operations...");
+if (!test_atomic_counter_basic()) print("test_atomic_counter_basic FAILED");
+if (!test_compare_and_swap()) print("test_compare_and_swap FAILED");
+if (!test_concurrent_atomic_counter()) print("test_concurrent_atomic_counter FAILED");
+if (!test_system_info()) print("test_system_info FAILED");
+if (!test_counter_contention()) print("test_counter_contention FAILED");
+print("Atomic operations tests completed");

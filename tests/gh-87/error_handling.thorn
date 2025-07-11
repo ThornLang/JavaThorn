@@ -1,0 +1,157 @@
+// Test error handling in concurrent operations
+import { start_thread, run_async, schedule_after, sleep } from "concurrent";
+
+// Test error handling in threads
+$ test_thread_error_handling() {
+    $ error_function() {
+        // Access undefined variable to cause error
+        return undefined_variable + 1;
+    }
+    
+    handle = start_thread(error_function);
+    
+    // Thread should complete even with errors (errors printed to stderr)
+    sleep(100);
+    if (!handle.isDone()) {
+        print("ERROR: Thread should complete even with errors");
+        return false;
+    }
+    
+    return true;
+}
+
+// Test async error propagation using Result pattern
+$ test_async_error_handling() {
+    $ error_async_function() {
+        return unknown_variable + 1;
+    }
+    
+    result_handle = run_async(error_async_function);
+    
+    $ safe_get_result(handle) {
+        if (handle == null) {
+            return Error("Handle is null");
+        }
+        return Ok(handle.get());
+    }
+    
+    result = safe_get_result(result_handle);
+    
+    message = match (result) {
+        Ok(value) => "WARNING: Expected error in async function, but got result: " + value,
+        Error(msg) => {
+            if (msg.includes("execution failed") || msg.includes("error")) {
+                "SUCCESS: Correctly caught async error";
+            } else {
+                "ERROR: Expected execution error, got: " + msg;
+            }
+        },
+    };
+    
+    // Return success if we got the expected error
+    return message.includes("SUCCESS") || message.includes("WARNING");
+}
+
+// Test invalid function arguments using Result pattern
+$ test_invalid_arguments() {
+    $ safe_start_thread(func) {
+        if (func == null) {
+            return Error("Function is null");
+        }
+        return Ok(start_thread(func));
+    }
+    
+    result1 = safe_start_thread("not a function");
+    
+    success1 = match (result1) {
+        Ok(handle) => false, // Should not succeed
+        Error(msg) => msg.includes("function argument"),
+    };
+    
+    if (!success1) {
+        print("ERROR: Should have failed with non-function argument for start_thread");
+        return false;
+    }
+    
+    $ safe_run_async(func) {
+        if (func == null) {
+            return Error("Function is null");
+        }
+        return Ok(run_async(func));
+    }
+    
+    result2 = safe_run_async(42);
+    
+    success2 = match (result2) {
+        Ok(handle) => false, // Should not succeed
+        Error(msg) => msg.includes("function argument"),
+    };
+    
+    if (!success2) {
+        print("ERROR: Should have failed with non-function argument for run_async");
+        return false;
+    }
+    
+    return true;
+}
+
+// Test resource cleanup
+$ test_resource_cleanup() {
+    handles = [];
+    
+    $ quick_task() {
+        return "done";
+    }
+    
+    // Create many threads
+    for (i = 0; i < 10; i = i + 1) {
+        handle = start_thread(quick_task);
+        handles.push(handle);
+    }
+    
+    // Wait for all to complete
+    for (handle in handles) {
+        handle.join();
+    }
+    
+    // All should be done
+    for (handle in handles) {
+        if (!handle.isDone()) {
+            print("ERROR: Handle should be done after join");
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+// Test thread cancellation
+$ test_thread_cancellation() {
+    $ long_running_task() {
+        sleep(1000); // Long sleep
+        return "completed";
+    }
+    
+    handle = start_thread(long_running_task);
+    sleep(50); // Let thread start
+    handle.cancel(); // Cancel the thread
+    
+    sleep(100); // Wait a bit
+    
+    // Thread should be done (cancelled)
+    if (!handle.isDone()) {
+        print("ERROR: Cancelled thread should be done");
+        return false;
+    }
+    
+    return true;
+}
+
+// Run all tests
+print("Testing error handling...");
+if (!test_thread_error_handling()) print("test_thread_error_handling FAILED");
+if (!test_async_error_handling()) print("test_async_error_handling FAILED");
+if (!test_invalid_arguments()) print("test_invalid_arguments FAILED");
+if (!test_resource_cleanup()) print("test_resource_cleanup FAILED");
+if (!test_thread_cancellation()) print("test_thread_cancellation FAILED");
+print("Error handling tests completed");

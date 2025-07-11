@@ -1,5 +1,6 @@
 package com.thorn.stdlib;
 
+import com.thorn.StdlibException;
 import java.io.*;
 import java.util.*;
 import java.util.zip.*;

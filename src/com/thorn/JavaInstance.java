@@ -25,9 +25,9 @@ public class JavaInstance {
             return methodCache.get(methodName);
         }
         
-        // Look for a matching method
+        // Look for a matching method (use original method names)
         for (Method method : clazz.getMethods()) {
-            if (convertMethodName(method.getName()).equals(methodName)) {
+            if (method.getName().equals(methodName)) {
                 JavaFunction function = createBoundMethod(methodName, method);
                 methodCache.put(methodName, function);
                 return function;
@@ -55,7 +55,7 @@ public class JavaInstance {
                 return result;
             } catch (Exception e) {
                 Throwable cause = e.getCause() != null ? e.getCause() : e;
-                if (cause instanceof com.thorn.stdlib.StdlibException) {
+                if (cause instanceof com.thorn.StdlibException) {
                     throw new Thorn.RuntimeError(null, cause.getMessage());
                 }
                 throw new Thorn.RuntimeError(null, "Error calling " + name + ": " + cause.getMessage());
@@ -74,20 +74,6 @@ public class JavaInstance {
                  obj instanceof ThornInstance);
     }
     
-    private String convertMethodName(String javaName) {
-        // Convert Java camelCase to Thorn snake_case
-        StringBuilder result = new StringBuilder();
-        for (int i = 0; i < javaName.length(); i++) {
-            char c = javaName.charAt(i);
-            if (Character.isUpperCase(c) && i > 0) {
-                result.append('_');
-                result.append(Character.toLowerCase(c));
-            } else {
-                result.append(Character.toLowerCase(c));
-            }
-        }
-        return result.toString();
-    }
     
     private Object convertArgument(Object thornValue, Class<?> targetType) {
         if (thornValue == null) {

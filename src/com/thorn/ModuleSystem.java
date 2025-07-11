@@ -193,10 +193,10 @@ public class ModuleSystem {
         javaStdlibModules.put("random", com.thorn.stdlib.Random.class);
         javaStdlibModules.put("crypto", com.thorn.stdlib.Crypto.class);
         javaStdlibModules.put("net", com.thorn.stdlib.Net.class);
+        javaStdlibModules.put("compression", com.thorn.stdlib.Compression.class);
         // Future modules can be added here:
         // javaStdlibModules.put("io", com.thorn.stdlib.Io.class);
         // javaStdlibModules.put("concurrent", com.thorn.stdlib.Concurrent.class);
-        // javaStdlibModules.put("compression", com.thorn.stdlib.Compression.class);
     }
     
     private String extractModuleName(String modulePath) {

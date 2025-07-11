@@ -194,9 +194,9 @@ public class ModuleSystem {
         javaStdlibModules.put("crypto", com.thorn.stdlib.Crypto.class);
         javaStdlibModules.put("net", com.thorn.stdlib.Net.class);
         javaStdlibModules.put("compression", com.thorn.stdlib.Compression.class);
+        javaStdlibModules.put("concurrent", com.thorn.stdlib.Concurrent.class);
         // Future modules can be added here:
         // javaStdlibModules.put("io", com.thorn.stdlib.Io.class);
-        // javaStdlibModules.put("concurrent", com.thorn.stdlib.Concurrent.class);
     }
     
     private String extractModuleName(String modulePath) {
@@ -219,6 +219,9 @@ public class ModuleSystem {
     private Module loadJavaStdlibModule(String moduleName, Class<?> moduleClass) {
         Module module = new Module(moduleName, "stdlib:" + moduleName);
         loadedModules.put(moduleName, module);
+        
+        // Set the main interpreter for concurrent module support
+        ThreadSafeExecutor.setMainInterpreter(interpreter);
         
         try {
             // Load all public static methods as module functions
@@ -308,7 +311,7 @@ public class ModuleSystem {
                 return result;
             } catch (Exception e) {
                 Throwable cause = e.getCause() != null ? e.getCause() : e;
-                if (cause instanceof com.thorn.stdlib.StdlibException) {
+                if (cause instanceof com.thorn.StdlibException) {
                     throw new Thorn.RuntimeError(null, cause.getMessage());
                 }
                 throw new Thorn.RuntimeError(null, "Error calling " + name + ": " + cause.getMessage());
@@ -339,7 +342,7 @@ public class ModuleSystem {
                 throw new Thorn.RuntimeError(null, "No matching constructor for " + name);
             } catch (Exception e) {
                 Throwable cause = e.getCause() != null ? e.getCause() : e;
-                if (cause instanceof com.thorn.stdlib.StdlibException) {
+                if (cause instanceof com.thorn.StdlibException) {
                     throw new Thorn.RuntimeError(null, cause.getMessage());
                 }
                 throw new Thorn.RuntimeError(null, "Error creating " + name + ": " + cause.getMessage());
@@ -389,13 +392,25 @@ public class ModuleSystem {
     
     private boolean shouldWrap(Object obj) {
         // Don't wrap primitives, strings, lists, maps, or Thorn objects
-        return !(obj instanceof String || 
-                 obj instanceof Number || 
-                 obj instanceof Boolean ||
-                 obj instanceof java.util.List ||
-                 obj instanceof java.util.Map ||
-                 obj instanceof ThornCallable ||
-                 obj instanceof ThornInstance ||
-                 obj instanceof JavaInstance);
+        if (obj instanceof String || 
+            obj instanceof Number || 
+            obj instanceof Boolean ||
+            obj instanceof java.util.List ||
+            obj instanceof java.util.Map ||
+            obj instanceof ThornCallable ||
+            obj instanceof ThornInstance ||
+            obj instanceof JavaInstance) {
+            return false;
+        }
+        
+        // Check if the object has public methods that we should expose
+        Class<?> clazz = obj.getClass();
+        for (Method method : clazz.getDeclaredMethods()) {
+            if (Modifier.isPublic(method.getModifiers()) && !Modifier.isStatic(method.getModifiers())) {
+                return true; // Has instance methods, should wrap
+            }
+        }
+        
+        return false;
     }
 }

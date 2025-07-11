@@ -1,4 +1,4 @@
-package com.thorn.stdlib;
+package com.thorn;
 
 import com.thorn.Token;
 

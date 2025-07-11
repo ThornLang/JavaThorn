@@ -1,0 +1,107 @@
+// Test basic threading functionality
+import { start_thread, sleep, current_thread_id } from "concurrent";
+
+// Test basic thread creation and execution
+$ test_basic_thread() {
+    executed = false;
+    
+    $ thread_func() {
+        executed = true;
+    }
+    
+    handle = start_thread(thread_func);
+    sleep(100); // Wait a bit for thread to execute
+    
+    if (!executed) {
+        print("ERROR: Thread function was not executed");
+        return false;
+    }
+    
+    if (!handle.isDone()) {
+        print("ERROR: Thread should be done by now");
+        return false;
+    }
+    
+    return true;
+}
+
+// Test multiple threads
+$ test_multiple_threads() {
+    counters = {"count": 0};
+    
+    $ increment_counter() {
+        counters["count"] = counters["count"] + 1;
+    }
+    
+    handle1 = start_thread(increment_counter);
+    handle2 = start_thread(increment_counter);
+    handle3 = start_thread(increment_counter);
+    
+    // Wait for all threads
+    handle1.join();
+    handle2.join();
+    handle3.join();
+    
+    if (counters["count"] != 3) {
+        print("ERROR: Expected count to be 3, got " + counters["count"]);
+        return false;
+    }
+    
+    return true;
+}
+
+// Test thread IDs are different
+$ test_thread_ids() {
+    main_id = current_thread_id();
+    thread_ids = [];
+    
+    $ collect_thread_id() {
+        thread_ids.push(current_thread_id());
+    }
+    
+    handle1 = start_thread(collect_thread_id);
+    handle2 = start_thread(collect_thread_id);
+    
+    handle1.join();
+    handle2.join();
+    
+    if (thread_ids.includes(main_id)) {
+        print("ERROR: Thread ID should be different from main thread");
+        return false;
+    }
+    
+    if (thread_ids[0] == thread_ids[1]) {
+        print("ERROR: Each thread should have a unique ID");
+        return false;
+    }
+    
+    return true;
+}
+
+// Run all tests
+print("Testing basic threading...");
+passed = 0;
+total = 3;
+
+if (test_basic_thread()) {
+    print("test_basic_thread PASSED");
+    passed = passed + 1;
+} else {
+    print("test_basic_thread FAILED");
+}
+
+if (test_multiple_threads()) {
+    print("test_multiple_threads PASSED");
+    passed = passed + 1;
+} else {
+    print("test_multiple_threads FAILED");
+}
+
+if (test_thread_ids()) {
+    print("test_thread_ids PASSED");
+    passed = passed + 1;
+} else {
+    print("test_thread_ids FAILED");
+}
+
+print("Basic threading tests completed: " + passed + "/" + total + " passed");

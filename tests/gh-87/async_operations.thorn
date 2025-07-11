@@ -1,0 +1,106 @@
+// Test async operations functionality
+import { run_async, sleep, current_thread_id } from "concurrent";
+
+// Test basic async execution
+$ test_basic_async() {
+    $ async_function() {
+        return "Hello from async!";
+    }
+    
+    result_handle = run_async(async_function);
+    
+    // Note: Async operations may complete quickly in some environments
+    // We'll just check that we can get the result
+    
+    sleep(10); // Small delay to ensure async started
+    
+    result = result_handle.get();
+    if (result != "Hello from async!") {
+        print("ERROR: Expected 'Hello from async!', got " + result);
+        return false;
+    }
+    
+    return true;
+}
+
+// Test async with computation
+$ test_async_computation() {
+    $ compute_sum() {
+        sum = 0;
+        for (i = 1; i <= 100; i = i + 1) {
+            sum = sum + i;
+        }
+        return sum;
+    }
+    
+    result_handle = run_async(compute_sum);
+    result = result_handle.get();
+    
+    expected = 5050; // Sum of 1 to 100
+    if (result != expected) {
+        print("ERROR: Expected " + expected + ", got " + result);
+        return false;
+    }
+    
+    return true;
+}
+
+// Test async with timeout using Result
+$ test_async_timeout() {
+    $ slow_function() {
+        sleep(200);
+        return "slow result";
+    }
+    
+    result_handle = run_async(slow_function);
+    
+    $ safe_get_with_timeout(handle, timeout) {
+        // Wrap the potentially failing operation in Result
+        if (handle == null) {
+            return Error("Handle is null");
+        }
+        return Ok(handle.getWithTimeout(timeout));
+    }
+    
+    timeout_result = safe_get_with_timeout(result_handle, 50); // 50ms timeout
+    
+    message = match (timeout_result) {
+        Ok(value) => "ERROR: Should have timed out, got: " + value,
+        Error(msg) => "Got error as expected: " + msg,
+    };
+    
+    result_handle.cancel();
+    
+    // Return success if we got an error (expected timeout)
+    return message.includes("Got error");
+}
+
+// Test multiple async operations
+$ test_multiple_async() {
+    $ get_number(n) {
+        return n * 2;
+    }
+    
+    handle1 = run_async($() => get_number(5));
+    handle2 = run_async($() => get_number(10));
+    handle3 = run_async($() => get_number(15));
+    
+    result1 = handle1.get();
+    result2 = handle2.get();
+    result3 = handle3.get();
+    
+    if (result1 != 10 || result2 != 20 || result3 != 30) {
+        print("ERROR: Unexpected results: " + result1 + ", " + result2 + ", " + result3);
+        return false;
+    }
+    
+    return true;
+}
+
+// Run all tests
+print("Testing async operations...");
+if (!test_basic_async()) print("test_basic_async FAILED");
+if (!test_async_computation()) print("test_async_computation FAILED");
+if (!test_async_timeout()) print("test_async_timeout FAILED");
+if (!test_multiple_async()) print("test_multiple_async FAILED");
+print("Async operations tests completed");

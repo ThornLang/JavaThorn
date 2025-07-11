@@ -1,5 +1,6 @@
 package com.thorn.stdlib;
 
+import com.thorn.StdlibException;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 import java.nio.charset.StandardCharsets;

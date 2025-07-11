@@ -1,0 +1,124 @@
+// Test scheduling functionality
+import { schedule_after, schedule_repeat, sleep } from "concurrent";
+
+// Test delayed execution
+$ test_schedule_after() {
+    executed = false;
+    start_time = clock();
+    
+    $ delayed_task() {
+        executed = true;
+    }
+    
+    handle = schedule_after(delayed_task, 100); // 100ms delay
+    
+    // Should not be executed immediately
+    if (executed) {
+        print("ERROR: Task executed too early");
+        return false;
+    }
+    
+    sleep(150); // Wait longer than delay
+    
+    if (!executed) {
+        print("ERROR: Task was not executed after delay");
+        return false;
+    }
+    
+    elapsed = clock() - start_time;
+    if (elapsed < 100) {
+        print("ERROR: Task executed too early, elapsed: " + elapsed);
+        return false;
+    }
+    
+    return true;
+}
+
+// Test repeated execution
+$ test_schedule_repeat() {
+    counter = {"value": 0};
+    
+    $ increment_task() {
+        counter["value"] = counter["value"] + 1;
+    }
+    
+    handle = schedule_repeat(increment_task, 10, 50); // Start after 10ms, repeat every 50ms
+    
+    sleep(200); // Let it run for a while
+    handle.cancel();
+    sleep(100); // Make sure no more executions after cancel
+    
+    final_count = counter["value"];
+    
+    if (final_count < 2) {
+        print("ERROR: Expected at least 2 executions, got " + final_count);
+        return false;
+    }
+    
+    if (final_count > 5) {
+        print("ERROR: Too many executions (should have been cancelled), got " + final_count);
+        return false;
+    }
+    
+    return true;
+}
+
+// Test cancelling scheduled tasks
+$ test_task_cancellation() {
+    executed = false;
+    
+    $ task_to_cancel() {
+        executed = true;
+    }
+    
+    handle = schedule_after(task_to_cancel, 100);
+    sleep(20); // Wait a bit
+    handle.cancel();
+    sleep(150); // Wait past the original schedule time
+    
+    if (executed) {
+        print("ERROR: Cancelled task should not have executed");
+        return false;
+    }
+    
+    return true;
+}
+
+// Test task handle properties
+$ test_task_handle_properties() {
+    $ simple_task() {
+        return;
+    }
+    
+    handle = schedule_after(simple_task, 50);
+    
+    // Check delay
+    delay = handle.getDelay();
+    if (delay > 50 || delay < 0) {
+        print("ERROR: Unexpected delay: " + delay);
+        return false;
+    }
+    
+    // Should not be done initially
+    if (handle.is_done()) {
+        print("ERROR: Task should not be done initially");
+        return false;
+    }
+    
+    sleep(100); // Wait for completion
+    
+    if (!handle.is_done()) {
+        print("ERROR: Task should be done after waiting");
+        return false;
+    }
+    
+    return true;
+}
+
+// Run all tests
+print("Testing scheduling...");
+if (!test_schedule_after()) print("test_schedule_after FAILED");
+if (!test_schedule_repeat()) print("test_schedule_repeat FAILED");
+if (!test_task_cancellation()) print("test_task_cancellation FAILED");
+if (!test_task_handle_properties()) print("test_task_handle_properties FAILED");
+print("Scheduling tests completed");

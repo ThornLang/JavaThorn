@@ -7,10 +7,6 @@ on:
     types: [completed]
     branches: ["**"]
   
-  # Also run on pushes (when pr-tests and test would run)
-  push:
-    branches: ["main", "**"]
-  
   # Keep the manual trigger via comment
   issue_comment:
     types: [created]
@@ -47,12 +43,6 @@ jobs:
               core.setOutput('trigger-type', 'manual');
               return;
             }
-          } else if (eventName === 'push') {
-            // Push trigger - run directly
-            core.setOutput('should-run', 'true');
-            core.setOutput('checkout-ref', context.sha);
-            core.setOutput('trigger-type', 'push');
-            return;
           } else if (eventName === 'workflow_run') {
             // Workflow completion trigger
             const workflow = context.payload.workflow_run;
@@ -303,24 +293,33 @@ jobs:
             message += '\n\n<sub>Triggered by @' + context.payload.comment.user.login + '</sub>';
           } else if (triggerType === 'workflow-completion') {
             message += '\n\n<sub>Automatically triggered after PR tests and CI passed</sub>';
-          } else if (triggerType === 'push') {
-            message += '\n\n<sub>Automatically triggered by push to branch</sub>';
           }
           
-          // For PRs (manual trigger or workflow completion), post comment
-          if (triggerType === 'manual' || (triggerType === 'workflow-completion' && context.payload.workflow_run.event === 'pull_request')) {
-            const issueNumber = triggerType === 'manual' ? 
-              context.issue.number : 
-              context.payload.workflow_run.pull_requests[0]?.number;
-              
-            if (issueNumber) {
-              github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issueNumber,
-                body: message
-              });
+          // Determine if we should post a comment and get the issue number
+          let issueNumber = null;
+          
+          if (triggerType === 'manual') {
+            // Manual trigger - always post comment
+            issueNumber = context.issue.number;
+          } else if (triggerType === 'workflow-completion') {
+            // Workflow completion - post comment if there are associated PRs
+            const pullRequests = context.payload.workflow_run.pull_requests;
+            if (pullRequests && pullRequests.length > 0) {
+              issueNumber = pullRequests[0].number;
             }
+          }
+          
+          // Post comment if we have an issue number
+          if (issueNumber) {
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              body: message
+            });
+            console.log(`Posted regression test results to PR #${issueNumber}`);
+          } else {
+            console.log('No associated PR found, skipping comment posting');
           }
           
           // Add reaction for manual triggers

@@ -1,0 +1,60 @@
+// Test: Basic generic function and class declarations
+// Expected: Functions and classes with type parameters work correctly
+
+// Test 1: Simple generic function
+$ identity[T](value: T): T {
+    return value;
+}
+
+// Test type parameter behavior
+num_result = identity(42);
+str_result = identity("hello");
+bool_result = identity(true);
+null_result = identity(null);
+
+print("identity(42) = " + num_result);
+print("identity('hello') = " + str_result);
+print("identity(true) = " + bool_result);
+print("identity(null) = " + null_result);
+
+// Test 2: Generic function with multiple type parameters
+$ pair[A, B](first: A, second: B): Array[Any] {
+    return [first, second];
+}
+
+p1 = pair(1, "one");
+p2 = pair("hello", true);
+
+print("pair(1, 'one') = [" + p1[0] + ", " + p1[1] + "]");
+print("pair('hello', true) = [" + p2[0] + ", " + p2[1] + "]");
+
+// Test 3: Generic class
+class Box[T] {
+    $ init(value: T) {
+        this.value = value;
+    }
+    
+    $ get(): T {
+        return this.value;
+    }
+    
+    $ set(newValue: T): void {
+        this.value = newValue;
+    }
+}
+
+// Use generic class
+numBox = Box(42);
+strBox = Box("world");
+
+print("Box(42).get() = " + numBox.get());
+print("Box('world').get() = " + strBox.get());
+
+// Test mutations
+numBox.set(100);
+strBox.set("updated");
+
+print("After set(100): " + numBox.get());
+print("After set('updated'): " + strBox.get());
+
+print("✅ Basic functionality test passed");

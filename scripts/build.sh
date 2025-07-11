@@ -13,10 +13,15 @@ rm -rf com/
 
 # Create output directory
 mkdir -p com/thorn/vm
+mkdir -p com/thorn/stdlib
 
 # Compile core language classes first (required by VM)
 echo "Compiling core language classes..."
 javac -d . src/com/thorn/TokenType.java src/com/thorn/Token.java src/com/thorn/Expr.java src/com/thorn/Stmt.java
+
+# Compile stdlib classes (needed by ModuleSystem)
+echo "Compiling stdlib classes..."
+javac -d . src/com/thorn/stdlib/*.java
 
 # Compile ThornResult standalone (no dependencies)
 echo "Compiling ThornResult..."

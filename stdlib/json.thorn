@@ -1,0 +1,56 @@
+// JSON module for ThornLang
+// Provides JSON parsing and manipulation functionality
+
+// Note: This is a placeholder that will be replaced by native implementation
+// The actual implementation is in com.thorn.stdlib.Json
+
+// Export placeholder functions that will be replaced by native implementations
+export $ parse(json_string) {
+    // Native implementation
+    return null;
+}
+
+export $ stringify(value) {
+    // Native implementation  
+    return null;
+}
+
+export $ stringify_pretty(value, indent) {
+    // Native implementation
+    return null;
+}
+
+export $ parse_file(path) {
+    // Native implementation
+    return null;
+}
+
+export $ write_file(path, value, pretty) {
+    // Native implementation
+    return null;
+}
+
+export $ is_valid(json_string) {
+    // Native implementation
+    return null;
+}
+
+export $ get(obj, path) {
+    // Native implementation
+    return null;
+}
+
+export $ set(obj, path, value) {
+    // Native implementation
+    return null;
+}
+
+export $ has(obj, path) {
+    // Native implementation
+    return null;
+}
+
+export $ merge() {
+    // Native implementation - variadic
+    return null;
+}

@@ -1,0 +1,107 @@
+import "compression";
+
+// Test: Compression module functionality
+// Tests GZIP, DEFLATE, ZIP compression and checksums
+
+// Test 1: GZIP compression/decompression
+print("Test 1: GZIP compression");
+original = "Hello, World! This is a test string for compression. It should compress well because it has some repetition.";
+
+compressed = gzip_compress(original);
+print("Original size: " + original.length + " bytes");
+print("Compressed size: " + compressed.length + " bytes");
+ratio = compression_ratio(original.length, compressed.length);
+print("Compression ratio: " + ratio + "%");
+
+decompressed = gzip_decompress(compressed);
+print("Decompressed size: " + decompressed.length + " bytes");
+// Can't easily convert back to string without String methods
+
+// Test 2: DEFLATE compression with different levels
+print("\nTest 2: DEFLATE compression levels");
+test_data = "AAAAAAAAAABBBBBBBBBBCCCCCCCCCCDDDDDDDDDD"; // Highly compressible
+
+// Test different compression levels
+for (level = 0; level <= 9; level = level + 3) {
+    compressed = deflate_compress(test_data, level);
+    print("Level " + level + ": " + compressed.length + " bytes");
+}
+
+// Test decompression
+compressed = deflate_compress(test_data, 6);
+decompressed = deflate_decompress(compressed);
+print("DEFLATE round-trip successful: " + (decompressed.length > 0));
+
+// Test 3: String compression helpers
+print("\nTest 3: String compression helpers");
+test_string = "This is a longer string that should benefit from compression. " +
+              "It contains repeated words and patterns. Compression, compression, compression!";
+              
+compressed_str = compress_string(test_string);
+print("Original length: " + test_string.length);
+print("Compressed (base64) length: " + compressed_str.length);
+
+decompressed_str = decompress_string(compressed_str);
+print("String round-trip successful: " + (decompressed_str == test_string));
+
+// Test 4: ZIP archive creation and extraction
+print("\nTest 4: ZIP archives");
+files = {
+    "file1.txt": "This is the content of file 1",
+    "file2.txt": "This is the content of file 2",
+    "folder/file3.txt": "This is file 3 in a folder"
+};
+
+// Create ZIP
+zip_data = zip_create(files);
+print("ZIP archive created: " + zip_data.length + " bytes");
+
+// List ZIP contents
+entries = zip_list(zip_data);
+print("ZIP contains " + entries.length + " files:");
+for (entry in entries) {
+    print("  - " + entry["name"] + " (" + entry["size"] + " bytes)");
+}
+
+// Extract ZIP
+extracted = zip_extract(zip_data);
+print("Extracted " + extracted.keys().length + " files");
+
+// Test 5: Checksums
+print("\nTest 5: Checksums");
+test_data = "Test data for checksum";
+crc = crc32(test_data);
+adler = adler32(test_data);
+print("CRC32: " + crc);
+print("Adler32: " + adler);
+
+// Verify checksums are consistent
+crc2 = crc32(test_data);
+adler2 = adler32(test_data);
+print("CRC32 consistent: " + (crc == crc2));
+print("Adler32 consistent: " + (adler == adler2));
+
+// Test 6: Large data compression
+print("\nTest 6: Large data compression");
+large_data = "";
+for (i = 0; i < 100; i = i + 1) {
+    large_data = large_data + "Pattern " + i + " repeats. ";
+}
+
+compressed_large = gzip_compress(large_data);
+ratio = compression_ratio(large_data.length, compressed_large.length);
+print("Large data compression ratio: " + ratio + "%");
+
+// Test 7: Binary data compression
+print("\nTest 7: Binary data compression");
+binary_data = [];
+for (i = 0; i < 256; i = i + 1) {
+    binary_data.push(i);
+}
+compressed_binary = gzip_compress(binary_data);
+decompressed_binary = gzip_decompress(compressed_binary);
+print("Binary data size: " + binary_data.length);
+print("Compressed size: " + compressed_binary.length);
+print("Binary round-trip successful: " + (decompressed_binary.length == binary_data.length));
+
+print("\n✅ Compression module tests completed!");

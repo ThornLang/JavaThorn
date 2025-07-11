@@ -488,6 +488,10 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         if (object instanceof ThornInstance) {
             return ((ThornInstance) object).get(expr.name);
         }
+        
+        if (object instanceof JavaInstance) {
+            return ((JavaInstance) object).get(expr.name);
+        }
 
         // Add built-in properties for native types
         if (object instanceof String && expr.name.lexeme.equals("length")) {

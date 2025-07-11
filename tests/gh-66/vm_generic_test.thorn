@@ -1,0 +1,26 @@
+// Simple generic test for VM
+
+// Generic function
+$ identity[T](value: T): T {
+    return value;
+}
+
+// Test without type arguments
+result1 = identity(42);
+result2 = identity("hello");
+print(result1);
+print(result2);
+
+// Generic function with multiple params
+$ swap[T](a: T, b: T): Array[T] {
+    return [b, a];
+}
+
+result = swap(1, 2);
+print("swap(1, 2) = [" + result[0] + ", " + result[1] + "]");
+
+// Test with explicit type arguments
+typed_result = swap[number](10, 20);
+print("swap[number](10, 20) = [" + typed_result[0] + ", " + typed_result[1] + "]");
+
+print("VM generic test completed!");

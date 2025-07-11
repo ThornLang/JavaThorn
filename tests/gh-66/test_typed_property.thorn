@@ -1,0 +1,26 @@
+// Test typed property assignment in constructor
+
+class TestClass {
+    $ init() {
+        // Try different syntaxes
+        
+        // Option 1: Direct typed assignment
+        this.items: Array[number] = [1, 2, 3];
+        
+        // Option 2: Local variable with type that gets converted
+        name: string = "test";
+        age: number = 25;
+    }
+    
+    $ getItems() {
+        return this.items;
+    }
+    
+    $ getInfo() {
+        return this.name + " is " + this.age;
+    }
+}
+
+tc = TestClass();
+print("Items: " + tc.getItems());
+print("Info: " + tc.getInfo());

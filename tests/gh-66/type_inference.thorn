@@ -1,0 +1,55 @@
+// Test: Type inference for generic functions
+// Expected: Type arguments can be inferred from usage
+
+// Test 1: Infer from arguments
+$ map[T, R](list: Array[T], transform: Function[(T), R]): Array[R] {
+    result: Array[R] = [];
+    for (item in list) {
+        result.push(transform(item));
+    }
+    return result;
+}
+
+// Type inference - T=number, R=number
+doubled = map([1, 2, 3], $(x) => x * 2);
+print("map([1,2,3], x*2) = [" + doubled[0] + ", " + doubled[1] + ", " + doubled[2] + "]");
+
+// Type inference - T=string, R=number  
+lengths = map(["hi", "hello", "world"], $(s) => s.length);
+print("map(['hi','hello','world'], length) = [" + lengths[0] + ", " + lengths[1] + ", " + lengths[2] + "]");
+
+// Test 2: Filter with type inference
+$ filter[T](list: Array[T], predicate: Function[(T), boolean]): Array[T] {
+    result: Array[T] = [];
+    for (item in list) {
+        if (predicate(item)) {
+            result.push(item);
+        }
+    }
+    return result;
+}
+
+// Infer T=number
+evens = filter([1, 2, 3, 4, 5, 6], $(n) => n % 2 == 0);
+print("filter([1-6], even) = [" + evens[0] + ", " + evens[1] + ", " + evens[2] + "]");
+
+// Infer T=string
+longWords = filter(["a", "hello", "hi", "world"], $(s) => s.length > 2);
+print("filter(words, len>2) = [" + longWords[0] + ", " + longWords[1] + "]");
+
+// Test 3: Nested generic calls
+$ compose[A, B, C](f: Function[(B), C], g: Function[(A), B]): Function[(A), C] {
+    return $(x) => f(g(x));
+}
+
+// Create functions
+addOne = $(n) => n + 1;
+double = $(n) => n * 2;
+
+// Compose them - infer A=number, B=number, C=number
+addThenDouble = compose(double, addOne);
+result = addThenDouble(5); // (5+1)*2 = 12
+
+print("compose(double, addOne)(5) = " + result);
+
+print("✅ Type inference test passed");

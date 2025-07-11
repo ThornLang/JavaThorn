@@ -1,0 +1,33 @@
+// Simple test for generic parsing
+
+// Test 1: Basic generic function declaration (parsing only)
+$ identity[T](value: T): T {
+    return value;
+}
+
+// Test 2: Using the function without type arguments for now
+result1 = identity(42);
+result2 = identity("hello");
+
+print("result1: " + result1);
+print("result2: " + result2);
+
+// Test 3: Generic class
+class Container[T] {
+    $ init(item: T) {
+        this.item = item;
+    }
+    
+    $ getValue(): T {
+        return this.item;
+    }
+}
+
+// Test 4: Using the class without type arguments for now
+c1 = Container(100);
+c2 = Container("world");
+
+print("c1.getValue(): " + c1.getValue());
+print("c2.getValue(): " + c2.getValue());
+
+print("Basic generic test completed!");

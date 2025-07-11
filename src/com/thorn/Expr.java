@@ -137,8 +137,13 @@ public abstract class Expr {
 
     public static class Call extends Expr {
         Call(Expr callee, Token paren, List<Expr> arguments) {
+            this(callee, paren, null, arguments);
+        }
+        
+        Call(Expr callee, Token paren, List<Expr> typeArguments, List<Expr> arguments) {
             this.callee = callee;
             this.paren = paren;
+            this.typeArguments = typeArguments;
             this.arguments = arguments;
         }
 
@@ -149,6 +154,7 @@ public abstract class Expr {
 
         public final Expr callee;
         public final Token paren;
+        public final List<Expr> typeArguments;  // null if no type arguments
         public final List<Expr> arguments;
     }
 

@@ -1,0 +1,74 @@
+// Test: Type parameter constraints
+// Expected: Type parameters can be constrained to specific types
+
+// Note: Since we don't have interfaces yet, we'll use classes for constraints
+
+// Base class for comparison
+class Comparable {
+    $ init(value: number) {
+        this.value = value;
+    }
+    
+    $ compareTo(other: Comparable): number {
+        if (this.value < other.value) return -1;
+        if (this.value > other.value) return 1;
+        return 0;
+    }
+}
+
+// Subclass
+class SortableNumber {
+    $ init(n: number) {
+        this.num = n;
+    }
+    
+    $ compareTo(other: SortableNumber): number {
+        if (this.num < other.num) return -1;
+        if (this.num > other.num) return 1;
+        return 0;
+    }
+    
+    $ getValue(): number {
+        return this.num;
+    }
+}
+
+// Generic function with constraint (syntax demonstration)
+// In full implementation, T: Comparable means T must have compareTo method
+$ findMax[T: Comparable](items: Array[T]): T {
+    if (items.length == 0) {
+        return null;
+    }
+    
+    max = items[0];
+    for (i = 1; i < items.length; i = i + 1) {
+        // Would check that T has compareTo method
+        if (items[i].compareTo(max) > 0) {
+            max = items[i];
+        }
+    }
+    return max;
+}
+
+// Test with comparable objects
+c1 = Comparable(10);
+c2 = Comparable(25);  
+c3 = Comparable(15);
+comparables = [c1, c2, c3];
+
+maxComp = findMax(comparables);
+print("Max comparable value: " + maxComp.value);
+
+// Test with sortable numbers
+s1 = SortableNumber(5);
+s2 = SortableNumber(20);
+s3 = SortableNumber(12);
+sortables = [s1, s2, s3];
+
+maxSort = findMax(sortables);
+print("Max sortable value: " + maxSort.getValue());
+
+// Multiple constraints example (syntax)
+// $ process[T: Serializable, Cloneable](obj: T): string { ... }
+
+print("✅ Constraints test passed");

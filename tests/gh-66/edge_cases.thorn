@@ -1,0 +1,71 @@
+// Test: Edge cases for generic types
+// Expected: Handle unusual but valid generic usage
+
+// Test 1: Nested generics
+$ wrapInArray[T](value: T): Array[Array[T]] {
+    return [[value]];
+}
+
+nested = wrapInArray(42);
+print("wrapInArray(42) = [[" + nested[0][0] + "]]");
+
+// Test 2: Generic function returning generic function
+$ makeRepeater[T](): Function[(T, number), Array[T]] {
+    return $(value, count) => {
+        result: Array[T] = [];
+        for (i = 0; i < count; i = i + 1) {
+            result.push(value);
+        }
+        return result;
+    };
+}
+
+repeater = makeRepeater();
+repeated = repeater("hi", 3);
+print("repeater('hi', 3) = [" + repeated[0] + ", " + repeated[1] + ", " + repeated[2] + "]");
+
+// Test 3: Generic class with generic method
+class Container[T] {
+    $ init() {
+        // Type annotation on local variable, gets converted to property
+        items: Array[T] = [];
+    }
+    
+    $ add(item: T): void {
+        this.items.push(item);
+    }
+    
+    // Generic method in generic class
+    $ transform[R](fn: Function[(T), R]): Array[R] {
+        result: Array[R] = [];
+        for (item in this.items) {
+            result.push(fn(item));
+        }
+        return result;
+    }
+}
+
+// Use generic class with generic method
+c = Container();
+c.add(1);
+c.add(2);
+c.add(3);
+
+// Transform numbers to strings
+strings = c.transform($(n) => "num: " + n);
+print("Transform to strings: [" + strings[0] + ", " + strings[1] + ", " + strings[2] + "]");
+
+// Test 4: Empty type parameter lists
+class NoTypeParams {
+    $ init() {
+        this.value = "no generics";
+    }
+}
+
+// Test 5: Single letter vs multi-letter type params
+$ process[T, TResult, TError](input: T): TResult {
+    // Multi-letter type parameters are valid
+    return input;
+}
+
+print("✅ Edge cases test passed");

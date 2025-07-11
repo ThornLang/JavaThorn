@@ -1,0 +1,39 @@
+// Test: Dictionary .set() method chaining
+// Expected: set() returns the dictionary for chaining
+
+dict = {};
+
+print("Testing method chaining:");
+
+// Chain multiple set calls
+result = dict.set("a", 1)
+             .set("b", 2)
+             .set("c", 3)
+             .set("d", 4);
+
+// Verify all values were set
+if (dict.get("a") == 1 && dict.get("b") == 2 && 
+    dict.get("c") == 3 && dict.get("d") == 4) {
+    print("✅ All chained values set correctly");
+} else {
+    print("❌ Method chaining failed to set values");
+}
+
+// Verify set returns the dictionary
+if (result == dict) {
+    print("✅ set() returns the dictionary");
+} else {
+    print("❌ set() does not return the dictionary");
+}
+
+// Test chaining with mixed operations
+dict2 = {"x": 10};
+dict2.set("y", 20).set("z", 30);
+
+// Can still access after chaining
+keys = dict2.keys();
+if (keys.includes("x") && keys.includes("y") && keys.includes("z")) {
+    print("✅ Chaining preserves dictionary functionality");
+} else {
+    print("❌ Dictionary broken after chaining");
+}

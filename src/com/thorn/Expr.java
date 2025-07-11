@@ -17,6 +17,7 @@ public abstract class Expr {
         R visitDictExpr(Dict expr);
         R visitIndexExpr(Index expr);
         R visitIndexSetExpr(IndexSet expr);
+        R visitSliceExpr(Slice expr);
         R visitMatchExpr(Match expr);
         R visitGetExpr(Get expr);
         R visitSetExpr(Set expr);
@@ -136,8 +137,13 @@ public abstract class Expr {
 
     public static class Call extends Expr {
         Call(Expr callee, Token paren, List<Expr> arguments) {
+            this(callee, paren, null, arguments);
+        }
+        
+        Call(Expr callee, Token paren, List<Expr> typeArguments, List<Expr> arguments) {
             this.callee = callee;
             this.paren = paren;
+            this.typeArguments = typeArguments;
             this.arguments = arguments;
         }
 
@@ -148,6 +154,7 @@ public abstract class Expr {
 
         public final Expr callee;
         public final Token paren;
+        public final List<Expr> typeArguments;  // null if no type arguments
         public final List<Expr> arguments;
     }
 
@@ -228,6 +235,25 @@ public abstract class Expr {
         public final Token bracket;
         public final Expr index;
         public final Expr value;
+    }
+
+    public static class Slice extends Expr {
+        Slice(Expr object, Token bracket, Expr start, Expr end) {
+            this.object = object;
+            this.bracket = bracket;
+            this.start = start;
+            this.end = end;
+        }
+
+        @Override
+        <R> R accept(Visitor<R> visitor) {
+            return visitor.visitSliceExpr(this);
+        }
+
+        public final Expr object;
+        public final Token bracket;
+        public final Expr start;  // nullable
+        public final Expr end;    // nullable
     }
 
     public static class Match extends Expr {

@@ -1,0 +1,8 @@
+// Minimal generic test
+
+$ test[T](x: T): T {
+    return x;
+}
+
+v = test(5);
+print(v);

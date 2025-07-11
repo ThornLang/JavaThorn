@@ -1,0 +1,111 @@
+// Test: Dict[K,V] edge cases (Issue #10)
+// Tests edge cases and boundary conditions for Dict type annotations
+
+print("Testing Dict[K,V] edge cases...");
+
+// Test 1: Empty dict with strict types
+emptyScores: Dict[string, number] = {};
+print("✓ Empty Dict[string, number] works");
+
+// Test 2: Single entry dict
+singleEntry: Dict[string, boolean] = {"active": true};
+print("✓ Single entry Dict works: " + singleEntry["active"]);
+
+// Test 3: Dict with null values (should work with Any)
+nullValues: Dict[string, Any] = {"name": "Alice", "middle": null, "last": "Smith"};
+print("✓ Dict with null values works: " + (nullValues["middle"] == null));
+
+// Test 4: Nested dicts - multiple levels
+deepNested: Dict[string, Dict[string, Dict[string, number]]] = {
+    "users": {
+        "alice": {"scores": 95},
+        "bob": {"scores": 87}
+    }
+};
+print("✓ Deep nested Dict works: " + deepNested["users"]["alice"]["scores"]);
+
+// Test 5: Dict with number keys as strings (common pattern)
+httpCodes: Dict[string, string] = {
+    "200": "OK",
+    "404": "Not Found",
+    "500": "Server Error"
+};
+print("✓ String keys representing numbers work: " + httpCodes["404"]);
+
+// Test 6: Dict with boolean values
+flags: Dict[string, boolean] = {
+    "debug": true,
+    "production": false,
+    "testing": true
+};
+print("✓ Dict[string, boolean] works: " + flags["debug"]);
+
+// Test 7: Function that modifies Dict parameter
+$ addScore(scores: Dict[string, number], name: string, score: number): void {
+    scores[name] = score;
+}
+
+testScores: Dict[string, number] = {"alice": 90};
+addScore(testScores, "bob", 85);
+print("✓ Dict parameter modification works: " + testScores["bob"]);
+
+// Test 8: Function returning empty Dict
+$ createEmptyConfig(): Dict[string, Any] {
+    return {};
+}
+
+emptyConfig = createEmptyConfig();
+print("✓ Function returning empty Dict works");
+
+// Test 9: Dict with mixed Any values
+mixedData: Dict[string, Any] = {
+    "count": 42,
+    "name": "test",
+    "active": true,
+    "data": {"nested": "value"}
+};
+print("✓ Dict[string, Any] with mixed types works: " + mixedData["count"]);
+
+// Test 10: Dict method calls on typed dicts
+userAges: Dict[string, number] = {"alice": 25, "bob": 30, "charlie": 35};
+ageKeys = userAges.keys();
+print("✓ Dict.keys() on typed Dict works: " + ageKeys.length + " users");
+
+// Test 11: Dict with special string keys
+specialKeys: Dict[string, string] = {
+    "": "empty key",
+    " ": "space key",
+    "key with spaces": "spaced value",
+    "key-with-dashes": "dashed value"
+};
+print("✓ Dict with special string keys works: " + specialKeys[""]);
+
+// Test 12: Large Dict (performance test)
+largeDictData: Dict[string, number] = {};
+for (i = 0; i < 100; i = i + 1) {
+    key = "item" + i;
+    largeDictData[key] = i * 10;
+}
+print("✓ Large Dict creation works: " + largeDictData["item50"]);
+
+// Test 13: Dict assignment to variables
+originalDict: Dict[string, number] = {"a": 1, "b": 2};
+copiedDict: Dict[string, number] = originalDict;
+print("✓ Dict assignment works: " + (copiedDict["a"] == originalDict["a"]));
+
+// Test 14: Dict in array (mixed data structures)
+arrayOfDicts: Array[Dict[string, number]] = [
+    {"alice": 95},
+    {"bob": 87},
+    {"charlie": 92}
+];
+print("✓ Array of Dicts works: " + arrayOfDicts[0]["alice"]);
+
+// Test 15: Chained property access
+chainedAccess: Dict[string, Dict[string, string]] = {
+    "user": {"name": "Alice", "city": "Seattle"}
+};
+userName = chainedAccess["user"]["name"];
+print("✓ Chained Dict access works: " + userName);
+
+print("All Dict[K,V] edge case tests passed!");

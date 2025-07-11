@@ -1,0 +1,92 @@
+name: Cleanup PR Tests (Bot)
+
+on:
+  pull_request:
+    types: [closed]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Issue number to clean up (e.g., 29)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup-tests:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
+    
+    steps:
+    - name: Generate token
+      id: generate-token
+      uses: tibdex/github-app-token@v2
+      with:
+        app_id: ${{ secrets.THORN_LANG_APP_ID }}
+        private_key: ${{ secrets.THORN_LANG_APP_PRIVATE_KEY }}
+    
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        token: ${{ steps.generate-token.outputs.token }}
+        
+    - name: Extract issue number and move to regression
+      env:
+        GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
+      run: |
+        # Extract issue number from PR title or use manual input
+        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          ISSUE_NUM="${{ github.event.inputs.issue_number }}"
+        else
+          ISSUE_NUM=$(echo "${{ github.event.pull_request.title }}" | grep -o "gh-[0-9]*" | grep -o "[0-9]*" || echo "")
+        fi
+        
+        if [ -n "$ISSUE_NUM" ]; then
+          TEST_DIR="tests/gh-$ISSUE_NUM"
+          REGRESSION_DIR="tests/regression"
+          
+          if [ -d "$TEST_DIR" ]; then
+            echo "📦 Moving tests from $TEST_DIR to regression folder"
+            
+            # Create regression directory if it doesn't exist
+            mkdir -p "$REGRESSION_DIR"
+            
+            # Move all test files to regression folder (preserving directory structure if needed)
+            find "$TEST_DIR" -name "*.thorn" -type f | while read -r test_file; do
+              # Get just the filename without the gh-XX directory
+              filename=$(basename "$test_file")
+              # Add issue number prefix to avoid conflicts
+              new_filename="gh${ISSUE_NUM}_${filename}"
+              
+              echo "  Moving: $test_file -> $REGRESSION_DIR/$new_filename"
+              mv "$test_file" "$REGRESSION_DIR/$new_filename"
+            done
+            
+            # Remove the now-empty issue directory
+            rm -rf "$TEST_DIR"
+            echo "🧹 Removed empty directory: $TEST_DIR"
+            
+            # Configure git with bot identity
+            git config user.name "thorn-lang[bot]"
+            git config user.email "thorn-lang[bot]@users.noreply.github.com"
+            
+            # Commit and push the cleanup
+            git add -A
+            if git diff --staged --quiet; then
+              echo "ℹ️  No changes to commit"
+            else
+              if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+                git commit -m "gh-41: move tests for issue gh-$ISSUE_NUM to regression (manual cleanup)"
+              else
+                git commit -m "gh-41: move tests for merged PR #${{ github.event.pull_request.number }} (gh-$ISSUE_NUM) to regression"
+              fi
+              git push
+              echo "✅ Tests moved to regression folder and committed"
+            fi
+          else
+            echo "ℹ️  No test directory found for Issue #$ISSUE_NUM"
+          fi
+        else
+          echo "ℹ️  Could not extract issue number from PR title: ${{ github.event.pull_request.title }}"
+        fi

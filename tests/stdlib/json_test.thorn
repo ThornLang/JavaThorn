@@ -1,0 +1,90 @@
+import "json";
+
+// Test: JSON module functionality
+// Tests parsing, stringifying, and manipulation of JSON data
+
+// Test 1: Basic parsing
+// Using object literal instead of JSON string until escape sequences are supported
+data = {"name": "Alice", "age": 30, "active": true};
+print("Object name: " + get(data, "name"));
+print("Object age: " + get(data, "age"));
+print("Object active: " + get(data, "active"));
+
+// Test 2: Stringify
+obj = {"hello": "world", "number": 42};
+json_output = stringify(obj);
+print("Stringified: " + json_output);
+
+// Test 3: Pretty print
+pretty = stringify_pretty(obj, 4);
+print("Pretty printed (length): " + pretty.length + " characters");
+
+// Test 4: Arrays
+arr = [1, 2, 3, "four", true, null];
+print("Array length: " + arr.length);
+
+// Test 5: Nested objects
+nested = {
+    "user": {
+        "profile": {
+            "name": "Bob",
+            "email": "bob@example.com"
+        },
+        "settings": {
+            "theme": "dark",
+            "notifications": true
+        }
+    }
+};
+
+// Test dot notation access
+user_name = get(nested, "user.profile.name");
+theme = get(nested, "user.settings.theme");
+print("User name from nested: " + user_name);
+print("Theme from nested: " + theme);
+
+// Test 6: Set values
+set(nested, "user.profile.age", 25);
+set(nested, "user.settings.language", "en");
+print("After set operations:");
+print(stringify_pretty(nested, 2));
+
+// Test 7: Merge objects
+defaults = {"timeout": 30, "retries": 3, "debug": false};
+user_config = {"timeout": 60, "debug": true};
+merged = merge(defaults, user_config);
+print("Merged config:");
+print(stringify(merged));
+
+// Test 8: Validation - skip until escape sequences work
+// For now just test with stringify output
+valid_obj = {"valid": true};
+valid_json = stringify(valid_obj);
+print("Is valid JSON: " + is_valid(valid_json));
+print("Is invalid JSON: " + is_valid("not json at all"));
+
+// Test 9: Has method
+print("Has user.profile.name: " + has(nested, "user.profile.name"));
+print("Has user.profile.phone: " + has(nested, "user.profile.phone"));
+
+// Test 10: Complex data types
+complex = {
+    "string": "hello",
+    "number": 3.14159,
+    "boolean": true,
+    "null_value": null,
+    "array": [1, 2, 3],
+    "object": {"nested": "value"}
+};
+print("Complex object stringified:");
+print(stringify_pretty(complex, 2));
+
+// Test 11: Round-trip test
+round_trip = {"test": "value", "num": 123};
+round_json = stringify(round_trip);
+print("Stringified: " + round_json);
+parsed_back = parse(round_json);
+print("Parsed back test: " + get(parsed_back, "test"));
+print("Parsed back num: " + get(parsed_back, "num"));
+
+print("✅ JSON module tests completed!");

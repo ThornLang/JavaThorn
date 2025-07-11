@@ -87,6 +87,16 @@ filter = $(arr, predicate) => {
 validator: Function[(string), boolean] = $(s) => s.length > 0;
 processor: Function[(number, number), number] = $(a, b) => a + b;
 callback: Function[(), void] = $() => { print("Done!"); };
+
+// Functions with Dict type parameters
+$ getScore(scoreMap: Dict[string, number], name: string): number {
+    return scoreMap[name] ?? 0;
+}
+
+// Functions returning Dict types
+$ createConfig(): Dict[string, Any] {
+    return {"host": "localhost", "port": 8080, "debug": true};
+}
 ```
 
 ### Classes and Objects
@@ -224,6 +234,17 @@ handler: Function[(string, number), boolean] = $(name, age) => age >= 18;
 // Generic types
 list: Array[number] = [1, 2, 3];
 matrix: Array[Array[number]] = [[1, 2], [3, 4]];
+
+// Dictionary types (Dict[K,V])
+scores: Dict[string, number] = {"alice": 95, "bob": 87};
+errors: Dict[string, string] = {"404": "Not Found", "500": "Server Error"};
+config: Dict[string, Any] = {"port": 8080, "debug": true, "name": "MyApp"};
+
+// Nested dictionary types
+users: Dict[string, Dict[string, Any]] = {
+    "alice": {"age": 25, "city": "Seattle"},
+    "bob": {"age": 30, "city": "Portland"}
+};
 ```
 
 ### Operators

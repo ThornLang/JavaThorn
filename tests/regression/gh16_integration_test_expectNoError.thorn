@@ -1,0 +1,69 @@
+// Test: Integration with other dictionary methods
+// Expected: New methods work well with existing dictionary features
+
+print("Testing integration with other features:");
+
+// Create a dictionary with various data
+data = {
+    "users": ["Alice", "Bob", "Charlie"],
+    "scores": {"Alice": 95, "Bob": 87, "Charlie": 92},
+    "active": true,
+    "count": 3
+};
+
+// Test with nested dictionaries
+scores = data.get("scores");
+aliceScore = scores.get("Alice");
+if (aliceScore == 95) {
+    print("✅ Nested dictionary get works");
+} else {
+    print("❌ Nested dictionary get failed");
+}
+
+// Modify nested dictionary
+scores.set("David", 88);
+data.set("count", 4);
+if (scores.get("David") == 88 && data.get("count") == 4) {
+    print("✅ Modifying nested structures works");
+} else {
+    print("❌ Nested modification failed");
+}
+
+// Integration with existing methods
+keys = data.keys();
+if (keys.includes("users") && keys.includes("scores")) {
+    print("✅ keys() method still works");
+} else {
+    print("❌ keys() method broken");
+}
+
+// Test has() with get()
+if (data.has("users") && data.get("users").includes("Alice")) {
+    print("✅ has() and get() work together");
+} else {
+    print("❌ Method integration failed");
+}
+
+// Test remove() and get()
+data.set("temp", "temporary");
+removed = data.remove("temp");
+afterRemove = data.get("temp", "not found");
+if (removed == "temporary" && afterRemove == "not found") {
+    print("✅ remove() and get() work together");
+} else {
+    print("❌ remove/get integration failed");
+}
+
+// Test with functions
+processDict = $(d) => {
+    d.set("processed", true);
+    return d.get("processed");
+};
+
+testDict = {"value": 100};
+result = processDict(testDict);
+if (result == true && testDict.get("processed") == true) {
+    print("✅ Methods work in functions");
+} else {
+    print("❌ Function integration failed");
+}

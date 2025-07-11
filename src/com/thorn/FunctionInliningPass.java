@@ -502,6 +502,14 @@ public class FunctionInliningPass extends OptimizationPass {
                     return new Expr.IndexSet(object, expr.bracket, index, value);
                 }
                 
+                @Override
+                public Expr visitSliceExpr(Expr.Slice expr) {
+                    Expr object = transformExpression(expr.object);
+                    Expr start = expr.start != null ? transformExpression(expr.start) : null;
+                    Expr end = expr.end != null ? transformExpression(expr.end) : null;
+                    return new Expr.Slice(object, expr.bracket, start, end);
+                }
+                
                 // Simple expressions - return as-is
                 @Override
                 public Expr visitLiteralExpr(Expr.Literal expr) {
@@ -850,6 +858,7 @@ public class FunctionInliningPass extends OptimizationPass {
                     @Override public Boolean visitGetExpr(Expr.Get expr) { return false; }
                     @Override public Boolean visitSetExpr(Expr.Set expr) { return false; }
                     @Override public Boolean visitIndexSetExpr(Expr.IndexSet expr) { return false; }
+                    @Override public Boolean visitSliceExpr(Expr.Slice expr) { return false; }
                     @Override public Boolean visitTypeExpr(Expr.Type expr) { return false; }
                     @Override public Boolean visitGenericTypeExpr(Expr.GenericType expr) { return false; }
                     @Override public Boolean visitFunctionTypeExpr(Expr.FunctionType expr) { return false; }
@@ -1015,6 +1024,7 @@ public class FunctionInliningPass extends OptimizationPass {
                     @Override public Void visitGetExpr(Expr.Get expr) { return null; }
                     @Override public Void visitSetExpr(Expr.Set expr) { return null; }
                     @Override public Void visitIndexSetExpr(Expr.IndexSet expr) { return null; }
+                    @Override public Void visitSliceExpr(Expr.Slice expr) { return null; }
                     @Override public Void visitTypeExpr(Expr.Type expr) { return null; }
                     @Override public Void visitGenericTypeExpr(Expr.GenericType expr) { return null; }
                     @Override public Void visitFunctionTypeExpr(Expr.FunctionType expr) { return null; }
@@ -1238,6 +1248,14 @@ public class FunctionInliningPass extends OptimizationPass {
                         Expr index = inlineExpression(expr.index);
                         Expr value = inlineExpression(expr.value);
                         return new Expr.IndexSet(object, expr.bracket, index, value);
+                    }
+                    
+                    @Override
+                    public Expr visitSliceExpr(Expr.Slice expr) {
+                        Expr object = inlineExpression(expr.object);
+                        Expr start = expr.start != null ? inlineExpression(expr.start) : null;
+                        Expr end = expr.end != null ? inlineExpression(expr.end) : null;
+                        return new Expr.Slice(object, expr.bracket, start, end);
                     }
                     
                     // Type expressions - return as-is

@@ -1,0 +1,37 @@
+// Test: Basic dictionary .get() and .set() functionality
+// Expected: Basic operations work correctly
+
+// Create a dictionary
+dict = {
+    "name": "Alice",
+    "age": 25,
+    "city": "Seattle"
+};
+
+// Test basic get
+print("Testing basic get:");
+name = dict.get("name");
+age = dict.get("age");
+if (name == "Alice" && age == 25) {
+    print("✅ Basic get works");
+} else {
+    print("❌ Basic get failed");
+}
+
+// Test basic set
+print("\nTesting basic set:");
+dict.set("country", "Canada");
+dict.set("age", 26);
+if (dict.get("country") == "Canada" && dict.get("age") == 26) {
+    print("✅ Basic set works");
+} else {
+    print("❌ Basic set failed");
+}
+
+// Test that original bracket notation still works
+print("\nTesting bracket notation compatibility:");
+if (dict["name"] == "Alice" && dict["age"] == 26) {
+    print("✅ Bracket notation still works");
+} else {
+    print("❌ Bracket notation broken");
+}

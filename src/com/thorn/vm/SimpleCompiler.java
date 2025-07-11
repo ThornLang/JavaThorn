@@ -325,6 +325,8 @@ public class SimpleCompiler {
             return compileIndexSetExpression((Expr.IndexSet) expr);
         } else if (expr instanceof Expr.Index) {
             return compileIndexExpression((Expr.Index) expr);
+        } else if (expr instanceof Expr.Slice) {
+            return compileSliceExpression((Expr.Slice) expr);
         } else if (expr instanceof Expr.Grouping) {
             Expr.Grouping groupingExpr = (Expr.Grouping) expr;
             return compileExpression(groupingExpr.expression);
@@ -878,6 +880,64 @@ public class SimpleCompiler {
         
         // Return the result register
         return resultReg;
+    }
+    
+    private Integer compileSliceExpression(Expr.Slice sliceExpr) {
+        // Convert slice notation to method call: array.slice(start, end)
+        // This follows the same pattern as compileCall but needs special handling
+        // for optional arguments
+        
+        // Compile the array expression
+        Integer objectReg = compileExpression(sliceExpr.object);
+        
+        // Get the slice method
+        int sliceMethodReg = allocateRegister();
+        int sliceNameIndex = constantPool.addString("slice");
+        emit(Instruction.createWithConstantC(OpCode.GET_PROPERTY, sliceMethodReg, objectReg, sliceNameIndex));
+        freeRegister(objectReg);
+        
+        // Now compile it like a regular method call
+        // The VM expects the function in register A and arguments starting from register 1
+        // So we compile arguments normally and let the VM handle register placement
+        
+        List<Integer> argRegs = new ArrayList<>();
+        
+        if (sliceExpr.start == null && sliceExpr.end == null) {
+            // arr[:] -> arr.slice()
+            // No arguments
+        } else if (sliceExpr.start != null && sliceExpr.end == null) {
+            // arr[start:] -> arr.slice(start)
+            Integer startReg = compileExpression(sliceExpr.start);
+            argRegs.add(startReg);
+        } else if (sliceExpr.start == null && sliceExpr.end != null) {
+            // arr[:end] -> arr.slice(0, end)
+            int zeroReg = allocateRegister();
+            int zeroIndex = constantPool.addConstant(0.0);
+            emit(Instruction.createWithConstantB(OpCode.LOAD_CONSTANT, zeroReg, zeroIndex, 0));
+            argRegs.add(zeroReg);
+            
+            Integer endReg = compileExpression(sliceExpr.end);
+            argRegs.add(endReg);
+        } else {
+            // arr[start:end] -> arr.slice(start, end)
+            Integer startReg = compileExpression(sliceExpr.start);
+            argRegs.add(startReg);
+            
+            Integer endReg = compileExpression(sliceExpr.end);
+            argRegs.add(endReg);
+        }
+        
+        // Emit CALL instruction
+        emit(Instruction.create(OpCode.CALL, sliceMethodReg, argRegs.size(), 0));
+        
+        // Free argument registers
+        for (Integer argReg : argRegs) {
+            freeRegister(argReg);
+        }
+        freeRegister(sliceMethodReg);
+        
+        // The result will be placed in register 0 by the VM
+        return 0;
     }
     
     private Integer compileDictExpression(Expr.Dict dictExpr) {

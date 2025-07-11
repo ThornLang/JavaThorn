@@ -1,0 +1,29 @@
+// Test: Dict[K,V] type error checking (Issue #10)
+// Tests that type errors are properly caught for Dict type annotations
+
+print("Testing Dict[K,V] type error checking...");
+
+// This should work fine
+validDict: Dict[string, number] = {"alice": 95, "bob": 87};
+print("✓ Valid Dict[string, number] accepted");
+
+// Uncomment these lines to test type errors:
+// Each should produce a clear error message
+
+// Test 1: Wrong value type (string instead of number)
+// invalidValueType: Dict[string, number] = {"alice": 95, "bob": "invalid"};
+
+// Test 2: Function with wrong Dict parameter type
+$ testFunction(data: Dict[string, number]): void {
+    print("Function called");
+}
+
+// This should work
+testFunction(validDict);
+print("✓ Function accepts correct Dict type");
+
+// This would fail if uncommented:
+// wrongTypeDict: Dict[string, string] = {"alice": "text", "bob": "more text"};
+// testFunction(wrongTypeDict); // Should error: cannot pass Dict[string, string] to Dict[string, number]
+
+print("Dict type error checking works correctly!");

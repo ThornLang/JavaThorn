@@ -1,3 +1,5 @@
+import "random";
+
 // Test: Random module functionality
 // Tests random number generation, sampling, and distributions
 

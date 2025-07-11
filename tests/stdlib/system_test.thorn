@@ -1,74 +1,76 @@
-// Test: System module functionality
+import "system";
+
+// Test: System module functionality  
 // Tests system information, environment variables, and process operations
 
 // Test 1: System information
-print("Platform: " + system.platform());
-print("Architecture: " + system.architecture());
-print("Hostname: " + system.hostname());
-print("Username: " + system.username());
-print("Home directory: " + system.home_dir());
-print("Temp directory: " + system.temp_dir());
-print("CPU count: " + system.cpu_count());
-print("Total memory: " + (system.total_memory() / 1024 / 1024) + " MB");
-print("Available memory: " + (system.available_memory() / 1024 / 1024) + " MB");
+print("Platform: " + platform());
+print("Architecture: " + architecture());
+print("Hostname: " + hostname());
+print("Username: " + username());
+print("Home directory: " + home_dir());
+print("Temp directory: " + temp_dir());
+print("CPU count: " + cpu_count());
+print("Total memory: " + (total_memory() / 1024 / 1024) + " MB");
+print("Available memory: " + (available_memory() / 1024 / 1024) + " MB");
 
 // Test 2: Environment variables
-path = system.getenv("PATH");
+path = getenv("PATH");
 print("PATH exists: " + (path != null));
 
 // Test setting an environment variable (note: this may not work in all environments)
-// system.setenv("THORN_TEST", "hello");
-// test_var = system.getenv("THORN_TEST");
+// setenv("THORN_TEST", "hello");
+// test_var = getenv("THORN_TEST");
 // print("Test env var: " + test_var);
 
 // Get all environment variables
-env_vars = system.environ();
+env_vars = environ();
 print("Number of env vars: " + env_vars.keys().length);
 
 // Test 3: Process information
-print("Current PID: " + system.pid());
-print("Parent PID: " + system.ppid());
+print("Current PID: " + pid());
+print("Parent PID: " + ppid());
 
 // Test 4: Working directory
-cwd = system.cwd();
-print("Current directory: " + cwd);
+curr_dir = cwd();
+print("Current directory: " + curr_dir);
 
 // Test changing directory (careful with this)
-// home = system.home_dir();
-// system.chdir(home);
-// new_cwd = system.cwd();
+// home = home_dir();
+// chdir(home);
+// new_cwd = cwd();
 // print("Changed to: " + new_cwd);
-// system.chdir(cwd); // Change back
+// chdir(curr_dir); // Change back
 
 // Test 5: Path operations
-home = system.home_dir();
-config_path = system.join_path([home, ".config", "test"]);
+home = home_dir();
+config_path = join_path([home, ".config", "test"]);
 print("Joined path: " + config_path);
 
 // Test realpath (on current directory)
-real = system.realpath(".");
+real = realpath(".");
 print("Real path of '.': " + real);
 
 // Test 6: Time functions
-start_time = system.time();
-start_millis = system.time_millis();
-start_nanos = system.time_nanos();
+start_time = time();
+start_millis = time_millis();
+start_nanos = time_nanos();
 
 // Sleep for 0.1 seconds
-system.sleep(0.1);
+sleep(0.1);
 
-end_time = system.time();
+end_time = time();
 elapsed = end_time - start_time;
 print("Elapsed time: " + elapsed + " seconds");
 
 // Test 7: Process execution
 // Execute a simple command
-if (system.platform() == "windows") {
+if (platform() == "windows") {
     // Windows command
-    proc = system.exec("cmd", ["/c", "echo", "Hello from Windows"]);
+    proc = exec("cmd", ["/c", "echo", "Hello from Windows"]);
 } else {
     // Unix-like command  
-    proc = system.exec("echo", ["Hello from Unix"]);
+    proc = exec("echo", ["Hello from Unix"]);
 }
 
 print("Started process with PID: " + proc.pid());
@@ -77,14 +79,14 @@ print("Process exited with code: " + exit_code);
 
 // Test 8: Environment variable expansion
 test_string = "Home is $HOME and path is ${PATH}";
-expanded = system.expand_env(test_string);
+expanded = expand_env(test_string);
 print("Original: " + test_string);
 print("Expanded: " + expanded);
 
 // Test 9: Check if a process is alive
-proc2 = system.exec("sleep", ["0.1"]);
+proc2 = exec("sleep", ["0.1"]);
 print("Process alive immediately: " + proc2.is_alive());
-system.sleep(0.2);
+sleep(0.2);
 print("Process alive after 0.2s: " + proc2.is_alive());
 
 print("✅ System module tests completed!");

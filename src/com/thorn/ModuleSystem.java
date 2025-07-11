@@ -10,12 +10,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 
 public class ModuleSystem {
     private final Map<String, Module> loadedModules = new HashMap<>();
     private final Set<String> loadingModules = new HashSet<>(); // For circular dependency detection
     private final List<String> searchPaths = new ArrayList<>();
     private final Interpreter interpreter;
+    private final Map<String, Class<?>> javaStdlibModules = new HashMap<>();
     
     public ModuleSystem(Interpreter interpreter) {
         this.interpreter = interpreter;
@@ -30,6 +33,9 @@ public class ModuleSystem {
                 searchPaths.add(path.trim());
             }
         }
+        
+        // Register Java stdlib modules
+        registerJavaStdlibModules();
     }
     
     public static class Module {
@@ -85,10 +91,22 @@ public class ModuleSystem {
         loadingModules.add(modulePath);
         
         try {
+            // First check if it's a Java stdlib module
+            String moduleName = extractModuleName(modulePath);
+            if (javaStdlibModules.containsKey(moduleName)) {
+                return loadJavaStdlibModule(moduleName, javaStdlibModules.get(moduleName));
+            }
+            
             // Find the module file
             Path filePath = resolveModulePath(modulePath);
             if (filePath == null) {
                 throw new Thorn.RuntimeError(null, "Cannot find module: " + modulePath);
+            }
+            
+            // Check for conflict with stdlib module
+            if (javaStdlibModules.containsKey(moduleName)) {
+                throw new Thorn.RuntimeError(null, 
+                    "ImportError: There is a file named after a stdlib module, unable to find correct import.");
             }
             
             // Read and parse the module
@@ -166,5 +184,187 @@ public class ModuleSystem {
         public Module getModule() {
             return module;
         }
+    }
+    
+    private void registerJavaStdlibModules() {
+        // Register all Java stdlib modules
+        javaStdlibModules.put("json", com.thorn.stdlib.Json.class);
+        javaStdlibModules.put("system", com.thorn.stdlib.System.class);
+        javaStdlibModules.put("random", com.thorn.stdlib.Random.class);
+        javaStdlibModules.put("crypto", com.thorn.stdlib.Crypto.class);
+        // Future modules can be added here:
+        // javaStdlibModules.put("io", com.thorn.stdlib.Io.class);
+        // javaStdlibModules.put("net", com.thorn.stdlib.Net.class);
+        // javaStdlibModules.put("concurrent", com.thorn.stdlib.Concurrent.class);
+        // javaStdlibModules.put("compression", com.thorn.stdlib.Compression.class);
+    }
+    
+    private String extractModuleName(String modulePath) {
+        // Remove quotes if present
+        if (modulePath.startsWith("\"") && modulePath.endsWith("\"")) {
+            modulePath = modulePath.substring(1, modulePath.length() - 1);
+        }
+        
+        // Extract base name without path and extension
+        String name = modulePath;
+        if (name.contains("/")) {
+            name = name.substring(name.lastIndexOf("/") + 1);
+        }
+        if (name.endsWith(".thorn")) {
+            name = name.substring(0, name.length() - 6);
+        }
+        return name;
+    }
+    
+    private Module loadJavaStdlibModule(String moduleName, Class<?> moduleClass) {
+        Module module = new Module(moduleName, "stdlib:" + moduleName);
+        loadedModules.put(moduleName, module);
+        
+        try {
+            // Load all public static methods as module functions
+            for (Method method : moduleClass.getDeclaredMethods()) {
+                if (Modifier.isPublic(method.getModifiers()) && Modifier.isStatic(method.getModifiers())) {
+                    String methodName = convertMethodName(method.getName());
+                    JavaFunction function = createJavaFunction(methodName, method);
+                    module.addExport(methodName, function);
+                }
+            }
+            
+            // Load all public static nested classes
+            for (Class<?> nestedClass : moduleClass.getDeclaredClasses()) {
+                if (Modifier.isPublic(nestedClass.getModifiers()) && Modifier.isStatic(nestedClass.getModifiers())) {
+                    String className = nestedClass.getSimpleName();
+                    JavaClass javaClass = createJavaClass(className, nestedClass);
+                    module.addExport(className, javaClass);
+                }
+            }
+            
+            return module;
+        } finally {
+            loadingModules.remove(moduleName);
+        }
+    }
+    
+    private String convertMethodName(String javaName) {
+        // Convert Java camelCase to Thorn snake_case
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < javaName.length(); i++) {
+            char c = javaName.charAt(i);
+            if (Character.isUpperCase(c) && i > 0) {
+                result.append('_');
+                result.append(Character.toLowerCase(c));
+            } else {
+                result.append(Character.toLowerCase(c));
+            }
+        }
+        return result.toString();
+    }
+    
+    private JavaFunction createJavaFunction(String name, Method method) {
+        return new JavaFunction(name, method.getParameterCount(), (interpreter, arguments) -> {
+            try {
+                // Convert arguments to appropriate types
+                Object[] args = new Object[arguments.size()];
+                Class<?>[] paramTypes = method.getParameterTypes();
+                for (int i = 0; i < arguments.size(); i++) {
+                    args[i] = convertArgument(arguments.get(i), paramTypes[i]);
+                }
+                Object result = method.invoke(null, args);
+                // Wrap Java objects that have methods
+                if (result != null && shouldWrap(result)) {
+                    return new JavaInstance(result);
+                }
+                return result;
+            } catch (Exception e) {
+                Throwable cause = e.getCause() != null ? e.getCause() : e;
+                if (cause instanceof com.thorn.stdlib.StdlibException) {
+                    throw new Thorn.RuntimeError(null, cause.getMessage());
+                }
+                throw new Thorn.RuntimeError(null, "Error calling " + name + ": " + cause.getMessage());
+            }
+        });
+    }
+    
+    private JavaClass createJavaClass(String name, Class<?> clazz) {
+        return new JavaClass(name, (interpreter, arguments) -> {
+            try {
+                // For now, we only support classes with public constructors
+                // This is mainly for things like RandomGenerator, Hash, Process etc.
+                if (arguments.isEmpty()) {
+                    return clazz.getDeclaredConstructor().newInstance();
+                } else {
+                    // Try to find a constructor that matches
+                    for (var constructor : clazz.getConstructors()) {
+                        if (constructor.getParameterCount() == arguments.size()) {
+                            Object[] args = new Object[arguments.size()];
+                            Class<?>[] paramTypes = constructor.getParameterTypes();
+                            for (int i = 0; i < arguments.size(); i++) {
+                                args[i] = convertArgument(arguments.get(i), paramTypes[i]);
+                            }
+                            return constructor.newInstance(args);
+                        }
+                    }
+                }
+                throw new Thorn.RuntimeError(null, "No matching constructor for " + name);
+            } catch (Exception e) {
+                Throwable cause = e.getCause() != null ? e.getCause() : e;
+                if (cause instanceof com.thorn.stdlib.StdlibException) {
+                    throw new Thorn.RuntimeError(null, cause.getMessage());
+                }
+                throw new Thorn.RuntimeError(null, "Error creating " + name + ": " + cause.getMessage());
+            }
+        });
+    }
+    
+    private Object convertArgument(Object thornValue, Class<?> targetType) {
+        if (thornValue == null) {
+            return null;
+        }
+        
+        // Handle primitive types and their wrappers
+        if (targetType == String.class) {
+            return thornValue.toString();
+        } else if (targetType == double.class || targetType == Double.class) {
+            if (thornValue instanceof Double) {
+                return thornValue;
+            } else if (thornValue instanceof Number) {
+                return ((Number) thornValue).doubleValue();
+            }
+        } else if (targetType == int.class || targetType == Integer.class) {
+            if (thornValue instanceof Double) {
+                return ((Double) thornValue).intValue();
+            } else if (thornValue instanceof Number) {
+                return ((Number) thornValue).intValue();
+            }
+        } else if (targetType == boolean.class || targetType == Boolean.class) {
+            if (thornValue instanceof Boolean) {
+                return thornValue;
+            }
+        } else if (targetType == List.class) {
+            if (thornValue instanceof List) {
+                return thornValue;
+            }
+        } else if (targetType == Map.class) {
+            if (thornValue instanceof Map) {
+                return thornValue;
+            }
+        } else if (targetType == Object.class) {
+            return thornValue;
+        }
+        
+        // If no conversion found, return as-is and let Java handle it
+        return thornValue;
+    }
+    
+    private boolean shouldWrap(Object obj) {
+        // Don't wrap primitives, strings, lists, maps, or Thorn objects
+        return !(obj instanceof String || 
+                 obj instanceof Number || 
+                 obj instanceof Boolean ||
+                 obj instanceof java.util.List ||
+                 obj instanceof java.util.Map ||
+                 obj instanceof ThornCallable ||
+                 obj instanceof ThornInstance ||
+                 obj instanceof JavaInstance);
     }
 }

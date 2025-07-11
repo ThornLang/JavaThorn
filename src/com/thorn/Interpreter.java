@@ -1000,6 +1000,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         if (value instanceof Double) return "number";
         if (value instanceof Boolean) return "boolean";
         if (value instanceof List) return "array";
+        if (value instanceof java.util.Map) return "dict";
         if (value instanceof ThornInstance) {
             return ((ThornInstance) value).getKlass().name;
         }

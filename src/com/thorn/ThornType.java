@@ -114,6 +114,20 @@ class ThornGenericType extends ThornType {
                 }
                 return true;
                 
+            case "Dict":
+                if (!(value instanceof java.util.Map)) return false;
+                if (typeArgs.size() < 2) return true; // No type constraints
+                
+                java.util.Map<?, ?> map = (java.util.Map<?, ?>) value;
+                ThornType keyType = (ThornType) typeArgs.get(0);
+                ThornType valueType = (ThornType) typeArgs.get(1);
+                
+                for (java.util.Map.Entry<?, ?> entry : map.entrySet()) {
+                    if (!keyType.matches(entry.getKey())) return false;
+                    if (!valueType.matches(entry.getValue())) return false;
+                }
+                return true;
+                
             case "Function":
                 return value instanceof ThornCallable;
                 

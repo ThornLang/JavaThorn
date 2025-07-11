@@ -802,6 +802,16 @@ class Parser {
             return new Expr.GenericType(arrayToken, java.util.Arrays.asList(elementType));
         }
         
+        if (match(DICT_TYPE)) {
+            Token dictToken = previous();
+            consume(LEFT_BRACKET, "Expected '[' after 'Dict'.");
+            Expr keyType = parseType();
+            consume(COMMA, "Expected ',' between key and value types.");
+            Expr valueType = parseType();
+            consume(RIGHT_BRACKET, "Expected ']' after dict value type.");
+            return new Expr.GenericType(dictToken, java.util.Arrays.asList(keyType, valueType));
+        }
+        
         if (match(FUNCTION_TYPE)) {
             Token functionToken = previous();
             consume(LEFT_BRACKET, "Expected '[' after 'Function'.");

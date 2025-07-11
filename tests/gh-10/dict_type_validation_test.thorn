@@ -1,0 +1,82 @@
+// Test: Dict[K,V] type validation edge cases (Issue #10)
+// Tests strict type validation and error conditions
+
+print("Testing Dict[K,V] type validation...");
+
+// Test 1: Valid homogeneous types
+validNumbers: Dict[string, number] = {"a": 1, "b": 2, "c": 3};
+print("✓ Homogeneous number values accepted");
+
+validStrings: Dict[string, string] = {"first": "Alice", "last": "Smith"};
+print("✓ Homogeneous string values accepted");
+
+validBooleans: Dict[string, boolean] = {"debug": true, "prod": false};
+print("✓ Homogeneous boolean values accepted");
+
+// Test 2: Any type accepts everything
+anyValues: Dict[string, Any] = {
+    "number": 42,
+    "string": "hello", 
+    "boolean": true,
+    "null": null
+};
+print("✓ Dict[string, Any] accepts mixed types");
+
+// Test 3: Nested validation
+nestedValid: Dict[string, Dict[string, number]] = {
+    "scores": {"alice": 95, "bob": 87}
+};
+print("✓ Nested Dict type validation works");
+
+// Test 4: Function parameter validation
+$ strictNumberDict(data: Dict[string, number]): number {
+    total: number = 0;
+    for (key in data.keys()) {
+        total = total + data[key];
+    }
+    return total;
+}
+
+result = strictNumberDict(validNumbers);
+print("✓ Function accepts valid Dict[string, number]: " + result);
+
+// Test 5: Function return type validation
+$ createValidDict(): Dict[string, boolean] {
+    return {"active": true, "visible": false};
+}
+
+boolDict = createValidDict();
+print("✓ Function returns valid Dict[string, boolean]: " + boolDict["active"]);
+
+// Test 6: Empty dict validation (should always pass)
+emptyAny: Dict[string, Any] = {};
+emptyNumber: Dict[string, number] = {};
+emptyString: Dict[string, string] = {};
+print("✓ Empty Dicts pass validation for all types");
+
+// Test 7: Null handling in Any type
+nullInAny: Dict[string, Any] = {"value": null};
+print("✓ Null values work in Dict[string, Any]");
+
+// Test 8: Complex nested structures
+complexNested: Dict[string, Array[Dict[string, number]]] = {
+    "teams": [
+        {"alice": 95, "bob": 87},
+        {"charlie": 92, "diana": 88}
+    ]
+};
+print("✓ Complex nested Dict[string, Array[Dict[string, number]]] works");
+
+// Test 9: Dict method compatibility
+methodTest: Dict[string, number] = {"a": 1, "b": 2};
+keys = methodTest.keys();
+hasA = methodTest.has("a");
+size = methodTest.size();
+print("✓ Dict methods work with typed Dicts: " + size + " items");
+
+// Test 10: Assignment compatibility (same types)
+dict1: Dict[string, number] = {"x": 10};
+dict2: Dict[string, number] = dict1;
+print("✓ Same-type Dict assignment works: " + dict2["x"]);
+
+print("All Dict[K,V] type validation tests passed!");

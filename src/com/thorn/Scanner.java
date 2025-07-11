@@ -45,6 +45,7 @@ class Scanner {
         keywords.put("void", VOID_TYPE);
         keywords.put("Array", ARRAY_TYPE);
         keywords.put("Function", FUNCTION_TYPE);
+        keywords.put("Dict", DICT_TYPE);
     }
 
     Scanner(String source) {

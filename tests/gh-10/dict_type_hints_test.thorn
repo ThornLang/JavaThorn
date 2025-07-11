@@ -1,0 +1,45 @@
+// Test: Dict[K,V] type hints (Issue #10)
+// Tests the new Dict type annotation syntax for compile-time type safety
+
+print("Testing Dict[K,V] type hints...");
+
+// Test 1: Basic Dict type annotations
+scores: Dict[string, number] = {"alice": 95, "bob": 87, "charlie": 92};
+print("✓ Dict[string, number] assignment works");
+
+// Test 2: Dict with Any values
+config: Dict[string, Any] = {"port": 8080, "debug": true, "name": "MyApp"};
+print("✓ Dict[string, Any] assignment works");
+
+// Test 3: Function parameter with Dict type
+$ getScore(scoreMap: Dict[string, number], name: string): number {
+    return scoreMap[name] ?? 0;
+}
+
+result = getScore(scores, "alice");
+print("✓ Function parameter Dict[string, number] works: " + result);
+
+// Test 4: Function returning Dict type
+$ createStatusMap(): Dict[string, string] {
+    return {"200": "OK", "404": "Not Found", "500": "Server Error"};
+}
+
+statusMap = createStatusMap();
+print("✓ Function return Dict[string, string] works: " + statusMap["404"]);
+
+// Test 5: Nested Dict types
+userProfiles: Dict[string, Dict[string, Any]] = {
+    "alice": {"age": 25, "city": "Seattle"},
+    "bob": {"age": 30, "city": "Portland"}
+};
+print("✓ Nested Dict types work: " + userProfiles["alice"]["city"]);
+
+// Test 6: Empty Dict with type annotation
+emptyScores: Dict[string, number] = {};
+print("✓ Empty Dict with type annotation works");
+
+// Test 7: Dict methods work with type annotations
+keys = scores.keys();
+print("✓ Dict methods work with typed Dict: " + keys.length + " keys");
+
+print("All Dict[K,V] type hint tests passed!");

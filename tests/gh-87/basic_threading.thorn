@@ -80,7 +80,28 @@ $ test_thread_ids() {
 
 // Run all tests
 print("Testing basic threading...");
-if (!test_basic_thread()) print("test_basic_thread FAILED");
-if (!test_multiple_threads()) print("test_multiple_threads FAILED");
-if (!test_thread_ids()) print("test_thread_ids FAILED");
-print("Basic threading tests completed");
+passed = 0;
+total = 3;
+
+if (test_basic_thread()) {
+    print("test_basic_thread PASSED");
+    passed = passed + 1;
+} else {
+    print("test_basic_thread FAILED");
+}
+
+if (test_multiple_threads()) {
+    print("test_multiple_threads PASSED");
+    passed = passed + 1;
+} else {
+    print("test_multiple_threads FAILED");
+}
+
+if (test_thread_ids()) {
+    print("test_thread_ids PASSED");
+    passed = passed + 1;
+} else {
+    print("test_thread_ids FAILED");
+}
+
+print("Basic threading tests completed: " + passed + "/" + total + " passed");

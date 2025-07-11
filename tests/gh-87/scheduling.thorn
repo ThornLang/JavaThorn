@@ -93,7 +93,7 @@ $ test_task_handle_properties() {
     handle = schedule_after(simple_task, 50);
     
     // Check delay
-    delay = handle.get_delay();
+    delay = handle.getDelay();
     if (delay > 50 || delay < 0) {
         print("ERROR: Unexpected delay: " + delay);
         return false;

@@ -85,7 +85,7 @@ $ test_worker_pool() {
         handle.join();
     }
     
-    processed_count = counter.get_value();
+    processed_count = counter.getValue();
     if (processed_count != 12) {
         print("ERROR: Expected 12 items processed, got " + processed_count);
         return false;
@@ -147,7 +147,7 @@ $ test_mixed_operations() {
         return false;
     }
     
-    scheduled_count = schedule_counter.get_value();
+    scheduled_count = schedule_counter.getValue();
     if (scheduled_count < 3) {
         print("ERROR: Expected at least 3 scheduled executions, got " + scheduled_count);
         return false;
@@ -179,7 +179,7 @@ $ test_performance_load() {
     }
     
     elapsed = clock() - start_time;
-    total_operations = counter.get_value();
+    total_operations = counter.getValue();
     
     if (total_operations != num_tasks * 100) {
         print("ERROR: Expected " + (num_tasks * 100) + " operations, got " + total_operations);
@@ -218,7 +218,7 @@ $ test_graceful_shutdown() {
     handle1.join();
     handle2.join();
     
-    operations = counter.get_value();
+    operations = counter.getValue();
     if (operations < 2) {
         print("ERROR: Expected some operations to complete, got " + operations);
         return false;

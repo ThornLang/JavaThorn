@@ -16,6 +16,7 @@ public abstract class Stmt {
         R visitImportStmt(Import stmt);
         R visitExportStmt(Export stmt);
         R visitExportIdentifierStmt(ExportIdentifier stmt);
+        R visitTypeAliasStmt(TypeAlias stmt);
     }
 
     abstract <R> R accept(Visitor<R> visitor);
@@ -213,5 +214,21 @@ public abstract class Stmt {
         
         public final Token name;
         public final Expr type;  // null if no type annotation
+    }
+    
+    // Type alias statement: % TypeName = Type;
+    public static class TypeAlias extends Stmt {
+        TypeAlias(Token name, Expr type) {
+            this.name = name;
+            this.type = type;
+        }
+
+        @Override
+        <R> R accept(Visitor<R> visitor) {
+            return visitor.visitTypeAliasStmt(this);
+        }
+
+        public final Token name;
+        public final Expr type;
     }
 }

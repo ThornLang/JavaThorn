@@ -174,6 +174,12 @@ public class DeadCodeEliminator {
                 }
                 return null;
             }
+            
+            @Override
+            public Void visitTypeAliasStmt(Stmt.TypeAlias stmt) {
+                // Type aliases are compile-time only, no optimization needed
+                return null;
+            }
         });
     }
     
@@ -396,6 +402,12 @@ public class DeadCodeEliminator {
             
             @Override
             public Void visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
+                return null;
+            }
+            
+            @Override
+            public Void visitTypeAliasStmt(Stmt.TypeAlias stmt) {
+                // Type aliases are compile-time only, no optimization needed
                 return null;
             }
         });
@@ -702,6 +714,7 @@ public class DeadCodeEliminator {
             @Override public Void visitImportStmt(Stmt.Import stmt) { return null; }
             @Override public Void visitExportStmt(Stmt.Export stmt) { return null; }
             @Override public Void visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) { return null; }
+            @Override public Void visitTypeAliasStmt(Stmt.TypeAlias stmt) { return null; }
         });
     }
     

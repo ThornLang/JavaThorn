@@ -150,6 +150,8 @@ public class SimpleCompiler {
             compileExportStatement((Stmt.Export) stmt);
         } else if (stmt instanceof Stmt.Import) {
             compileImportStatement((Stmt.Import) stmt);
+        } else if (stmt instanceof Stmt.TypeAlias) {
+            compileTypeAliasStatement((Stmt.TypeAlias) stmt);
         } else {
             System.err.println("Warning: Unsupported statement type: " + stmt.getClass().getSimpleName());
         }
@@ -941,6 +943,13 @@ public class SimpleCompiler {
         // TODO: Implement proper module import system
         // The VM would need to load and execute the module file
         System.err.println("Warning: Import statements not yet fully implemented in VM");
+    }
+    
+    private void compileTypeAliasStatement(Stmt.TypeAlias typeAliasStmt) {
+        // Type aliases are compile-time only - they don't generate runtime code
+        // The type system would handle the aliasing at the type-checking phase
+        // For now, this is a no-op since we don't have static type checking
+        // In the future, this would update a type alias table in the compiler
     }
     
     private Integer compileThisExpression(Expr.This thisExpr) {

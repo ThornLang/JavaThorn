@@ -202,6 +202,11 @@ public class TailCallOptimizationPass extends OptimizationPass {
             public Stmt visitExportStmt(Stmt.Export stmt) { return stmt; }
             @Override
             public Stmt visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) { return stmt; }
+            @Override
+            public Stmt visitTypeAliasStmt(Stmt.TypeAlias stmt) { 
+                // Type aliases are compile-time only, no optimization needed
+                return stmt; 
+            }
         });
     }
     

@@ -1,0 +1,36 @@
+// Test type aliases
+
+// Basic type alias
+% UserId = number;
+% Username = string;
+
+// Composite type aliases
+% UserInfo = Dict[string, Any];
+% UserList = Array[UserInfo];
+
+// Function type alias
+% Validator = Function[(string), boolean];
+
+// Test usage
+userId: UserId = 12345;
+username: Username = "alice";
+
+print("User ID: " + userId);
+print("Username: " + username);
+
+// Test with composite types
+userInfo: UserInfo = {
+    "id": userId,
+    "name": username,
+    "active": true
+};
+
+users: UserList = [userInfo];
+print("Users count: " + users.length);
+
+// Test with function type
+isValid: Validator = $(s) => s.length > 0;
+print("Is 'test' valid? " + isValid("test"));
+print("Is '' valid? " + isValid(""));
+
+print("✅ Type aliases work!");

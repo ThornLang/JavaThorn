@@ -362,9 +362,109 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             return ((ThornInstance) object).get(expr.name);
         }
 
-        // Add built-in properties for native types
-        if (object instanceof String && expr.name.lexeme.equals("length")) {
-            return (double) ((String) object).length();
+        // Add built-in properties and methods for native types
+        if (object instanceof String) {
+            String str = (String) object;
+            String methodName = expr.name.lexeme;
+            
+            switch (methodName) {
+                case "length":
+                    return (double) str.length();
+                    
+                case "includes":
+                    return new ThornCallable() {
+                        @Override
+                        public int arity() { return 1; }
+                        
+                        @Override
+                        public Object call(Interpreter interpreter, List<Object> arguments) {
+                            Object arg = arguments.get(0);
+                            if (!(arg instanceof String)) {
+                                throw new Thorn.RuntimeError(expr.name, "includes() expects a string argument");
+                            }
+                            return str.contains((String) arg);
+                        }
+                        
+                        @Override
+                        public String toString() { return "<native string method>"; }
+                    };
+                    
+                case "startsWith":
+                    return new ThornCallable() {
+                        @Override
+                        public int arity() { return 1; }
+                        
+                        @Override
+                        public Object call(Interpreter interpreter, List<Object> arguments) {
+                            Object arg = arguments.get(0);
+                            if (!(arg instanceof String)) {
+                                throw new Thorn.RuntimeError(expr.name, "startsWith() expects a string argument");
+                            }
+                            return str.startsWith((String) arg);
+                        }
+                        
+                        @Override
+                        public String toString() { return "<native string method>"; }
+                    };
+                    
+                case "endsWith":
+                    return new ThornCallable() {
+                        @Override
+                        public int arity() { return 1; }
+                        
+                        @Override
+                        public Object call(Interpreter interpreter, List<Object> arguments) {
+                            Object arg = arguments.get(0);
+                            if (!(arg instanceof String)) {
+                                throw new Thorn.RuntimeError(expr.name, "endsWith() expects a string argument");
+                            }
+                            return str.endsWith((String) arg);
+                        }
+                        
+                        @Override
+                        public String toString() { return "<native string method>"; }
+                    };
+                    
+                case "slice":
+                    return new ThornCallable() {
+                        @Override
+                        public int arity() { return -1; } // Variable arity
+                        
+                        @Override
+                        public Object call(Interpreter interpreter, List<Object> arguments) {
+                            if (arguments.isEmpty() || arguments.size() > 2) {
+                                throw new Thorn.RuntimeError(expr.name, "slice() expects 1 or 2 arguments");
+                            }
+                            
+                            if (!(arguments.get(0) instanceof Double)) {
+                                throw new Thorn.RuntimeError(expr.name, "slice() start index must be a number");
+                            }
+                            
+                            int start = ((Double) arguments.get(0)).intValue();
+                            int end = str.length();
+                            
+                            if (arguments.size() == 2) {
+                                if (!(arguments.get(1) instanceof Double)) {
+                                    throw new Thorn.RuntimeError(expr.name, "slice() end index must be a number");
+                                }
+                                end = ((Double) arguments.get(1)).intValue();
+                            }
+                            
+                            // Handle negative indices
+                            if (start < 0) start = Math.max(0, str.length() + start);
+                            if (end < 0) end = Math.max(0, str.length() + end);
+                            
+                            // Clamp to valid range
+                            start = Math.max(0, Math.min(start, str.length()));
+                            end = Math.max(start, Math.min(end, str.length()));
+                            
+                            return str.substring(start, end);
+                        }
+                        
+                        @Override
+                        public String toString() { return "<native string method>"; }
+                    };
+            }
         }
 
         if (object instanceof List) {
@@ -656,8 +756,8 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             errorMessage = "Dictionary method '" + expr.name.lexeme + "' is not defined.\n" +
                           "Available dictionary methods: keys, values, has, size, remove, get, set";
         } else if (object instanceof String) {
-            errorMessage = "String property '" + expr.name.lexeme + "' is not defined.\n" +
-                          "Available string properties: length";
+            errorMessage = "String method '" + expr.name.lexeme + "' is not defined.\n" +
+                          "Available string methods: length, includes, startsWith, endsWith, slice";
         } else if (object instanceof Double || object instanceof Boolean) {
             errorMessage = "Cannot access property '" + expr.name.lexeme + "' on primitive type '" + typeName + "'.";
         } else if (object == null) {
@@ -691,11 +791,33 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     // Type expression visitors - for now, just return type information
     @Override
     public Object visitTypeExpr(Expr.Type expr) {
+        // First check if this is a type alias
+        try {
+            Object aliasedType = lookUpVariable(expr.name, expr);
+            if (aliasedType instanceof ThornType) {
+                return aliasedType;
+            }
+        } catch (Thorn.RuntimeError e) {
+            // Not a type alias, continue with built-in type
+        }
+        
         return ThornTypeFactory.createType(expr.name.lexeme);
     }
     
     @Override
     public Object visitGenericTypeExpr(Expr.GenericType expr) {
+        // First check if this is a type alias for a generic type
+        try {
+            Object aliasedType = lookUpVariable(expr.name, expr);
+            if (aliasedType instanceof ThornType) {
+                // If it's already a complete type, return it
+                // This handles cases where the type alias includes type parameters
+                return aliasedType;
+            }
+        } catch (Thorn.RuntimeError e) {
+            // Not a type alias, continue with built-in type
+        }
+        
         List<Object> typeArgs = new ArrayList<>();
         for (Expr arg : expr.typeArgs) {
             typeArgs.add(evaluate(arg));
@@ -983,6 +1105,18 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             // Export it
             moduleEnv.export(stmt.name.lexeme, value);
         }
+        
+        return null;
+    }
+    
+    @Override
+    public Void visitTypeAliasStmt(Stmt.TypeAlias stmt) {
+        // Evaluate the type expression to get the actual type
+        Object type = evaluate(stmt.type);
+        
+        // Store the type alias in the environment as a special type value
+        // We'll mark it as immutable since type aliases shouldn't be reassignable
+        environment.define(stmt.name.lexeme, type, true);
         
         return null;
     }

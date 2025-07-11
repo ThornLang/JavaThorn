@@ -98,6 +98,8 @@ public class TailCallAnalyzer {
             public Boolean visitExportStmt(Stmt.Export stmt) { return false; }
             @Override
             public Boolean visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) { return false; }
+            @Override
+            public Boolean visitTypeAliasStmt(Stmt.TypeAlias stmt) { return false; }
         });
     }
     
@@ -191,6 +193,8 @@ public class TailCallAnalyzer {
             public Void visitExportStmt(Stmt.Export stmt) { return null; }
             @Override
             public Void visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) { return null; }
+            @Override
+            public Void visitTypeAliasStmt(Stmt.TypeAlias stmt) { return null; }
         });
     }
 }

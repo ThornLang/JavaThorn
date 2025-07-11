@@ -45,6 +45,12 @@ class Parser {
             if (match(DOLLAR)) return function("function");
             if (match(AT)) return varDeclaration(true);
             
+            // Check for type alias: % IDENTIFIER = 
+            if (check(PERCENT) && checkAhead(IDENTIFIER)) {
+                advance(); // consume %
+                return typeAliasDeclaration();
+            }
+            
             // Check for typed variable declaration: identifier : type = value
             if (check(IDENTIFIER) && checkAhead(COLON)) {
                 return varDeclaration(false);
@@ -154,6 +160,14 @@ class Parser {
         }
         
         return new Stmt.Var(name, type, initializer, isImmutable);
+    }
+    
+    private Stmt typeAliasDeclaration() {
+        Token name = consume(IDENTIFIER, "Expected type alias name.");
+        consume(EQUAL, "Expected '=' after type alias name.");
+        Expr type = parseType();
+        consume(SEMICOLON, "Expected ';' after type alias declaration.");
+        return new Stmt.TypeAlias(name, type);
     }
 
     private Stmt statement() {

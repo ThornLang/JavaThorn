@@ -1,0 +1,596 @@
+// Test framework module for ThornLang
+// Provides comprehensive testing capabilities including assertions, test runners, and mocking
+
+// ==================== Type Definitions ====================
+// Define structured types for better type safety using type aliases
+
+% TestCase = Dict[string, Any];
+% TestSuite = Dict[string, Any];
+% TestResult = Dict[string, Any];
+
+// ==================== Test Context ====================
+// Test suite storage and current context  
+_test_suites: Dict[string, TestSuite] = {};
+_current_suite: TestSuite = null;
+_current_test: TestCase = null;
+_test_results: Array[TestResult] = [];
+_exit_on_failure: boolean = false;
+_verbose_mode: boolean = false;
+
+// ==================== Core Assertions ====================
+
+$ assert_true(condition: boolean, message: string): void {
+    if (!condition) {
+        _fail("Expected true but was false" + (message != null ? ": " + message : ""));
+    }
+}
+
+$ assert_true(condition: boolean): void {
+    assert_true(condition, null);
+}
+
+$ assert_false(condition: boolean, message: string): void {
+    if (condition) {
+        _fail("Expected false but was true" + (message != null ? ": " + message : ""));
+    }
+}
+
+$ assert_false(condition: boolean): void {
+    assert_false(condition, null);
+}
+
+$ assert_equals[T](expected: T, actual: T, message: string): void {
+    if (expected != actual) {
+        _fail("Expected " + _format_value(expected) + " but was " + _format_value(actual) + 
+             (message != null ? ": " + message : ""));
+    }
+}
+
+$ assert_equals[T](expected: T, actual: T): void {
+    assert_equals(expected, actual, null);
+}
+
+$ assert_not_equals[T](expected: T, actual: T, message: string): void {
+    if (expected == actual) {
+        _fail("Expected values to be different but both were " + _format_value(expected) + 
+             (message != null ? ": " + message : ""));
+    }
+}
+
+$ assert_not_equals[T](expected: T, actual: T): void {
+    assert_not_equals(expected, actual, null);
+}
+
+$ assert_null[T](value: T, message: string): void {
+    if (value != null) {
+        _fail("Expected null but was " + _format_value(value) + 
+             (message != null ? ": " + message : ""));
+    }
+}
+
+$ assert_null[T](value: T): void {
+    assert_null(value, null);
+}
+
+$ assert_not_null[T](value: T, message: string): void {
+    if (value == null) {
+        _fail("Expected non-null value" + (message != null ? ": " + message : ""));
+    }
+}
+
+$ assert_not_null[T](value: T): void {
+    assert_not_null(value, null);
+}
+
+// ==================== Numeric Assertions ====================
+
+$ assert_greater_than(actual: number, expected: number, message: string): void {
+    if (actual <= expected) {
+        _fail("Expected " + actual + " > " + expected + 
+             (message != null ? ": " + message : ""));
+    }
+}
+
+$ assert_greater_than(actual: number, expected: number): void {
+    assert_greater_than(actual, expected, null);
+}
+
+$ assert_less_than(actual: number, expected: number, message: string): void {
+    if (actual >= expected) {
+        _fail("Expected " + actual + " < " + expected + 
+             (message != null ? ": " + message : ""));
+    }
+}
+
+$ assert_less_than(actual: number, expected: number): void {
+    assert_less_than(actual, expected, null);
+}
+
+$ assert_greater_equal(actual: number, expected: number, message: string): void {
+    if (actual < expected) {
+        _fail("Expected " + actual + " >= " + expected + 
+             (message != null ? ": " + message : ""));
+    }
+}
+
+$ assert_greater_equal(actual: number, expected: number): void {
+    assert_greater_equal(actual, expected, null);
+}
+
+$ assert_less_equal(actual: number, expected: number, message: string): void {
+    if (actual > expected) {
+        _fail("Expected " + actual + " <= " + expected + 
+             (message != null ? ": " + message : ""));
+    }
+}
+
+$ assert_less_equal(actual: number, expected: number): void {
+    assert_less_equal(actual, expected, null);
+}
+
+$ assert_almost_equal(expected: number, actual: number, delta: number, message: string): void {
+    diff: number = expected - actual;
+    if (diff < 0) {
+        diff = -diff;
+    }
+    if (diff > delta) {
+        _fail("Expected " + expected + " ± " + delta + " but was " + actual + 
+             (message != null ? ": " + message : ""));
+    }
+}
+
+$ assert_almost_equal(expected: number, actual: number, delta: number): void {
+    assert_almost_equal(expected, actual, delta, null);
+}
+
+// ==================== String Assertions ====================
+
+$ assert_contains(haystack: string, needle: string, message: string): void {
+    if (haystack == null || needle == null) {
+        _fail("Cannot check contains with null values" + 
+             (message != null ? ": " + message : ""));
+    }
+    
+    if (!haystack.includes(needle)) {
+        _fail("Expected \"" + haystack + "\" to contain \"" + needle + "\"" + 
+             (message != null ? ": " + message : ""));
+    }
+}
+
+$ assert_contains(haystack: string, needle: string): void {
+    assert_contains(haystack, needle, null);
+}
+
+$ assert_starts_with(string: string, prefix: string, message: string): void {
+    if (string == null || prefix == null) {
+        _fail("Cannot check starts_with with null values" + 
+             (message != null ? ": " + message : ""));
+    }
+    
+    if (!string.startsWith(prefix)) {
+        _fail("Expected \"" + string + "\" to start with \"" + prefix + "\"" + 
+             (message != null ? ": " + message : ""));
+    }
+}
+
+$ assert_starts_with(string: string, prefix: string): void {
+    assert_starts_with(string, prefix, null);
+}
+
+$ assert_ends_with(string: string, suffix: string, message: string): void {
+    if (string == null || suffix == null) {
+        _fail("Cannot check ends_with with null values" + 
+             (message != null ? ": " + message : ""));
+    }
+    
+    if (!string.endsWith(suffix)) {
+        _fail("Expected \"" + string + "\" to end with \"" + suffix + "\"" + 
+             (message != null ? ": " + message : ""));
+    }
+}
+
+$ assert_ends_with(string: string, suffix: string): void {
+    assert_ends_with(string, suffix, null);
+}
+
+// ==================== Collection Assertions ====================
+
+$ assert_includes[T](collection: Array[T], element: T, message: string): void {
+    found: boolean = collection.includes(element);
+    
+    if (!found) {
+        _fail("Expected " + _format_value(collection) + " to include " + _format_value(element) + 
+             (message != null ? ": " + message : ""));
+    }
+}
+
+$ assert_includes[T](collection: Array[T], element: T): void {
+    assert_includes(collection, element, null);
+}
+
+$ assert_empty[T](collection: Array[T], message: string): void {
+    if (collection == null || collection.length != 0) {
+        _fail("Expected empty collection but was " + _format_value(collection) + 
+             (message != null ? ": " + message : ""));
+    }
+}
+
+$ assert_empty[T](collection: Array[T]): void {
+    assert_empty(collection, null);
+}
+
+$ assert_not_empty[T](collection: Array[T], message: string): void {
+    if (collection == null || collection.length == 0) {
+        _fail("Expected non-empty collection" + 
+             (message != null ? ": " + message : ""));
+    }
+}
+
+$ assert_not_empty[T](collection: Array[T]): void {
+    assert_not_empty(collection, null);
+}
+
+$ assert_size[T](collection: Array[T], expected_size: number, message: string): void {
+    actual_size: number = collection.length;
+    
+    if (actual_size != expected_size) {
+        _fail("Expected size " + expected_size + " but was " + actual_size + 
+             (message != null ? ": " + message : ""));
+    }
+}
+
+$ assert_size[T](collection: Array[T], expected_size: number): void {
+    assert_size(collection, expected_size, null);
+}
+
+// ==================== Exception Assertions ====================
+
+$ assert_throws[T](function: Function[(), T], expected_message: string): void {
+    thrown: boolean = false;
+    actual_message: string = null;
+    
+    try {
+        function();
+    } catch (e) {
+        thrown = true;
+        actual_message = "" + e;
+        if (expected_message != null && !actual_message.includes(expected_message)) {
+            _fail("Expected exception message to contain \"" + expected_message + 
+                 "\" but was \"" + actual_message + "\"");
+        }
+    }
+    
+    if (!thrown) {
+        _fail("Expected exception to be thrown");
+    }
+}
+
+$ assert_throws[T](function: Function[(), T]): void {
+    assert_throws(function, null);
+}
+
+$ assert_no_throw[T](function: Function[(), T]): void {
+    try {
+        function();
+    } catch (e) {
+        _fail("Expected no exception but got: " + e);
+    }
+}
+
+// ==================== Test Definition ====================
+
+$ test(name: string, test_function: Function[(), void]): void {
+    test_case: TestCase = {
+        "name": name,
+        "function": test_function,
+        "skipped": false
+    };
+    
+    if (_current_suite != null) {
+        _current_suite["tests"].push(test_case);
+    } else {
+        // Create default suite if none exists
+        default_suite_name: string = "Default";
+        if (!_test_suites[default_suite_name]) {
+            _test_suites[default_suite_name] = {
+                "name": default_suite_name,
+                "tests": []
+            };
+        }
+        _current_suite = _test_suites[default_suite_name];
+        _current_suite["tests"].push(test_case);
+    }
+}
+
+$ suite(name: string, suite_function: Function[(), void]): void {
+    suite: TestSuite = {
+        "name": name,
+        "tests": []
+    };
+    
+    previous_suite: TestSuite = _current_suite;
+    _current_suite = suite;
+    
+    // Execute suite function to collect tests
+    suite_function();
+    
+    _current_suite = previous_suite;
+    _test_suites[name] = suite;
+}
+
+$ skip(name: string, test_function: Function[(), void]): void {
+    test_case: TestCase = {
+        "name": name,
+        "function": test_function,
+        "skipped": true
+    };
+    
+    if (_current_suite != null) {
+        _current_suite["tests"].push(test_case);
+    }
+}
+
+// ==================== Test Execution ====================
+
+$ run_all(): boolean {
+    _test_results = [];
+    
+    for (suite_name in _test_suites) {
+        run_suite(suite_name);
+    }
+    
+    _print_summary();
+    
+    if (_exit_on_failure && _has_failures()) {
+        // In Thorn, we can't call System.exit, so just return failure indicator
+        return false;
+    }
+    return true;
+}
+
+$ run_suite(suite_name: string): void {
+    suite: TestSuite = _test_suites[suite_name];
+    if (suite == null) {
+        print("ERROR: Test suite '" + suite_name + "' not found");
+        return;
+    }
+    
+    print("\n🧪 Running suite: " + suite["name"]);
+    print("=" + _repeat_string("=", 49));
+    
+    for (test_case in suite["tests"]) {
+        _run_test(test_case, suite);
+    }
+}
+
+$ _run_test(test_case: TestCase, suite: TestSuite): void {
+    if (test_case["skipped"]) {
+        result: TestResult = {
+            "test": test_case,
+            "suite": suite,
+            "passed": false,
+            "skipped": true,
+            "duration": 0,
+            "error": null
+        };
+        _test_results.push(result);
+        print("⏭️  SKIPPED: " + test_case["name"]);
+        return;
+    }
+    
+    _current_test = test_case;
+    start_time: number = clock();
+    passed: boolean = false;
+    error: string = null;
+    
+    // Execute test
+    try {
+        test_function: Function[(), void] = test_case["function"];
+        test_function();
+        passed = true;
+    } catch (e) {
+        error = "" + e;
+    }
+    
+    _current_test = null;
+    
+    duration: number = (clock() - start_time) * 1000; // Convert to milliseconds
+    result: TestResult = {
+        "test": test_case,
+        "suite": suite,
+        "passed": passed,
+        "skipped": false,
+        "duration": duration,
+        "error": error
+    };
+    _test_results.push(result);
+    
+    if (passed) {
+        print("✅ PASSED: " + test_case["name"] + " (" + _format_duration(duration) + ")");
+    } else {
+        print("❌ FAILED: " + test_case["name"]);
+        if (_verbose_mode && error != null) {
+            print("   " + error);
+        }
+    }
+}
+
+// ==================== Test Results ====================
+
+$ _print_summary(): void {
+    passed: number = 0;
+    failed: number = 0;
+    skipped: number = 0;
+    total_time: number = 0;
+    
+    for (result in _test_results) {
+        if (result["skipped"]) {
+            skipped = skipped + 1;
+        } else if (result["passed"]) {
+            passed = passed + 1;
+            total_time = total_time + result["duration"];
+        } else {
+            failed = failed + 1;
+            total_time = total_time + result["duration"];
+        }
+    }
+    
+    print("\n" + _repeat_string("=", 50));
+    print("📊 Test Summary");
+    print(_repeat_string("=", 50));
+    print("✅ Passed:  " + passed);
+    print("❌ Failed:  " + failed);
+    print("⏭️  Skipped: " + skipped);
+    print("⏱️  Total:   " + _format_duration(total_time));
+    
+    if (failed > 0) {
+        print("\n❌ Failed tests:");
+        for (result in _test_results) {
+            if (!result["passed"] && !result["skipped"]) {
+                print("   - " + result["suite"]["name"] + " / " + result["test"]["name"]);
+                if (result["error"] != null) {
+                    print("     " + result["error"]);
+                }
+            }
+        }
+    }
+    
+    if (failed == 0 && passed > 0) {
+        print("\n🎉 All tests passed!");
+    }
+}
+
+$ _has_failures(): boolean {
+    for (result in _test_results) {
+        if (!result["passed"] && !result["skipped"]) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// ==================== Configuration ====================
+
+$ set_exit_on_failure(exit: boolean): void {
+    _exit_on_failure = exit;
+}
+
+$ set_verbose(verbose: boolean): void {
+    _verbose_mode = verbose;
+}
+
+// ==================== Helper Functions ====================
+
+$ _fail(message: string): void {
+    full_message: string = message;
+    if (_current_test != null) {
+        full_message = "Test '" + _current_test["name"] + "': " + message;
+    }
+    
+    // Throw an error to stop test execution
+    throw full_message;
+}
+
+$ _format_value[T](value: T): string {
+    if (value == null) {
+        return "null";
+    }
+    if (_is_string(value)) {
+        return "\"" + value + "\"";
+    }
+    if (_is_array(value)) {
+        return _format_array(value);
+    }
+    return "" + value;
+}
+
+$ _format_array[T](arr: Array[T]): string {
+    result: string = "[";
+    first: boolean = true;
+    for (item in arr) {
+        if (!first) {
+            result = result + ", ";
+        }
+        result = result + _format_value(item);
+        first = false;
+    }
+    result = result + "]";
+    return result;
+}
+
+$ _format_duration(ms: number): string {
+    if (ms < 1) {
+        return "< 1ms";
+    }
+    return "" + ms + "ms";
+}
+
+$ _repeat_string(str: string, count: number): string {
+    result: string = "";
+    for (i: number = 0; i < count; i = i + 1) {
+        result = result + str;
+    }
+    return result;
+}
+
+// ==================== Type Checking Helpers ====================
+
+$ _is_string[T](value: T): boolean {
+    // Check if value is a string by checking if it has string methods
+    if (value == null) {
+        return false;
+    }
+    try {
+        // If we can call length on it and it's not an array, it's likely a string
+        dummy: number = value.length;
+        // Additional check - strings should have includes method
+        dummy2: boolean = value.includes("");
+        return !_is_array(value);
+    } catch (e) {
+        return false;
+    }
+}
+
+$ _is_array[T](value: T): boolean {
+    if (value == null) {
+        return false;
+    }
+    try {
+        // Arrays have push method
+        test_arr: Array[T] = value;
+        // Check if it has array-specific methods
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+// ==================== Exports ====================
+// Export all public functions
+export assert_true;
+export assert_false;
+export assert_equals;
+export assert_not_equals;
+export assert_null;
+export assert_not_null;
+export assert_greater_than;
+export assert_less_than;
+export assert_greater_equal;
+export assert_less_equal;
+export assert_almost_equal;
+export assert_contains;
+export assert_starts_with;
+export assert_ends_with;
+export assert_includes;
+export assert_empty;
+export assert_not_empty;
+export assert_size;
+export assert_throws;
+export assert_no_throw;
+export test;
+export suite;
+export skip;
+export run_all;
+export run_suite;
+export set_exit_on_failure;
+export set_verbose;

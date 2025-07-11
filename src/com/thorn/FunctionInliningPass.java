@@ -177,6 +177,11 @@ public class FunctionInliningPass extends OptimizationPass {
                 @Override public Void visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
                     return null;
                 }
+                
+                @Override public Void visitTypeAliasStmt(Stmt.TypeAlias stmt) {
+                    // Type aliases are compile-time only, no optimization needed
+                    return null;
+                }
             });
         }
         
@@ -378,6 +383,12 @@ public class FunctionInliningPass extends OptimizationPass {
                 
                 @Override
                 public Stmt visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
+                    return stmt;
+                }
+                
+                @Override
+                public Stmt visitTypeAliasStmt(Stmt.TypeAlias stmt) {
+                    // Type aliases are compile-time only, no optimization needed
                     return stmt;
                 }
             });
@@ -699,6 +710,12 @@ public class FunctionInliningPass extends OptimizationPass {
                     public Void visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
                         return null;
                     }
+                    
+                    @Override
+                    public Void visitTypeAliasStmt(Stmt.TypeAlias stmt) {
+                        // Type aliases are compile-time only, no optimization needed
+                        return null;
+                    }
                 });
             }
             
@@ -789,6 +806,12 @@ public class FunctionInliningPass extends OptimizationPass {
                     
                     @Override
                     public Boolean visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
+                        return false;
+                    }
+                    
+                    @Override
+                    public Boolean visitTypeAliasStmt(Stmt.TypeAlias stmt) {
+                        // Type aliases are compile-time only, no optimization needed
                         return false;
                     }
                 });
@@ -947,6 +970,12 @@ public class FunctionInliningPass extends OptimizationPass {
                     
                     @Override
                     public Void visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
+                        return null;
+                    }
+                    
+                    @Override
+                    public Void visitTypeAliasStmt(Stmt.TypeAlias stmt) {
+                        // Type aliases are compile-time only, no optimization needed
                         return null;
                     }
                 });
@@ -1111,6 +1140,12 @@ public class FunctionInliningPass extends OptimizationPass {
                     
                     @Override
                     public Stmt visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
+                        return stmt;
+                    }
+                    
+                    @Override
+                    public Stmt visitTypeAliasStmt(Stmt.TypeAlias stmt) {
+                        // Type aliases are compile-time only, no optimization needed
                         return stmt;
                     }
                 });

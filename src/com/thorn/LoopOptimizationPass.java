@@ -209,6 +209,12 @@ public class LoopOptimizationPass extends OptimizationPass {
                 public Stmt visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
                     return stmt;
                 }
+                
+                @Override
+                public Stmt visitTypeAliasStmt(Stmt.TypeAlias stmt) {
+                    // Type aliases are compile-time only, no optimization needed
+                    return stmt;
+                }
             });
         }
         
@@ -315,6 +321,12 @@ public class LoopOptimizationPass extends OptimizationPass {
                 
                 @Override
                 public Stmt visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
+                    return stmt;
+                }
+                
+                @Override
+                public Stmt visitTypeAliasStmt(Stmt.TypeAlias stmt) {
+                    // Type aliases are compile-time only, no optimization needed
                     return stmt;
                 }
             });
@@ -557,6 +569,12 @@ public class LoopOptimizationPass extends OptimizationPass {
                 public Stmt visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
                     return stmt;
                 }
+                
+                @Override
+                public Stmt visitTypeAliasStmt(Stmt.TypeAlias stmt) {
+                    // Type aliases are compile-time only, no optimization needed
+                    return stmt;
+                }
             });
         }
         
@@ -646,6 +664,7 @@ public class LoopOptimizationPass extends OptimizationPass {
                     @Override public Void visitImportStmt(Stmt.Import stmt) { return null; }
                     @Override public Void visitExportStmt(Stmt.Export stmt) { return null; }
                     @Override public Void visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) { return null; }
+                    @Override public Void visitTypeAliasStmt(Stmt.TypeAlias stmt) { return null; }
                 });
             }
             
@@ -698,6 +717,7 @@ public class LoopOptimizationPass extends OptimizationPass {
                     @Override public Void visitImportStmt(Stmt.Import stmt) { return null; }
                     @Override public Void visitExportStmt(Stmt.Export stmt) { return null; }
                     @Override public Void visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) { return null; }
+                    @Override public Void visitTypeAliasStmt(Stmt.TypeAlias stmt) { return null; }
                 });
             }
             

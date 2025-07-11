@@ -166,6 +166,12 @@ public class ConstantFoldingPass extends OptimizationPass {
                 public Stmt visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
                     return stmt;
                 }
+                
+                @Override
+                public Stmt visitTypeAliasStmt(Stmt.TypeAlias stmt) {
+                    // Type aliases are compile-time only, no optimization needed
+                    return stmt;
+                }
             });
         }
         

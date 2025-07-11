@@ -290,4 +290,9 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
         builder.append(")");
         return builder.toString();
     }
+    
+    @Override
+    public String visitTypeAliasStmt(Stmt.TypeAlias stmt) {
+        return "(type-alias " + stmt.name.lexeme + " = " + print(stmt.type) + ")";
+    }
 }

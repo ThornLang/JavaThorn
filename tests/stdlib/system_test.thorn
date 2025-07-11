@@ -74,8 +74,8 @@ if (platform() == "windows") {
     proc = exec("echo", ["Hello from Unix"]);
 }
 
-print("Started process with PID: " + proc.get_pid());
-exit_code = proc.wait_for();
+print("Started process with PID: " + proc.getPid());
+exit_code = proc.waitFor();
 print("Process exited with code: " + exit_code);
 
 // Test 8: Environment variable expansion
@@ -86,8 +86,8 @@ print("Expanded: " + expanded);
 
 // Test 9: Check if a process is alive
 proc2 = exec("sleep", ["0.1"]);
-print("Process alive immediately: " + proc2.is_alive());
+print("Process alive immediately: " + proc2.isAlive());
 sleep(0.2);
-print("Process alive after 0.2s: " + proc2.is_alive());
+print("Process alive after 0.2s: " + proc2.isAlive());
 
 print("✅ System module tests completed!");

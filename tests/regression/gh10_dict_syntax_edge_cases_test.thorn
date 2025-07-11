@@ -1,0 +1,98 @@
+// Test: Dict[K,V] syntax edge cases (Issue #10)
+// Tests parsing edge cases and syntax variations
+
+print("Testing Dict[K,V] syntax edge cases...");
+
+// Test 1: Whitespace variations in type annotations
+dict1: Dict[string,number] = {"a": 1}; // No spaces
+dict2: Dict[ string , number ] = {"b": 2}; // Extra spaces
+dict3: Dict[string, number] = {"c": 3}; // Standard spacing
+print("✓ Whitespace variations work: " + (dict1["a"] + dict2["b"] + dict3["c"]));
+
+// Test 2: Complex type combinations
+stringToStringDict: Dict[string, string] = {"key": "value"};
+stringToNumberDict: Dict[string, number] = {"count": 42};
+stringToBoolDict: Dict[string, boolean] = {"flag": true};
+stringToAnyDict: Dict[string, Any] = {"mixed": "value"};
+print("✓ All basic type combinations work");
+
+// Test 3: Nested generic types
+arrayOfDictType: Array[Dict[string, number]] = [{"alice": 95}, {"bob": 87}];
+dictOfArrayType: Dict[string, Array[number]] = {"scores": [95, 87, 92]};
+print("✓ Nested generic types work: " + arrayOfDictType[0]["alice"]);
+
+// Test 4: Deep nesting (3+ levels)
+tripleNested: Dict[string, Dict[string, Dict[string, number]]] = {
+    "level1": {
+        "level2": {
+            "level3": 42
+        }
+    }
+};
+value = tripleNested["level1"]["level2"]["level3"];
+print("✓ Triple nested Dict works: " + value);
+
+// Test 5: Function type syntax variations
+$ funcWithSpaces( data : Dict[ string , number ] ) : number {
+    return data["test"] ?? 0;
+}
+
+$ funcNoSpaces(data:Dict[string,number]):number {
+    return data["test"] ?? 0;
+}
+
+testData: Dict[string, number] = {"test": 100};
+result1 = funcWithSpaces(testData);
+result2 = funcNoSpaces(testData);
+print("✓ Function parameter spacing variations work: " + result1);
+
+// Test 6: Variable naming edge cases
+_underscore: Dict[string, number] = {"val": 1};
+CamelCase: Dict[string, number] = {"val": 2};
+snake_case: Dict[string, number] = {"val": 3};
+mixed123: Dict[string, number] = {"val": 4};
+print("✓ Variable naming variations work: " + _underscore["val"]);
+
+// Test 7: Long type names
+veryLongVariableName: Dict[string, number] = {"value": 999};
+print("✓ Long variable names work: " + veryLongVariableName["value"]);
+
+// Test 8: Immediate access after declaration
+immediateAccess = {"immediate": true}["immediate"];
+print("✓ Immediate property access works: " + immediateAccess);
+
+// Test 9: Dict in complex expressions
+dict4: Dict[string, number] = {"a": 10, "b": 20};
+dict5: Dict[string, number] = {"c": 30, "d": 40};
+total = dict4["a"] + dict5["c"];
+print("✓ Dict in expressions works: " + total);
+
+// Test 10: Method chaining syntax
+chainResult: Dict[string, number] = {"x": 1, "y": 2, "z": 3};
+keyCount = chainResult.keys().length;
+print("✓ Method chaining works: " + keyCount + " keys");
+
+// Test 11: Dict literal with complex values
+complexValues: Dict[string, Any] = {
+    "array": [1, 2, 3],
+    "nested": {"inner": "value"},
+    "function": $() => { return "lambda"; }
+};
+print("✓ Complex value types work");
+
+// Test 12: Empty key string
+emptyKeyDict: Dict[string, string] = {"": "empty key value"};
+print("✓ Empty string key works: " + emptyKeyDict[""]);
+
+// Test 13: Unicode in keys (if supported)
+unicodeKeys: Dict[string, string] = {
+    "café": "coffee",
+    "naïve": "innocent"
+};
+print("✓ Unicode keys work: " + unicodeKeys["café"]);
+
+// Test 14: Multiple declarations on same line
+a: Dict[string, number] = {"x": 1}; b: Dict[string, number] = {"y": 2};
+print("✓ Multiple declarations work: " + (a["x"] + b["y"]));
+
+print("All Dict[K,V] syntax edge case tests passed!");

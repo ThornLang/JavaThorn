@@ -1,0 +1,29 @@
+// Basic string indexing functionality test
+
+name = "Alice";
+print("String: " + name);
+print("Length: " + name.length);
+
+// Test basic indexing
+first = name[0];
+second = name[1];
+last = name[4];
+
+print("First character: " + first);
+print("Second character: " + second);
+print("Last character: " + last);
+
+// Test with different strings
+empty = "";
+print("Empty string length: " + empty.length);
+
+single = "X";
+print("Single char: " + single[0]);
+
+// Test with Unicode
+unicode = "café";
+print("Unicode string: " + unicode);
+print("First: " + unicode[0]);
+print("Accent: " + unicode[3]);
+
+print("✅ Basic string indexing test passed");

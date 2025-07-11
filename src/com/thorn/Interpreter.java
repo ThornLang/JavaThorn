@@ -343,13 +343,25 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                         "List index out of bounds.");
             }
             return list.get(i);
+        } else if (object instanceof String) {
+            if (!(index instanceof Double)) {
+                throw new Thorn.RuntimeError(expr.bracket,
+                        "String index must be a number.");
+            }
+            String str = (String) object;
+            int i = ((Double)index).intValue();
+            if (i < 0 || i >= str.length()) {
+                throw new Thorn.RuntimeError(expr.bracket,
+                        "String index out of bounds.");
+            }
+            return String.valueOf(str.charAt(i));
         } else if (object instanceof Map) {
             Map<?, ?> map = (Map<?, ?>)object;
             return map.get(index);
         }
 
         throw new Thorn.RuntimeError(expr.bracket,
-                "Only lists and dictionaries support indexing.");
+                "Only lists, strings, and dictionaries support indexing.");
     }
 
     @Override
@@ -1000,6 +1012,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         if (value instanceof Double) return "number";
         if (value instanceof Boolean) return "boolean";
         if (value instanceof List) return "array";
+        if (value instanceof java.util.Map) return "dict";
         if (value instanceof ThornInstance) {
             return ((ThornInstance) value).getKlass().name;
         }

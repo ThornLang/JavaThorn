@@ -325,6 +325,75 @@ class ThornResultType extends ThornType {
 }
 
 /**
+ * Type parameter for generic types (T, K, V, etc.)
+ */
+class ThornTypeParameter extends ThornType {
+    private final String name;
+    private final ThornType constraint; // Optional constraint
+    
+    public ThornTypeParameter(String name) {
+        this(name, null);
+    }
+    
+    public ThornTypeParameter(String name, ThornType constraint) {
+        this.name = name;
+        this.constraint = constraint;
+    }
+    
+    @Override
+    public String getName() {
+        if (constraint != null) {
+            return name + ": " + constraint.getName();
+        }
+        return name;
+    }
+    
+    @Override
+    public boolean matches(Object value) {
+        // Type parameters match any value during checking
+        // Actual type checking happens after substitution
+        if (constraint != null) {
+            return constraint.matches(value);
+        }
+        return true;
+    }
+    
+    @Override
+    public boolean isAssignableFrom(ThornType other) {
+        // Type parameters are assignable from themselves
+        if (other instanceof ThornTypeParameter) {
+            return name.equals(((ThornTypeParameter) other).name);
+        }
+        // If constrained, check constraint compatibility
+        if (constraint != null) {
+            return constraint.isAssignableFrom(other);
+        }
+        return true;
+    }
+    
+    public String getParameterName() {
+        return name;
+    }
+    
+    public ThornType getConstraint() {
+        return constraint;
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        ThornTypeParameter that = (ThornTypeParameter) obj;
+        return Objects.equals(name, that.name) && Objects.equals(constraint, that.constraint);
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, constraint);
+    }
+}
+
+/**
  * Helper class for creating type instances
  */
 class ThornTypeFactory {
@@ -339,6 +408,10 @@ class ThornTypeFactory {
             case "void":
                 return new ThornPrimitiveType(name);
             default:
+                // Check if it's a single uppercase letter (likely a type parameter)
+                if (name.length() == 1 && Character.isUpperCase(name.charAt(0))) {
+                    return new ThornTypeParameter(name);
+                }
                 // Assume it's a class type
                 return new ThornClassType(name);
         }
@@ -358,5 +431,13 @@ class ThornTypeFactory {
     
     public static ThornType createResultType(Object valueType, Object errorType) {
         return new ThornResultType(valueType, errorType);
+    }
+    
+    public static ThornType createTypeParameter(String name) {
+        return new ThornTypeParameter(name);
+    }
+    
+    public static ThornType createTypeParameter(String name, ThornType constraint) {
+        return new ThornTypeParameter(name, constraint);
     }
 }

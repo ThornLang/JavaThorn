@@ -1,6 +1,17 @@
 name: Run Regression Tests (Bot)
 
 on:
+  # Run when both pr-tests and test workflows complete successfully
+  workflow_run:
+    workflows: ["PR-Specific Tests", "ThornLang CI"]
+    types: [completed]
+    branches: ["**"]
+  
+  # Also run on pushes (when pr-tests and test would run)
+  push:
+    branches: ["main", "**"]
+  
+  # Keep the manual trigger via comment
   issue_comment:
     types: [created]
 
@@ -11,11 +22,85 @@ permissions:
   actions: write
 
 jobs:
+  # Check if we should run regression tests
+  check-prerequisites:
+    runs-on: ubuntu-latest
+    outputs:
+      should-run: ${{ steps.check.outputs.should-run }}
+      checkout-ref: ${{ steps.check.outputs.checkout-ref }}
+      trigger-type: ${{ steps.check.outputs.trigger-type }}
+    steps:
+    - name: Check prerequisites
+      id: check
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const eventName = context.eventName;
+          
+          if (eventName === 'issue_comment') {
+            // Manual trigger via comment
+            const isManualTrigger = context.payload.issue.pull_request && 
+                                   context.payload.comment.body.includes('@run_regression');
+            if (isManualTrigger) {
+              core.setOutput('should-run', 'true');
+              core.setOutput('checkout-ref', `refs/pull/${context.payload.issue.number}/head`);
+              core.setOutput('trigger-type', 'manual');
+              return;
+            }
+          } else if (eventName === 'push') {
+            // Push trigger - run directly
+            core.setOutput('should-run', 'true');
+            core.setOutput('checkout-ref', context.sha);
+            core.setOutput('trigger-type', 'push');
+            return;
+          } else if (eventName === 'workflow_run') {
+            // Workflow completion trigger
+            const workflow = context.payload.workflow_run;
+            const conclusion = workflow.conclusion;
+            
+            if (conclusion !== 'success') {
+              console.log(`Workflow ${workflow.name} did not succeed (${conclusion}), skipping regression tests`);
+              core.setOutput('should-run', 'false');
+              return;
+            }
+            
+            // Check if both required workflows have completed successfully for this commit
+            const { owner, repo } = context.repo;
+            const headSha = workflow.head_sha;
+            
+            // Get all workflow runs for this commit
+            const { data: workflowRuns } = await github.rest.actions.listWorkflowRunsForRepo({
+              owner,
+              repo,
+              head_sha: headSha,
+              status: 'completed'
+            });
+            
+            const requiredWorkflows = ['PR-Specific Tests', 'ThornLang CI'];
+            const completedWorkflows = workflowRuns.workflow_runs
+              .filter(run => requiredWorkflows.includes(run.name) && run.conclusion === 'success')
+              .map(run => run.name);
+            
+            console.log(`Required workflows: ${requiredWorkflows.join(', ')}`);
+            console.log(`Completed successful workflows: ${completedWorkflows.join(', ')}`);
+            
+            if (completedWorkflows.length >= requiredWorkflows.length) {
+              core.setOutput('should-run', 'true');
+              core.setOutput('checkout-ref', headSha);
+              core.setOutput('trigger-type', 'workflow-completion');
+            } else {
+              console.log('Not all required workflows have completed successfully yet');
+              core.setOutput('should-run', 'false');
+            }
+            return;
+          }
+          
+          core.setOutput('should-run', 'false');
+
   run-regression:
     runs-on: ubuntu-latest
-    if: |
-      github.event.issue.pull_request && 
-      contains(github.event.comment.body, '@run_regression')
+    needs: check-prerequisites
+    if: needs.check-prerequisites.outputs.should-run == 'true'
     
     steps:
     - name: Generate token
@@ -25,7 +110,8 @@ jobs:
         app_id: ${{ secrets.THORN_LANG_APP_ID }}
         private_key: ${{ secrets.THORN_LANG_APP_PRIVATE_KEY }}
     
-    - name: Add acknowledgment reaction
+    - name: Add acknowledgment reaction (manual trigger only)
+      if: needs.check-prerequisites.outputs.trigger-type == 'manual'
       uses: actions/github-script@v6
       with:
         github-token: ${{ steps.generate-token.outputs.token }}
@@ -37,12 +123,11 @@ jobs:
             content: 'rocket'
           });
     
-    - name: Checkout PR
+    - name: Checkout code
       uses: actions/checkout@v3
       with:
         token: ${{ steps.generate-token.outputs.token }}
-        # Checkout the PR branch
-        ref: refs/pull/${{ github.event.issue.number }}/head
+        ref: ${{ needs.check-prerequisites.outputs.checkout-ref }}
     
     - name: Set up Java
       uses: actions/setup-java@v3
@@ -182,7 +267,7 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: regression-test-logs-${{ github.event.issue.number }}
+        name: regression-test-logs-${{ github.sha }}-${{ needs.check-prerequisites.outputs.trigger-type }}
         path: /tmp/test_logs/
         retention-days: 7
     
@@ -196,6 +281,7 @@ jobs:
           const passed = '${{ steps.regression-tests.outputs.passed_count }}' || '0';
           const failed = '${{ steps.regression-tests.outputs.failed_count }}' || '0';
           const total = '${{ steps.regression-tests.outputs.total_count }}' || '0';
+          const triggerType = '${{ needs.check-prerequisites.outputs.trigger-type }}';
           
           let message = '## 🧪 Regression Test Results\n\n';
           
@@ -212,20 +298,44 @@ jobs:
             message += 'Check the workflow logs for detailed failure information.';
           }
           
-          message += '\n\n<sub>Triggered by @' + context.payload.comment.user.login + '</sub>';
+          // Add trigger info based on type
+          if (triggerType === 'manual') {
+            message += '\n\n<sub>Triggered by @' + context.payload.comment.user.login + '</sub>';
+          } else if (triggerType === 'workflow-completion') {
+            message += '\n\n<sub>Automatically triggered after PR tests and CI passed</sub>';
+          } else if (triggerType === 'push') {
+            message += '\n\n<sub>Automatically triggered by push to branch</sub>';
+          }
           
-          github.rest.issues.createComment({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            issue_number: context.issue.number,
-            body: message
-          });
+          // For PRs (manual trigger or workflow completion), post comment
+          if (triggerType === 'manual' || (triggerType === 'workflow-completion' && context.payload.workflow_run.event === 'pull_request')) {
+            const issueNumber = triggerType === 'manual' ? 
+              context.issue.number : 
+              context.payload.workflow_run.pull_requests[0]?.number;
+              
+            if (issueNumber) {
+              github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                body: message
+              });
+            }
+          }
           
-          // Add reaction to indicate completion
-          const reaction = status === 'passed' ? '+1' : (status === 'no-tests' ? 'confused' : '-1');
-          github.rest.reactions.createForIssueComment({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            comment_id: context.payload.comment.id,
-            content: reaction
-          });
+          // Add reaction for manual triggers
+          if (triggerType === 'manual') {
+            const reaction = status === 'passed' ? '+1' : (status === 'no-tests' ? 'confused' : '-1');
+            github.rest.reactions.createForIssueComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: context.payload.comment.id,
+              content: reaction
+            });
+          }
+          
+          // Always log results
+          console.log(`🧪 Regression tests completed`);
+          console.log(`Trigger type: ${triggerType}`);
+          console.log(`Status: ${status}`);
+          console.log(`Results: ${passed}/${total} passed`);

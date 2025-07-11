@@ -5,7 +5,7 @@ class TestClass {
         // Try different syntaxes
         
         // Option 1: Direct typed assignment
-        this.items: Array[number] = [1, 2, 3];
+        items: Array[number] = [1, 2, 3];
         
         // Option 2: Local variable with type that gets converted
         name: string = "test";

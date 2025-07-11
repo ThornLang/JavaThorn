@@ -427,6 +427,7 @@ public class LoopOptimizationPass extends OptimizationPass {
                 @Override public Expr visitGetExpr(Expr.Get expr) { return expr; }
                 @Override public Expr visitSetExpr(Expr.Set expr) { return expr; }
                 @Override public Expr visitIndexSetExpr(Expr.IndexSet expr) { return expr; }
+                @Override public Expr visitSliceExpr(Expr.Slice expr) { return expr; }
                 @Override public Expr visitLambdaExpr(Expr.Lambda expr) { return expr; }
                 @Override public Expr visitMatchExpr(Expr.Match expr) { return expr; }
                 @Override public Expr visitTypeExpr(Expr.Type expr) { return expr; }
@@ -779,6 +780,11 @@ public class LoopOptimizationPass extends OptimizationPass {
                     @Override public Boolean visitDictExpr(Expr.Dict expr) { return false; }
                     @Override public Boolean visitSetExpr(Expr.Set expr) { return true; }
                     @Override public Boolean visitIndexSetExpr(Expr.IndexSet expr) { return true; }
+                    @Override public Boolean visitSliceExpr(Expr.Slice expr) { 
+                        return dependsOnLoopVariables(expr.object) || 
+                               (expr.start != null && dependsOnLoopVariables(expr.start)) ||
+                               (expr.end != null && dependsOnLoopVariables(expr.end));
+                    }
                     @Override public Boolean visitLambdaExpr(Expr.Lambda expr) { return false; }
                     @Override public Boolean visitMatchExpr(Expr.Match expr) { return false; }
                     @Override public Boolean visitTypeExpr(Expr.Type expr) { return false; }
@@ -831,6 +837,11 @@ public class LoopOptimizationPass extends OptimizationPass {
                     @Override public Boolean visitThisExpr(Expr.This expr) { return false; }
                     @Override public Boolean visitListExpr(Expr.ListExpr expr) { return false; }
                     @Override public Boolean visitDictExpr(Expr.Dict expr) { return false; }
+                    @Override public Boolean visitSliceExpr(Expr.Slice expr) { 
+                        return hasSideEffects(expr.object) || 
+                               (expr.start != null && hasSideEffects(expr.start)) ||
+                               (expr.end != null && hasSideEffects(expr.end));
+                    }
                     @Override public Boolean visitLambdaExpr(Expr.Lambda expr) { return false; }
                     @Override public Boolean visitMatchExpr(Expr.Match expr) { return false; }
                     @Override public Boolean visitTypeExpr(Expr.Type expr) { return false; }

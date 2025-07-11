@@ -49,7 +49,12 @@ public abstract class Stmt {
 
     public static class Function extends Stmt {
         Function(Token name, List<Parameter> params, Expr returnType, List<Stmt> body) {
+            this(name, null, params, returnType, body);
+        }
+        
+        Function(Token name, List<TypeParameter> typeParams, List<Parameter> params, Expr returnType, List<Stmt> body) {
             this.name = name;
+            this.typeParams = typeParams;
             this.params = params;
             this.returnType = returnType;
             this.body = body;
@@ -61,6 +66,7 @@ public abstract class Stmt {
         }
 
         public final Token name;
+        public final List<TypeParameter> typeParams;  // null if no type parameters
         public final List<Parameter> params;
         public final Expr returnType;  // null if no return type annotation
         public final List<Stmt> body;
@@ -151,7 +157,12 @@ public abstract class Stmt {
 
     public static class Class extends Stmt {
         Class(Token name, List<Stmt.Function> methods) {
+            this(name, null, methods);
+        }
+        
+        Class(Token name, List<TypeParameter> typeParams, List<Stmt.Function> methods) {
             this.name = name;
+            this.typeParams = typeParams;
             this.methods = methods;
         }
 
@@ -161,6 +172,7 @@ public abstract class Stmt {
         }
 
         public final Token name;
+        public final List<TypeParameter> typeParams;  // null if no type parameters
         public final List<Stmt.Function> methods;
     }
 
@@ -230,5 +242,16 @@ public abstract class Stmt {
 
         public final Token name;
         public final Expr type;
+    }
+    
+    // Type parameter class for generic types
+    public static class TypeParameter {
+        TypeParameter(Token name, Expr constraint) {
+            this.name = name;
+            this.constraint = constraint;
+        }
+        
+        public final Token name;
+        public final Expr constraint;  // null if no constraint
     }
 }

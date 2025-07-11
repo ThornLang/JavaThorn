@@ -13,6 +13,9 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     // Return value optimization - avoid exceptions
     Object returnValue = null;
     boolean hasReturned = false;
+    
+    // Track if we're in a Result context for division by zero handling
+    private boolean inResultContext = false;
 
     Interpreter() {
         this.moduleSystem = new ModuleSystem(this);
@@ -27,6 +30,30 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         globals.define("clock", new JavaFunction("clock", 0, (interpreter, arguments) -> {
             return (double) System.currentTimeMillis();
         }), false);
+        
+        // Add built-in Ok constructor for Result type
+        globals.define("Ok", new JavaFunction("Ok", 1, (interpreter, arguments) -> {
+            interpreter.inResultContext = true;
+            try {
+                return ThornResult.ok(arguments.get(0));
+            } finally {
+                interpreter.inResultContext = false;
+            }
+        }), false);
+        
+        // Add built-in Error constructor for Result type
+        globals.define("Error", new JavaFunction("Error", 1, (interpreter, arguments) -> {
+            interpreter.inResultContext = true;
+            try {
+                return ThornResult.error(arguments.get(0));
+            } finally {
+                interpreter.inResultContext = false;
+            }
+        }), false);
+    }
+    
+    private boolean isInResultContext() {
+        return inResultContext;
     }
 
     void interpret(List<Stmt> statements) {
@@ -72,6 +99,10 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 if (left instanceof Double && right instanceof Double) {
                     double rightVal = getNumber(right);
                     if (rightVal == 0) {
+                        // Check if we're in a Result context (being called from Ok/Error constructor)
+                        if (isInResultContext()) {
+                            return getNumber(left) / rightVal; // Returns Infinity
+                        }
                         throw new Thorn.RuntimeError(expr.operator, "Division by zero.");
                     }
                     return getNumber(left) / rightVal;
@@ -79,6 +110,10 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 checkNumberOperands(expr.operator, left, right);
                 double rightNum = getNumber(right);
                 if (rightNum == 0) {
+                    // Check if we're in a Result context (being called from Ok/Error constructor)
+                    if (isInResultContext()) {
+                        return getNumber(left) / rightNum; // Returns Infinity
+                    }
                     throw new Thorn.RuntimeError(expr.operator, "Division by zero.");
                 }
                 return getNumber(left) / rightNum;
@@ -225,9 +260,30 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     public Object visitCallExpr(Expr.Call expr) {
         Object callee = evaluate(expr.callee);
 
+        // Check if this is a call to Ok or Error constructor
+        boolean isResultConstructor = false;
+        if (expr.callee instanceof Expr.Variable) {
+            String name = ((Expr.Variable) expr.callee).name.lexeme;
+            if ("Ok".equals(name) || "Error".equals(name)) {
+                isResultConstructor = true;
+            }
+        }
+
         List<Object> arguments = new ArrayList<>();
-        for (Expr argument : expr.arguments) {
-            arguments.add(evaluate(argument));
+        
+        // Set Result context flag if calling Ok or Error
+        if (isResultConstructor) {
+            inResultContext = true;
+        }
+        
+        try {
+            for (Expr argument : expr.arguments) {
+                arguments.add(evaluate(argument));
+            }
+        } finally {
+            if (isResultConstructor) {
+                inResultContext = false;
+            }
         }
 
         if (!(callee instanceof ThornCallable)) {
@@ -287,13 +343,68 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                         "List index out of bounds.");
             }
             return list.get(i);
+        } else if (object instanceof String) {
+            if (!(index instanceof Double)) {
+                throw new Thorn.RuntimeError(expr.bracket,
+                        "String index must be a number.");
+            }
+            String str = (String) object;
+            int i = ((Double)index).intValue();
+            if (i < 0 || i >= str.length()) {
+                throw new Thorn.RuntimeError(expr.bracket,
+                        "String index out of bounds.");
+            }
+            return String.valueOf(str.charAt(i));
         } else if (object instanceof Map) {
             Map<?, ?> map = (Map<?, ?>)object;
             return map.get(index);
         }
 
         throw new Thorn.RuntimeError(expr.bracket,
-                "Only lists and dictionaries support indexing.");
+                "Only lists, strings, and dictionaries support indexing.");
+    }
+
+    @Override
+    public Object visitSliceExpr(Expr.Slice expr) {
+        Object object = evaluate(expr.object);
+        
+        if (!(object instanceof List)) {
+            throw new Thorn.RuntimeError(expr.bracket,
+                    "Only lists support slicing.");
+        }
+        
+        List<?> list = (List<?>)object;
+        int size = list.size();
+        
+        // Evaluate start index (default to 0)
+        int start = 0;
+        if (expr.start != null) {
+            Object startObj = evaluate(expr.start);
+            if (!(startObj instanceof Double)) {
+                throw new Thorn.RuntimeError(expr.bracket,
+                        "Slice start index must be a number.");
+            }
+            start = ((Double)startObj).intValue();
+            if (start < 0) start = size + start;  // Handle negative indices
+            start = Math.max(0, Math.min(start, size));
+        }
+        
+        // Evaluate end index (default to size)
+        int end = size;
+        if (expr.end != null) {
+            Object endObj = evaluate(expr.end);
+            if (!(endObj instanceof Double)) {
+                throw new Thorn.RuntimeError(expr.bracket,
+                        "Slice end index must be a number.");
+            }
+            end = ((Double)endObj).intValue();
+            if (end < 0) end = size + end;  // Handle negative indices
+            end = Math.max(0, Math.min(end, size));
+        }
+        
+        // Create the slice
+        if (start > end) start = end;
+        return new ArrayList<>(list.subList(start, end));
     }
 
     @Override
@@ -338,6 +449,34 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 ((Expr.Literal)matchCase.pattern).value == null) {
                 // Default case (underscore)
                 matches = true;
+            } else if (matchCase.pattern instanceof Expr.Call) {
+                // Constructor pattern like Ok(value) or Error(error)
+                Expr.Call callPattern = (Expr.Call) matchCase.pattern;
+                if (callPattern.callee instanceof Expr.Variable) {
+                    String constructorName = ((Expr.Variable) callPattern.callee).name.lexeme;
+                    
+                    // Check if this is a Result constructor pattern
+                    if (value instanceof ThornResult) {
+                        ThornResult result = (ThornResult) value;
+                        if (constructorName.equals("Ok") && result.isOk()) {
+                            matches = true;
+                            // Bind the inner value to the pattern variable if it's a variable
+                            if (callPattern.arguments.size() == 1 && 
+                                callPattern.arguments.get(0) instanceof Expr.Variable) {
+                                Expr.Variable var = (Expr.Variable) callPattern.arguments.get(0);
+                                environment.define(var.name.lexeme, result.getValue(), false);
+                            }
+                        } else if (constructorName.equals("Error") && result.isError()) {
+                            matches = true;
+                            // Bind the inner error to the pattern variable if it's a variable
+                            if (callPattern.arguments.size() == 1 && 
+                                callPattern.arguments.get(0) instanceof Expr.Variable) {
+                                Expr.Variable var = (Expr.Variable) callPattern.arguments.get(0);
+                                environment.define(var.name.lexeme, result.getError(), false);
+                            }
+                        }
+                    }
+                }
             } else {
                 Object pattern = evaluate(matchCase.pattern);
                 matches = isEqual(value, pattern);
@@ -360,6 +499,10 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         Object object = evaluate(expr.object);
         if (object instanceof ThornInstance) {
             return ((ThornInstance) object).get(expr.name);
+        }
+        
+        if (object instanceof JavaInstance) {
+            return ((JavaInstance) object).get(expr.name);
         }
 
         // Add built-in properties and methods for native types
@@ -744,6 +887,83 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                     };
             }
         }
+        
+        // Handle Result type properties
+        if (object instanceof ThornResult) {
+            ThornResult result = (ThornResult) object;
+            
+            switch (expr.name.lexeme) {
+                case "is_ok":
+                    return new ThornCallable() {
+                        @Override
+                        public int arity() { return 0; }
+                        
+                        @Override
+                        public Object call(Interpreter interpreter, List<Object> arguments) {
+                            return result.isOk();
+                        }
+                        
+                        @Override
+                        public String toString() { return "<native result method>"; }
+                    };
+                    
+                case "is_error":
+                    return new ThornCallable() {
+                        @Override
+                        public int arity() { return 0; }
+                        
+                        @Override
+                        public Object call(Interpreter interpreter, List<Object> arguments) {
+                            return result.isError();
+                        }
+                        
+                        @Override
+                        public String toString() { return "<native result method>"; }
+                    };
+                    
+                case "unwrap":
+                    return new ThornCallable() {
+                        @Override
+                        public int arity() { return 0; }
+                        
+                        @Override
+                        public Object call(Interpreter interpreter, List<Object> arguments) {
+                            return result.unwrap();
+                        }
+                        
+                        @Override
+                        public String toString() { return "<native result method>"; }
+                    };
+                    
+                case "unwrap_or":
+                    return new ThornCallable() {
+                        @Override
+                        public int arity() { return 1; }
+                        
+                        @Override
+                        public Object call(Interpreter interpreter, List<Object> arguments) {
+                            return result.unwrapOr(arguments.get(0));
+                        }
+                        
+                        @Override
+                        public String toString() { return "<native result method>"; }
+                    };
+                    
+                case "unwrap_error":
+                    return new ThornCallable() {
+                        @Override
+                        public int arity() { return 0; }
+                        
+                        @Override
+                        public Object call(Interpreter interpreter, List<Object> arguments) {
+                            return result.unwrapError();
+                        }
+                        
+                        @Override
+                        public String toString() { return "<native result method>"; }
+                    };
+            }
+        }
 
         // Generate type-specific error messages
         String typeName = getTypeName(object);
@@ -758,6 +978,9 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         } else if (object instanceof String) {
             errorMessage = "String method '" + expr.name.lexeme + "' is not defined.\n" +
                           "Available string methods: length, includes, startsWith, endsWith, slice";
+        } else if (object instanceof ThornResult) {
+            errorMessage = "Result method '" + expr.name.lexeme + "' is not defined.\n" +
+                          "Available result methods: is_ok, is_error, unwrap, unwrap_or, unwrap_error";
         } else if (object instanceof Double || object instanceof Boolean) {
             errorMessage = "Cannot access property '" + expr.name.lexeme + "' on primitive type '" + typeName + "'.";
         } else if (object == null) {
@@ -911,6 +1134,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         if (value instanceof Double) return "number";
         if (value instanceof Boolean) return "boolean";
         if (value instanceof List) return "array";
+        if (value instanceof java.util.Map) return "dict";
         if (value instanceof ThornInstance) {
             return ((ThornInstance) value).getKlass().name;
         }

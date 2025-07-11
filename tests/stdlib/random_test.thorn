@@ -1,0 +1,103 @@
+import "random";
+
+// Test: Random module functionality
+// Tests random number generation, sampling, and distributions
+
+// Test 1: Basic random generation
+print("Random float [0,1): " + random());
+print("Random int [1,10]: " + randint(1, 10));
+print("Random float [0,100): " + randfloat(0, 100));
+print("Random boolean: " + randbool());
+
+// Test 2: Random bytes
+bytes = randbytes(5);
+print("Random bytes (5): [" + bytes[0] + ", " + bytes[1] + ", " + bytes[2] + ", " + bytes[3] + ", " + bytes[4] + "]");
+
+// Test 3: Seeding for reproducibility
+seed(42);
+val1 = random();
+val2 = random();
+seed(42);  // Reset with same seed
+val3 = random();
+val4 = random();
+print("Seeded values match: " + (val1 == val3) + " and " + (val2 == val4));
+
+// Test 4: Choice and sampling
+colors = ["red", "green", "blue", "yellow", "purple"];
+print("Random color: " + choice(colors));
+
+// Multiple choices with replacement
+picks = choices(colors, 3, null);
+print("3 random colors (with replacement): [" + picks[0] + ", " + picks[1] + ", " + picks[2] + "]");
+
+// Sample without replacement
+sample_colors = sample(colors, 3);
+print("3 color sample (no replacement): [" + sample_colors[0] + ", " + sample_colors[1] + ", " + sample_colors[2] + "]");
+
+// Test 5: Shuffling
+numbers = [1, 2, 3, 4, 5];
+shuffled_copy = shuffled(numbers);
+print("Original: [" + numbers[0] + ", " + numbers[1] + ", " + numbers[2] + ", " + numbers[3] + ", " + numbers[4] + "]");
+print("Shuffled copy: [" + shuffled_copy[0] + ", " + shuffled_copy[1] + ", " + shuffled_copy[2] + ", " + shuffled_copy[3] + ", " + shuffled_copy[4] + "]");
+
+// In-place shuffle
+shuffle(numbers);
+print("After in-place shuffle: [" + numbers[0] + ", " + numbers[1] + ", " + numbers[2] + ", " + numbers[3] + ", " + numbers[4] + "]");
+
+// Test 6: Distributions
+print("\nDistribution samples:");
+print("Normal(0, 1): " + normal(0, 1));
+print("Normal(100, 15): " + normal(100, 15));
+print("Exponential(0.5): " + exponential(0.5));
+print("Uniform(10, 20): " + uniform(10, 20));
+
+// Test 7: String generation
+rand_str = rand_string(10, null);
+print("Random alphanumeric (10): " + rand_str);
+
+custom_chars = "ABC123";
+custom_str = rand_string(8, custom_chars);
+print("Random from 'ABC123' (8): " + custom_str);
+
+// UUID generation
+uuid = uuid4();
+print("UUID v4: " + uuid);
+
+// Hex string
+hex_str = hex_string(8);
+print("Random hex (8 bytes): " + hex_str);
+
+// Test 8: Cryptographic random
+crypto_val = crypto_random();
+print("\nCrypto random float: " + crypto_val);
+
+crypto_int = crypto_randint(1000, 9999);
+print("Crypto random int [1000,9999]: " + crypto_int);
+
+crypto_bytes = crypto_randbytes(4);
+print("Crypto random bytes (4): [" + crypto_bytes[0] + ", " + crypto_bytes[1] + ", " + crypto_bytes[2] + ", " + crypto_bytes[3] + "]");
+
+crypto_tok = crypto_token(16);
+print("Crypto token (16): " + crypto_tok);
+
+// Test 9: Weighted choice
+items = [["common", 10.0], ["rare", 2.0], ["legendary", 0.5]];
+counts = {"common": 0, "rare": 0, "legendary": 0};
+
+// Run many times to see distribution
+for (i = 0; i < 100; i = i + 1) {
+    item = weighted_choice(items);
+    counts[item] = counts[item] + 1;
+}
+
+print("\nWeighted choice distribution (100 runs):");
+print("Common: " + counts["common"]);
+print("Rare: " + counts["rare"]);
+print("Legendary: " + counts["legendary"]);
+
+// Test 10: Create custom generator
+gen = RandomGenerator(12345);
+print("\nCustom generator values:");
+// Note: RandomGenerator methods might need different names due to Java conventions
+
+print("\n✅ Random module tests completed!");

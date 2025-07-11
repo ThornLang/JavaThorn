@@ -216,6 +216,13 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
     }
 
     @Override
+    public String visitSliceExpr(Expr.Slice expr) {
+        String start = expr.start != null ? print(expr.start) : "";
+        String end = expr.end != null ? print(expr.end) : "";
+        return "(slice " + print(expr.object) + " " + start + ":" + end + ")";
+    }
+
+    @Override
     public String visitMatchExpr(Expr.Match expr) {
         StringBuilder builder = new StringBuilder();
         builder.append("(match ").append(print(expr.expr));

@@ -1,0 +1,23 @@
+// Test that existing indexing still works
+
+// Array indexing
+numbers = [10, 20, 30, 40];
+print("Array[0]: " + numbers[0]);
+print("Array[2]: " + numbers[2]);
+
+// Dictionary indexing
+dict = {"name": "Bob", "age": 25};
+print("Dict name: " + dict["name"]);
+print("Dict age: " + dict["age"]);
+
+// Mixed operations
+fruits = ["apple", "banana", "cherry"];
+first_fruit = fruits[0];
+print("First fruit: " + first_fruit);
+print("First letter of first fruit: " + first_fruit[0]);
+
+// Nested access
+words = ["hello", "world"];
+print("First word, second char: " + words[0][1]);
+
+print("✅ Backwards compatibility test passed");

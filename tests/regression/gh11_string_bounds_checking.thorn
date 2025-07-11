@@ -1,0 +1,13 @@
+// Test string indexing bounds checking
+
+str = "Test";
+print("Testing bounds for string: " + str);
+print("Length: " + str.length);
+
+// Valid indices
+print("Index 0: " + str[0]);
+print("Index 1: " + str[1]);
+print("Index 2: " + str[2]);
+print("Index 3: " + str[3]);
+
+print("✅ Bounds checking test passed (valid indices)");

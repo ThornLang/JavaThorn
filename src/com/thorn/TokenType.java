@@ -30,7 +30,7 @@ public enum TokenType {
     
     // Type system keywords
     STRING_TYPE, NUMBER_TYPE, BOOLEAN_TYPE, NULL_TYPE,
-    ANY_TYPE, VOID_TYPE, ARRAY_TYPE, FUNCTION_TYPE,
+    ANY_TYPE, VOID_TYPE, ARRAY_TYPE, FUNCTION_TYPE, DICT_TYPE,
 
     // Thorn-specific tokens
     DOLLAR,          // $ for functions

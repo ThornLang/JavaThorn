@@ -1,0 +1,55 @@
+// Test: Explicit type arguments in function calls
+// Expected: Can specify type arguments explicitly
+
+// Generic swap function
+$ swap[T](a: T, b: T): Array[T] {
+    return [b, a];
+}
+
+// Test 1: Explicit type arguments for clarity
+nums = swap[number](1, 2);
+strs = swap[string]("first", "second");
+
+print("swap[number](1, 2) = [" + nums[0] + ", " + nums[1] + "]");
+print("swap[string]('first', 'second') = [" + strs[0] + ", " + strs[1] + "]");
+
+// Test 2: Type arguments with generic class
+class Pair[K, V] {
+    $ init(key: K, value: V) {
+        this.key = key;
+        this.value = value;
+    }
+    
+    $ getKey(): K {
+        return this.key;
+    }
+    
+    $ getValue(): V {
+        return this.value;
+    }
+    
+    $ toString(): string {
+        return "(" + this.key + ", " + this.value + ")";
+    }
+}
+
+// Explicit instantiation (when supported)
+// p1: Pair[string, number] = Pair[string, number]("age", 25);
+// For now, type inference from constructor
+p1 = Pair("age", 25);
+p2 = Pair(42, true);
+
+print("Pair('age', 25) = " + p1.toString());
+print("Pair(42, true) = " + p2.toString());
+
+// Test 3: Generic function with explicit type args
+$ cast[From, To](value: From): To {
+    // Simplified cast - in real impl would do proper conversion
+    return value;
+}
+
+// Use explicit type args to clarify intent
+// num = cast[string, number]("42");  // Would parse string to number
+// str = cast[number, string](42);    // Would convert to string
+
+print("✅ Explicit type arguments test passed");

@@ -1,0 +1,59 @@
+// Test: Pattern matching with Result types
+// Expected: Ok(value) and Error(error) patterns work, variables are bound correctly
+
+// Test basic pattern matching
+ok_result = Ok(42);
+error_result = Error("test error");
+
+// Test Ok pattern matching
+ok_match = match (ok_result) {
+    Ok(value) => "Got value: " + value,
+    Error(error) => "Got error: " + error,
+};
+print("Ok match result: " + ok_match);
+
+// Test Error pattern matching
+error_match = match (error_result) {
+    Ok(value) => "Got value: " + value,
+    Error(error) => "Got error: " + error,
+};
+print("Error match result: " + error_match);
+
+// Test pattern matching with different types
+string_ok = Ok("hello");
+number_error = Error(404);
+
+string_match = match (string_ok) {
+    Ok(value) => "String: " + value,
+    Error(error) => "Error: " + error,
+};
+print("String match: " + string_match);
+
+number_match = match (number_error) {
+    Ok(value) => "Value: " + value,
+    Error(error) => "Number error: " + error,
+};
+print("Number match: " + number_match);
+
+// Test with guards
+numeric_result = Ok(42);
+guard_result = match (numeric_result) {
+    Ok(value) if value > 50 => "Large: " + value,
+    Ok(value) if value > 0 => "Small positive: " + value,
+    Ok(value) => "Zero or negative: " + value,
+    Error(err) => "Error: " + err,
+};
+print("Guard result: " + guard_result);
+
+// Verify pattern matching works
+if (ok_match == "Got value: 42") {
+    print("✅ Ok pattern matching works");
+} else {
+    print("❌ Ok pattern matching failed");
+}
+
+if (error_match == "Got error: test error") {
+    print("✅ Error pattern matching works");
+} else {
+    print("❌ Error pattern matching failed");
+}

@@ -15,6 +15,9 @@ public class ThornVM {
     private int frameCount;
     private boolean halted;
     
+    // Track if we're in a Result context for division by zero handling
+    private boolean inResultContext = false;
+    
     public ThornVM() {
         this.callStack = new CallFrame[MAX_CALL_STACK];
         this.globals = new HashMap<>();
@@ -593,6 +596,10 @@ public class ThornVM {
         checkNumberOperands(left, right);
         double rightVal = ((Number) right).doubleValue();
         if (rightVal == 0.0) {
+            // Check if we're in a Result context (being called from Ok/Error constructor)
+            if (inResultContext) {
+                return ((Number) left).doubleValue() / rightVal; // Returns Infinity
+            }
             throw new RuntimeException("Division by zero");
         }
         return ((Number) left).doubleValue() / rightVal;
@@ -734,6 +741,34 @@ public class ThornVM {
             return (double) System.currentTimeMillis();
         }
         
+        if ("native_ok".equals(function)) {
+            if (argCount != 1) {
+                throw new RuntimeException("Ok() expects 1 argument");
+            }
+            // Set Result context flag before accessing the argument
+            inResultContext = true;
+            try {
+                Object value = callerFrame.getRegister(functionRegister + 1);
+                return com.thorn.ThornResult.ok(value);
+            } finally {
+                inResultContext = false;
+            }
+        }
+        
+        if ("native_error".equals(function)) {
+            if (argCount != 1) {
+                throw new RuntimeException("Error() expects 1 argument");
+            }
+            // Set Result context flag before accessing the argument
+            inResultContext = true;
+            try {
+                Object error = callerFrame.getRegister(functionRegister + 1);
+                return com.thorn.ThornResult.error(error);
+            } finally {
+                inResultContext = false;
+            }
+        }
+        
         // Handle array methods
         if (function instanceof ArrayMethod) {
             ArrayMethod method = (ArrayMethod) function;
@@ -759,6 +794,8 @@ public class ThornVM {
         // Add built-in functions and constants
         globals.put("clock", "native_clock");
         globals.put("print", "native_print");
+        globals.put("Ok", "native_ok");
+        globals.put("Error", "native_error");
     }
     
     // Inner class for array methods
@@ -772,12 +809,21 @@ public class ThornVM {
         }
         
         Object call(CallFrame frame, int argCount, int functionRegister) {
+            // Debug: print register contents
+            if ("slice".equals(methodName)) {
+                System.err.println("ArrayMethod.call: functionRegister=" + functionRegister + ", argCount=" + argCount);
+                for (int i = 0; i < 10; i++) {
+                    System.err.println("  Register " + i + ": " + frame.getRegister(i));
+                }
+            }
+            
             switch (methodName) {
                 case "push":
                     if (argCount != 1) {
                         throw new RuntimeException("push() expects 1 argument");
                     }
-                    list.add(frame.getRegister(functionRegister + 1));
+                    // Use consistent calling convention - arguments start at register 1
+                    list.add(frame.getRegister(1));
                     return (double) list.size();
                     
                 case "pop":
@@ -837,7 +883,9 @@ public class ThornVM {
                     if (argCount >= 1) {
                         Object startObj = frame.getRegister(functionRegister + 1);
                         if (!(startObj instanceof Double)) {
-                            throw new RuntimeException("Slice start index must be a number");
+                            throw new RuntimeException("Slice start index must be a number (got: " + 
+                                (startObj == null ? "null" : startObj.getClass().getSimpleName()) + 
+                                " from register " + (functionRegister + 1) + ")");
                         }
                         start = ((Double) startObj).intValue();
                         // Handle negative indices
@@ -850,7 +898,9 @@ public class ThornVM {
                     if (argCount >= 2) {
                         Object endObj = frame.getRegister(functionRegister + 2);
                         if (!(endObj instanceof Double)) {
-                            throw new RuntimeException("Slice end index must be a number");
+                            throw new RuntimeException("Slice end index must be a number (got: " + 
+                                (endObj == null ? "null" : endObj.getClass().getSimpleName()) + 
+                                " from register " + (functionRegister + 2) + ")");
                         }
                         end = ((Double) endObj).intValue();
                         // Handle negative indices

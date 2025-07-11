@@ -319,6 +319,14 @@ public class ConstantFoldingPass extends OptimizationPass {
                 }
                 
                 @Override
+                public Expr visitSliceExpr(Expr.Slice expr) {
+                    Expr foldedObject = foldExpression(expr.object);
+                    Expr foldedStart = expr.start != null ? foldExpression(expr.start) : null;
+                    Expr foldedEnd = expr.end != null ? foldExpression(expr.end) : null;
+                    return new Expr.Slice(foldedObject, expr.bracket, foldedStart, foldedEnd);
+                }
+                
+                @Override
                 public Expr visitLambdaExpr(Expr.Lambda expr) {
                     return expr; // Don't fold inside lambdas
                 }

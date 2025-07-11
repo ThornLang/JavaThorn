@@ -24,3 +24,6 @@ commit.sh
 
 # Wiki directory
 wiki/
+
+# Git worktrees
+worktrees/

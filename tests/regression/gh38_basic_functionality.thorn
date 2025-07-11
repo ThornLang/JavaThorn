@@ -1,0 +1,32 @@
+// Test: Basic Result type functionality
+// Expected: Ok and Error constructors work, helper methods return correct values
+
+// Test Ok and Error construction
+ok_result = Ok("success");
+error_result = Error("failure");
+
+print("Ok result: " + ok_result);
+print("Error result: " + error_result);
+
+// Test helper methods
+print("ok_result.is_ok(): " + ok_result.is_ok());
+print("ok_result.is_error(): " + ok_result.is_error());
+print("error_result.is_ok(): " + error_result.is_ok());
+print("error_result.is_error(): " + error_result.is_error());
+
+// Test unwrap_or
+print("ok_result.unwrap_or('default'): " + ok_result.unwrap_or("default"));
+print("error_result.unwrap_or('default'): " + error_result.unwrap_or("default"));
+
+// Verify basic functionality
+if (ok_result.is_ok() && !ok_result.is_error()) {
+    print("✅ Ok result methods work correctly");
+} else {
+    print("❌ Ok result methods failed");
+}
+
+if (!error_result.is_ok() && error_result.is_error()) {
+    print("✅ Error result methods work correctly");
+} else {
+    print("❌ Error result methods failed");
+}

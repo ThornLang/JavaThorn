@@ -1,0 +1,88 @@
+import "net";
+
+// Test: Network module functionality
+// Tests HTTP requests, URL parsing, and basic socket operations
+
+// Test 1: URL parsing and building
+url = "https://example.com:8080/path/to/resource?key=value&foo=bar#section";
+parsed = parse_url(url);
+print("Parsed URL:");
+print("  Scheme: " + parsed["scheme"]);
+print("  Host: " + parsed["host"]);
+print("  Port: " + parsed["port"]);
+print("  Path: " + parsed["path"]);
+print("  Query: " + parsed["query"]);
+print("  Fragment: " + parsed["fragment"]);
+print("  Params: " + parsed["params"].keys().length + " parameters");
+
+// Test 2: URL building
+components = {
+    "scheme": "https",
+    "host": "api.example.com",
+    "port": 443,
+    "path": "/v1/users",
+    "params": {
+        "limit": "10",
+        "offset": "20"
+    }
+};
+built_url = build_url(components);
+print("\nBuilt URL: " + built_url);
+
+// Test 3: URL encoding/decoding
+original = "Hello World! Special chars: &=?#";
+encoded = url_encode(original);
+decoded = url_decode(encoded);
+print("\nURL Encoding:");
+print("  Original: " + original);
+print("  Encoded: " + encoded);
+print("  Decoded: " + decoded);
+print("  Round-trip success: " + (original == decoded));
+
+// Test 4: HTTP GET request (using a reliable test endpoint)
+print("\nHTTP GET test:");
+try_http = false; // Set to true to test with real HTTP endpoint
+if (try_http) {
+    // Using httpbin.org for testing
+    response = get("https://httpbin.org/get");
+    print("  Status: " + response["status"]);
+    print("  Headers count: " + response["headers"].keys().length);
+    print("  Has body: " + (response["body"] != null));
+} else {
+    print("  Skipping HTTP test (set try_http to true to enable)");
+}
+
+// Test 5: Local IP addresses
+local_ips = get_local_ips();
+print("\nLocal IP addresses: " + local_ips.length + " found");
+for (ip in local_ips) {
+    print("  - " + ip);
+}
+
+// Test 6: Hostname/IP resolution
+hostname = "localhost";
+ip = get_ip_address(hostname);
+print("\nDNS Resolution:");
+print("  " + hostname + " -> " + ip);
+
+// Test 7: UDP socket creation and port binding
+udp = udp_socket();
+port = udp.get_port();
+print("\nUDP socket created on port: " + port);
+udp.close();
+
+// Test 8: TCP socket test (local only)
+test_tcp = false; // Set to true to test TCP sockets
+if (test_tcp) {
+    // Create server
+    server = tcp_listen(0); // Random port
+    server_port = server.get_port();
+    print("\nTCP server listening on port: " + server_port);
+    
+    // Would need threading to properly test client/server
+    server.close();
+} else {
+    print("\nSkipping TCP test (set test_tcp to true to enable)");
+}
+
+print("\n✅ Net module tests completed!");

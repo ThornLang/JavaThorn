@@ -1,0 +1,65 @@
+// Test: Result type with different data types
+// Expected: Result works with all ThornLang data types
+
+// Test with primitive types
+string_ok = Ok("hello");
+string_error = Error("string error");
+number_ok = Ok(42);
+number_error = Error(404);
+bool_ok = Ok(true);
+bool_error = Error(false);
+null_ok = Ok(null);
+null_error = Error(null);
+
+print("String Ok: " + string_ok);
+print("String Error: " + string_error);
+print("Number Ok: " + number_ok);
+print("Number Error: " + number_error);
+print("Bool Ok: " + bool_ok);
+print("Bool Error: " + bool_error);
+print("Null Ok: " + null_ok);
+print("Null Error: " + null_error);
+
+// Test with arrays
+array_ok = Ok([1, 2, 3]);
+array_error = Error(["error", "array"]);
+
+print("Array Ok: " + array_ok);
+print("Array Error: " + array_error);
+
+// Test with dictionaries  
+dict_ok = Ok({"key": "value"});
+dict_error = Error({"error": "dict"});
+
+print("Dict Ok: " + dict_ok);
+print("Dict Error: " + dict_error);
+
+// Test nested Results
+nested_ok = Ok(Ok("nested success"));
+nested_error = Ok(Error("nested error"));
+
+print("Nested Ok: " + nested_ok);
+print("Nested Error: " + nested_error);
+
+// Test pattern matching with nested Results
+nested_result = match (nested_ok) {
+    Ok(inner) => match (inner) {
+        Ok(value) => "Nested success: " + value,
+        Error(err) => "Nested error: " + err,
+    },
+    Error(err) => "Outer error: " + err,
+};
+print("Nested match: " + nested_result);
+
+// Verify different types work
+if (string_ok.is_ok() && number_ok.is_ok() && bool_ok.is_ok()) {
+    print("✅ All primitive types work with Ok");
+} else {
+    print("❌ Primitive types failed with Ok");
+}
+
+if (string_error.is_error() && number_error.is_error() && bool_error.is_error()) {
+    print("✅ All primitive types work with Error");
+} else {
+    print("❌ Primitive types failed with Error");
+}

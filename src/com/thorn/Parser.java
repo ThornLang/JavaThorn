@@ -117,6 +117,14 @@ class Parser {
 
     private Stmt classDeclaration() {
         Token name = consume(IDENTIFIER, "Expected class name.");
+        
+        // Parse type parameters if present (e.g., class Box[T])
+        List<Stmt.TypeParameter> typeParams = null;
+        if (match(LEFT_BRACKET)) {
+            typeParams = parseTypeParameters();
+            consume(RIGHT_BRACKET, "Expected ']' after type parameters.");
+        }
+        
         consume(LEFT_BRACE, "Expected '{' before class body.");
 
         List<Stmt.Function> methods = new ArrayList<>();
@@ -129,7 +137,7 @@ class Parser {
         }
 
         consume(RIGHT_BRACE, "Expected '}' after class body.");
-        return new Stmt.Class(name, methods);
+        return new Stmt.Class(name, typeParams, methods);
     }
 
     private Stmt varDeclaration(boolean isImmutable) {
@@ -288,6 +296,14 @@ class Parser {
 
     private Stmt function(String kind) {
         Token name = consume(IDENTIFIER, "Expected " + kind + " name.");
+        
+        // Parse type parameters if present (e.g., function[T, R])
+        List<Stmt.TypeParameter> typeParams = null;
+        if (match(LEFT_BRACKET)) {
+            typeParams = parseTypeParameters();
+            consume(RIGHT_BRACKET, "Expected ']' after type parameters.");
+        }
+        
         consume(LEFT_PAREN, "Expected '(' after " + kind + " name.");
         
         List<Stmt.Parameter> parameters = new ArrayList<>();
@@ -334,7 +350,7 @@ class Parser {
         inClassMethod = wasInClassMethod;
         inConstructor = wasInConstructor;
         
-        return new Stmt.Function(name, parameters, returnType, body);
+        return new Stmt.Function(name, typeParams, parameters, returnType, body);
     }
 
     private Stmt expressionStatement() {
@@ -551,14 +567,73 @@ class Parser {
 
         while (true) {
             if (match(LEFT_PAREN)) {
-                expr = finishCall(expr);
+                expr = finishCall(expr, null);
             } else if (match(DOT)) {
                 Token name = consume(IDENTIFIER, "Expected property name after '.'.");
                 expr = new Expr.Get(expr, name);
             } else if (match(LEFT_BRACKET)) {
-                Expr index = expression();
-                consume(RIGHT_BRACKET, "Expected ']' after index.");
-                expr = new Expr.Index(expr, previous(), index);
+                Token bracket = previous();
+                
+                // Try to parse as type arguments first
+                int savedCurrent = current;
+                boolean isTypeArgs = false;
+                
+                // Check if this looks like type arguments
+                if (check(IDENTIFIER) || check(STRING_TYPE) || check(NUMBER_TYPE) || 
+                    check(BOOLEAN_TYPE) || check(NULL_TYPE) || check(ANY_TYPE) || 
+                    check(VOID_TYPE) || check(FUNCTION_TYPE) || check(ARRAY_TYPE)) {
+                    // Look ahead to see if this could be type arguments
+                    // We need to check if the pattern matches type args followed by (
+                    while (!isAtEnd() && !check(RIGHT_BRACKET)) {
+                        advance();
+                        if (check(COMMA)) {
+                            advance();
+                        }
+                    }
+                    if (match(RIGHT_BRACKET) && check(LEFT_PAREN)) {
+                        // This is type arguments followed by a call
+                        isTypeArgs = true;
+                    }
+                }
+                
+                // Reset to start of bracket
+                current = savedCurrent;
+                
+                if (isTypeArgs) {
+                    // Parse type arguments
+                    List<Expr> typeArgs = new ArrayList<>();
+                    do {
+                        typeArgs.add(parseType());
+                    } while (match(COMMA));
+                    consume(RIGHT_BRACKET, "Expected ']' after type arguments.");
+                    
+                    // Must be followed by a function call
+                    if (match(LEFT_PAREN)) {
+                        expr = finishCall(expr, typeArgs);
+                    } else {
+                        throw error(peek(), "Expected '(' after type arguments.");
+                    }
+                } else {
+                    // Parse as array index or slice
+                    Expr start = null;
+                    if (!check(COLON)) {
+                        start = expression();
+                    }
+                    
+                    if (match(COLON)) {
+                        // This is a slice
+                        Expr end = null;
+                        if (!check(RIGHT_BRACKET)) {
+                            end = expression();
+                        }
+                        consume(RIGHT_BRACKET, "Expected ']' after slice.");
+                        expr = new Expr.Slice(expr, bracket, start, end);
+                    } else {
+                        // Regular index
+                        consume(RIGHT_BRACKET, "Expected ']' after index.");
+                        expr = new Expr.Index(expr, bracket, start);
+                    }
+                }
             } else {
                 break;
             }
@@ -567,7 +642,7 @@ class Parser {
         return expr;
     }
 
-    private Expr finishCall(Expr callee) {
+    private Expr finishCall(Expr callee, List<Expr> typeArguments) {
         List<Expr> arguments = new ArrayList<>();
         if (!check(RIGHT_PAREN)) {
             do {
@@ -580,7 +655,7 @@ class Parser {
 
         Token paren = consume(RIGHT_PAREN, "Expected ')' after arguments.");
 
-        return new Expr.Call(callee, paren, arguments);
+        return new Expr.Call(callee, paren, typeArguments, arguments);
     }
 
     private Expr primary() {
@@ -741,6 +816,16 @@ class Parser {
             return new Expr.GenericType(arrayToken, java.util.Arrays.asList(elementType));
         }
         
+        if (match(DICT_TYPE)) {
+            Token dictToken = previous();
+            consume(LEFT_BRACKET, "Expected '[' after 'Dict'.");
+            Expr keyType = parseType();
+            consume(COMMA, "Expected ',' between key and value types.");
+            Expr valueType = parseType();
+            consume(RIGHT_BRACKET, "Expected ']' after dict value type.");
+            return new Expr.GenericType(dictToken, java.util.Arrays.asList(keyType, valueType));
+        }
+        
         if (match(FUNCTION_TYPE)) {
             Token functionToken = previous();
             consume(LEFT_BRACKET, "Expected '[' after 'Function'.");
@@ -808,6 +893,24 @@ class Parser {
         throw error(peek(), "Expected type.");
     }
 
+    private List<Stmt.TypeParameter> parseTypeParameters() {
+        List<Stmt.TypeParameter> typeParams = new ArrayList<>();
+        
+        do {
+            Token paramName = consume(IDENTIFIER, "Expected type parameter name.");
+            Expr constraint = null;
+            
+            // Check for constraint (e.g., T: Comparable)
+            if (match(COLON)) {
+                constraint = parseType();
+            }
+            
+            typeParams.add(new Stmt.TypeParameter(paramName, constraint));
+        } while (match(COMMA));
+        
+        return typeParams;
+    }
+    
     private boolean isAtEnd() {
         return peek().type == EOF;
     }

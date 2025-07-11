@@ -261,14 +261,45 @@ public class ModuleSystem {
     }
     
     private JavaFunction createJavaFunction(String name, Method method) {
-        return new JavaFunction(name, method.getParameterCount(), (interpreter, arguments) -> {
+        // Check if method has varargs
+        boolean isVarArgs = method.isVarArgs();
+        int arity = isVarArgs ? -1 : method.getParameterCount();
+        
+        return new JavaFunction(name, arity, (interpreter, arguments) -> {
             try {
-                // Convert arguments to appropriate types
-                Object[] args = new Object[arguments.size()];
                 Class<?>[] paramTypes = method.getParameterTypes();
-                for (int i = 0; i < arguments.size(); i++) {
-                    args[i] = convertArgument(arguments.get(i), paramTypes[i]);
+                Object[] args;
+                
+                if (isVarArgs) {
+                    // Handle varargs - last parameter is an array
+                    int regularParams = paramTypes.length - 1;
+                    args = new Object[paramTypes.length];
+                    
+                    // Convert regular parameters
+                    for (int i = 0; i < regularParams; i++) {
+                        if (i < arguments.size()) {
+                            args[i] = convertArgument(arguments.get(i), paramTypes[i]);
+                        }
+                    }
+                    
+                    // Convert varargs into array
+                    Class<?> componentType = paramTypes[regularParams].getComponentType();
+                    int varArgCount = Math.max(0, arguments.size() - regularParams);
+                    Object varArgs = java.lang.reflect.Array.newInstance(componentType, varArgCount);
+                    
+                    for (int i = 0; i < varArgCount; i++) {
+                        Object converted = convertArgument(arguments.get(regularParams + i), componentType);
+                        java.lang.reflect.Array.set(varArgs, i, converted);
+                    }
+                    args[regularParams] = varArgs;
+                } else {
+                    // Regular method - convert arguments normally
+                    args = new Object[arguments.size()];
+                    for (int i = 0; i < arguments.size(); i++) {
+                        args[i] = convertArgument(arguments.get(i), paramTypes[i]);
+                    }
                 }
+                
                 Object result = method.invoke(null, args);
                 // Wrap Java objects that have methods
                 if (result != null && shouldWrap(result)) {

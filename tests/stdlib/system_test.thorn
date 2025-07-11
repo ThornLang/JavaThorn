@@ -65,6 +65,7 @@ print("Elapsed time: " + elapsed + " seconds");
 
 // Test 7: Process execution
 // Execute a simple command
+proc = null;
 if (platform() == "windows") {
     // Windows command
     proc = exec("cmd", ["/c", "echo", "Hello from Windows"]);
@@ -73,8 +74,8 @@ if (platform() == "windows") {
     proc = exec("echo", ["Hello from Unix"]);
 }
 
-print("Started process with PID: " + proc.pid());
-exit_code = proc.wait();
+print("Started process with PID: " + proc.get_pid());
+exit_code = proc.wait_for();
 print("Process exited with code: " + exit_code);
 
 // Test 8: Environment variable expansion

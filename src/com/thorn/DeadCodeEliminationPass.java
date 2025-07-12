@@ -275,6 +275,19 @@ public class DeadCodeEliminationPass extends OptimizationPass {
                 public Void visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
                     return null;
                 }
+                
+                @Override
+                public Void visitTryCatchStmt(Stmt.TryCatch stmt) {
+                    collectUsageFromStatement(stmt.tryBlock);
+                    collectUsageFromStatement(stmt.catchBlock);
+                    return null;
+                }
+                
+                @Override
+                public Void visitThrowStmt(Stmt.Throw stmt) {
+                    collectUsageFromExpression(stmt.value);
+                    return null;
+                }
             });
         }
         

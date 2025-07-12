@@ -10,4 +10,10 @@ person = Person("Alice");
 print("Testing class instance error messages...");
 
 // This should give a helpful error message
-age = person.age;  // Property doesn't exist
+try {
+    age = person.age;  // Property doesn't exist
+    print("ERROR: Expected exception but none was thrown");
+} catch (e) {
+    print("Successfully caught error: " + e);
+    print("PASS: Caught expected error for undefined property");
+}

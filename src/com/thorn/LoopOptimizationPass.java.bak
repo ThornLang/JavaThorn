@@ -209,16 +209,6 @@ public class LoopOptimizationPass extends OptimizationPass {
                 public Stmt visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
                     return stmt;
                 }
-
-                @Override
-                public Stmt visitTryCatchStmt(Stmt.TryCatch stmt) {
-                    return stmt;
-                }
-
-                @Override
-                public Stmt visitThrowStmt(Stmt.Throw stmt) {
-                    return stmt;
-                }
             });
         }
         
@@ -325,16 +315,6 @@ public class LoopOptimizationPass extends OptimizationPass {
                 
                 @Override
                 public Stmt visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
-                    return stmt;
-                }
-
-                @Override
-                public Stmt visitTryCatchStmt(Stmt.TryCatch stmt) {
-                    return stmt;
-                }
-
-                @Override
-                public Stmt visitThrowStmt(Stmt.Throw stmt) {
                     return stmt;
                 }
             });
@@ -578,16 +558,6 @@ public class LoopOptimizationPass extends OptimizationPass {
                 public Stmt visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
                     return stmt;
                 }
-
-                @Override
-                public Stmt visitTryCatchStmt(Stmt.TryCatch stmt) {
-                    return stmt;
-                }
-
-                @Override
-                public Stmt visitThrowStmt(Stmt.Throw stmt) {
-                    return stmt;
-                }
             });
         }
         
@@ -677,12 +647,6 @@ public class LoopOptimizationPass extends OptimizationPass {
                     @Override public Void visitImportStmt(Stmt.Import stmt) { return null; }
                     @Override public Void visitExportStmt(Stmt.Export stmt) { return null; }
                     @Override public Void visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) { return null; }
-                    @Override public Void visitTryCatchStmt(Stmt.TryCatch stmt) { 
-                        identifyLoopVariables(stmt.tryBlock);
-                        identifyLoopVariables(stmt.catchBlock);
-                        return null; 
-                    }
-                    @Override public Void visitThrowStmt(Stmt.Throw stmt) { return null; }
                 });
             }
             
@@ -735,8 +699,6 @@ public class LoopOptimizationPass extends OptimizationPass {
                     @Override public Void visitImportStmt(Stmt.Import stmt) { return null; }
                     @Override public Void visitExportStmt(Stmt.Export stmt) { return null; }
                     @Override public Void visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) { return null; }
-                    @Override public Void visitTryCatchStmt(Stmt.TryCatch stmt) { return null; }
-                    @Override public Void visitThrowStmt(Stmt.Throw stmt) { return null; }
                 });
             }
             

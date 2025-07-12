@@ -1,0 +1,37 @@
+import { assert_throws, test, suite, run_all } from "test";
+
+// Test improved error messages for class instances
+
+class Person {
+    $ init(name: string) {
+        this.name = name;
+    }
+}
+
+suite("Class Error Messages", $() => {
+    test("undefined property access should give helpful error", $() => {
+        person = Person("Alice");
+        
+        assert_throws(
+            $() => {
+                age = person.age;  // Property doesn't exist
+            },
+            "Property 'age' is not defined",
+            "undefined class property"
+        );
+    });
+    
+    test("undefined method call should give helpful error", $() => {
+        person = Person("Bob");
+        
+        assert_throws(
+            $() => {
+                person.getAge();  // Method doesn't exist
+            },
+            "Property 'getAge' is not defined",
+            "undefined class method"
+        );
+    });
+});
+
+run_all();

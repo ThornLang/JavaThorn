@@ -1,0 +1,33 @@
+import { assert_throws, test, suite, run_all } from "test";
+
+// Test improved error messages for arrays
+
+suite("Array Error Messages", $() => {
+    test("map method should give helpful error", $() => {
+        numbers = [1, 2, 3];
+        
+        // Now we can properly test runtime errors with assert_throws
+        assert_throws(
+            $() => {
+                result = numbers.map($(x) => x * 2);
+            },
+            "Array method 'map' is not defined",
+            "undefined array method map"
+        );
+    });
+    
+    test("array methods should be listed in error", $() => {
+        arr = [1, 2, 3];
+        
+        // Test that error message includes available methods
+        assert_throws(
+            $() => {
+                arr.forEach($(x) => print(x));
+            },
+            "Array method 'forEach' is not defined",
+            "undefined array method forEach"
+        );
+    });
+});
+
+run_all();

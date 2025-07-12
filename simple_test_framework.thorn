@@ -1,0 +1,44 @@
+// Simple test framework with try-catch support
+
+$ assert_throws(func: Any, expected_message: string, test_name: string): void {
+    try {
+        func();
+        print("FAIL: " + test_name + " - Expected exception but none was thrown");
+    } catch (e) {
+        if (e == expected_message) {
+            print("PASS: " + test_name);
+        } else {
+            print("FAIL: " + test_name + " - Expected '" + expected_message + "' but got '" + e + "'");
+        }
+    }
+}
+
+$ assert_equals(expected: Any, actual: Any, test_name: string): void {
+    if (expected == actual) {
+        print("PASS: " + test_name);
+    } else {
+        print("FAIL: " + test_name + " - Expected " + expected + " but got " + actual);
+    }
+}
+
+// Test the assert_throws function
+print("=== Testing assert_throws function ===");
+
+$ test_function_that_throws(): void {
+    throw "Expected test error";
+}
+
+$ test_function_that_does_not_throw(): void {
+    value = 5 + 5;
+}
+
+assert_throws(test_function_that_throws, "Expected test error", "Function that throws correct message");
+assert_throws(test_function_that_throws, "Wrong message", "Function that throws wrong message");
+assert_throws(test_function_that_does_not_throw, "Any message", "Function that doesn't throw");
+
+// Test assert_equals
+assert_equals(10, 5 + 5, "Simple arithmetic");
+assert_equals("hello", "hello", "String equality");
+assert_equals(true, true, "Boolean equality");
+
+print("=== Test framework demonstration complete ===");

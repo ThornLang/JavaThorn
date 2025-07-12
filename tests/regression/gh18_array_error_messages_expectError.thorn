@@ -4,4 +4,11 @@ numbers = [1, 2, 3];
 print("Testing array error messages...");
 
 // This should give a helpful error message - map() doesn't exist
-result = numbers.map($(x) => x * 2);
+try {
+    result = numbers.map($(x) => x * 2);
+    print("ERROR: Expected exception but none was thrown");
+} catch (e) {
+    print("Successfully caught error: " + e);
+    // Simply print the error to see what methods are available
+    print("PASS: Caught expected error for undefined array method");
+}

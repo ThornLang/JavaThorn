@@ -177,6 +177,16 @@ public class FunctionInliningPass extends OptimizationPass {
                 @Override public Void visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
                     return null;
                 }
+                
+                @Override public Void visitTryCatchStmt(Stmt.TryCatch stmt) {
+                    analyzeFunctionDefinitions(stmt.tryBlock);
+                    analyzeFunctionDefinitions(stmt.catchBlock);
+                    return null;
+                }
+                
+                @Override public Void visitThrowStmt(Stmt.Throw stmt) {
+                    return null;
+                }
             });
         }
         
@@ -379,6 +389,20 @@ public class FunctionInliningPass extends OptimizationPass {
                 @Override
                 public Stmt visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
                     return stmt;
+                }
+                
+                @Override
+                public Stmt visitTryCatchStmt(Stmt.TryCatch stmt) {
+                    return new Stmt.TryCatch(
+                        transformStatement(stmt.tryBlock),
+                        stmt.catchVariable,
+                        transformStatement(stmt.catchBlock)
+                    );
+                }
+                
+                @Override
+                public Stmt visitThrowStmt(Stmt.Throw stmt) {
+                    return new Stmt.Throw(stmt.keyword, transformExpression(stmt.value));
                 }
             });
         }
@@ -707,6 +731,19 @@ public class FunctionInliningPass extends OptimizationPass {
                     public Void visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
                         return null;
                     }
+                    
+                    @Override
+                    public Void visitTryCatchStmt(Stmt.TryCatch stmt) {
+                        calculateStatementSize(stmt.tryBlock);
+                        calculateStatementSize(stmt.catchBlock);
+                        return null;
+                    }
+                    
+                    @Override
+                    public Void visitThrowStmt(Stmt.Throw stmt) {
+                        calculateExpressionSize(stmt.value);
+                        return null;
+                    }
                 });
             }
             
@@ -798,6 +835,16 @@ public class FunctionInliningPass extends OptimizationPass {
                     @Override
                     public Boolean visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
                         return false;
+                    }
+                    
+                    @Override
+                    public Boolean visitTryCatchStmt(Stmt.TryCatch stmt) {
+                        return checkStatement(stmt.tryBlock) || checkStatement(stmt.catchBlock);
+                    }
+                    
+                    @Override
+                    public Boolean visitThrowStmt(Stmt.Throw stmt) {
+                        return checkExpression(stmt.value);
                     }
                 });
             }
@@ -956,6 +1003,19 @@ public class FunctionInliningPass extends OptimizationPass {
                     
                     @Override
                     public Void visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
+                        return null;
+                    }
+                    
+                    @Override
+                    public Void visitTryCatchStmt(Stmt.TryCatch stmt) {
+                        countCalls(stmt.tryBlock);
+                        countCalls(stmt.catchBlock);
+                        return null;
+                    }
+                    
+                    @Override
+                    public Void visitThrowStmt(Stmt.Throw stmt) {
+                        countCallsInExpression(stmt.value);
                         return null;
                     }
                 });
@@ -1123,6 +1183,20 @@ public class FunctionInliningPass extends OptimizationPass {
                     public Stmt visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
                         return stmt;
                     }
+                    
+                    @Override
+                    public Stmt visitTryCatchStmt(Stmt.TryCatch stmt) {
+                        return new Stmt.TryCatch(
+                            inlineStatement(stmt.tryBlock),
+                            stmt.catchVariable,
+                            inlineStatement(stmt.catchBlock)
+                        );
+                    }
+                    
+                    @Override
+                    public Stmt visitThrowStmt(Stmt.Throw stmt) {
+                        return new Stmt.Throw(stmt.keyword, inlineExpression(stmt.value));
+                    }
                 });
             }
             
@@ -1283,3 +1357,5 @@ public class FunctionInliningPass extends OptimizationPass {
         }
     }
 }
+// Stub methods for try-catch support - added by script
+// These should be properly implemented when optimization support is needed

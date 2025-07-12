@@ -194,16 +194,6 @@ public class UnreachableCodeEliminationPass extends OptimizationPass {
                 public Stmt visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
                     return stmt;
                 }
-
-                @Override
-                public Stmt visitTryCatchStmt(Stmt.TryCatch stmt) {
-                    return stmt;
-                }
-
-                @Override
-                public Stmt visitThrowStmt(Stmt.Throw stmt) {
-                    return stmt;
-                }
             });
         }
         

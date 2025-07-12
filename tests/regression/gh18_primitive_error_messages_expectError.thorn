@@ -3,9 +3,29 @@
 // Number primitive
 num = 42;
 print("Testing number primitive error...");
-prop = num.someProperty;
+try {
+    prop = num.someProperty;
+    print("ERROR: Expected exception but none was thrown");
+} catch (e) {
+    print("Successfully caught error: " + e);
+    if (e == "Cannot access property 'someProperty' on primitive type 'number'.") {
+        print("PASS: Error message correctly describes number primitive access");
+    } else {
+        print("FAIL: Expected exact error message for number primitive");
+    }
+}
 
 // Boolean primitive
 bool = true;
 print("Testing boolean primitive error...");
-method = bool.toString();
+try {
+    method = bool.toString();
+    print("ERROR: Expected exception but none was thrown");
+} catch (e) {
+    print("Successfully caught error: " + e);
+    if (e == "Cannot access property 'toString' on primitive type 'boolean'.") {
+        print("PASS: Error message correctly describes boolean primitive access");
+    } else {
+        print("FAIL: Expected exact error message for boolean primitive");
+    }
+}

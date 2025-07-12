@@ -1,0 +1,29 @@
+// Test that try-catch can catch runtime errors
+
+print("Testing division by zero:");
+try {
+    result = 5 / 0;
+    print("This should not execute");
+} catch (e) {
+    print("Caught division error: " + e);
+}
+
+print("Testing array index out of bounds:");
+try {
+    arr = [1, 2, 3];
+    value = arr[10];
+    print("This should not execute");
+} catch (e) {
+    print("Caught array error: " + e);
+}
+
+print("Testing property access on null:");
+try {
+    obj = null;
+    value = obj.property;
+    print("This should not execute");  
+} catch (e) {
+    print("Caught null access error: " + e);
+}
+
+print("All runtime error tests completed!");

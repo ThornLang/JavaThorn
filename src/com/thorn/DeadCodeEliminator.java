@@ -133,6 +133,18 @@ public class DeadCodeEliminator {
             }
             
             @Override
+            public Void visitTryCatchStmt(Stmt.TryCatch stmt) {
+                collectDefinitions(stmt.tryBlock);
+                collectDefinitions(stmt.catchBlock);
+                return null;
+            }
+            
+            @Override
+            public Void visitThrowStmt(Stmt.Throw stmt) {
+                return null;
+            }
+            
+            @Override
             public Void visitBlockStmt(Stmt.Block stmt) {
                 for (Stmt blockStmt : stmt.statements) {
                     collectDefinitions(blockStmt);
@@ -408,6 +420,19 @@ public class DeadCodeEliminator {
             
             @Override
             public Void visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
+                return null;
+            }
+            
+            @Override
+            public Void visitTryCatchStmt(Stmt.TryCatch stmt) {
+                collectUsages(stmt.tryBlock);
+                collectUsages(stmt.catchBlock);
+                return null;
+            }
+            
+            @Override
+            public Void visitThrowStmt(Stmt.Throw stmt) {
+                collectUsagesFromExpr(stmt.value);
                 return null;
             }
         });
@@ -726,6 +751,15 @@ public class DeadCodeEliminator {
             @Override public Void visitImportStmt(Stmt.Import stmt) { return null; }
             @Override public Void visitExportStmt(Stmt.Export stmt) { return null; }
             @Override public Void visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) { return null; }
+            @Override public Void visitTryCatchStmt(Stmt.TryCatch stmt) { 
+                analyzeLocalStatement(stmt.tryBlock, scope);
+                analyzeLocalStatement(stmt.catchBlock, scope);
+                return null; 
+            }
+            @Override public Void visitThrowStmt(Stmt.Throw stmt) { 
+                analyzeLocalExpression(stmt.value, scope);
+                return null; 
+            }
         });
     }
     
@@ -1062,3 +1096,5 @@ public class DeadCodeEliminator {
         }
     }
 }
+// Stub methods for try-catch support - added by script
+// These should be properly implemented when optimization support is needed

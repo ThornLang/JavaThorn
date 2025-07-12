@@ -1,0 +1,31 @@
+import { assert_throws, test, suite, run_all } from "test";
+
+// Test improved error messages for strings
+
+suite("String Error Messages", $() => {
+    test("string method should give helpful error", $() => {
+        text = "hello world";
+        
+        assert_throws(
+            $() => {
+                upper = text.toUpperCase();
+            },
+            "String property 'toUpperCase' is not defined",
+            "undefined string method"
+        );
+    });
+    
+    test("string property access should list available properties", $() => {
+        str = "test";
+        
+        assert_throws(
+            $() => {
+                result = str.toLowerCase();
+            },
+            "String property 'toLowerCase' is not defined",
+            "undefined string property"
+        );
+    });
+});
+
+run_all();

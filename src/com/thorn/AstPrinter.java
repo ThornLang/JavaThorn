@@ -118,6 +118,21 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
     }
 
     @Override
+    public String visitTryCatchStmt(Stmt.TryCatch stmt) {
+        String result = "(try " + print(stmt.tryBlock) + " catch";
+        if (stmt.catchVariable != null) {
+            result += " (" + stmt.catchVariable.lexeme + ")";
+        }
+        result += " " + print(stmt.catchBlock) + ")";
+        return result;
+    }
+
+    @Override
+    public String visitThrowStmt(Stmt.Throw stmt) {
+        return "(throw " + print(stmt.value) + ")";
+    }
+
+    @Override
     public String visitBinaryExpr(Expr.Binary expr) {
         return parenthesize(expr.operator.lexeme, expr.left, expr.right);
     }

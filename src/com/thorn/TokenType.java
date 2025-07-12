@@ -27,6 +27,7 @@ public enum TokenType {
     RETURN, TRUE, WHILE, THIS,
     IMPORT, EXPORT, FROM, IN,
     MATCH, UNDERSCORE,  // _ for pattern matching default
+    TRY, CATCH, THROW,
     
     // Type system keywords
     STRING_TYPE, NUMBER_TYPE, BOOLEAN_TYPE, NULL_TYPE,

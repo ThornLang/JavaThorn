@@ -16,6 +16,8 @@ public abstract class Stmt {
         R visitImportStmt(Import stmt);
         R visitExportStmt(Export stmt);
         R visitExportIdentifierStmt(ExportIdentifier stmt);
+        R visitTryCatchStmt(TryCatch stmt);
+        R visitThrowStmt(Throw stmt);
     }
 
     abstract <R> R accept(Visitor<R> visitor);
@@ -214,6 +216,38 @@ public abstract class Stmt {
         }
 
         public final Token name;
+    }
+
+    public static class TryCatch extends Stmt {
+        TryCatch(Stmt tryBlock, Token catchVariable, Stmt catchBlock) {
+            this.tryBlock = tryBlock;
+            this.catchVariable = catchVariable;
+            this.catchBlock = catchBlock;
+        }
+
+        @Override
+        <R> R accept(Visitor<R> visitor) {
+            return visitor.visitTryCatchStmt(this);
+        }
+
+        public final Stmt tryBlock;
+        public final Token catchVariable;  // can be null for catch without variable
+        public final Stmt catchBlock;
+    }
+
+    public static class Throw extends Stmt {
+        Throw(Token keyword, Expr value) {
+            this.keyword = keyword;
+            this.value = value;
+        }
+
+        @Override
+        <R> R accept(Visitor<R> visitor) {
+            return visitor.visitThrowStmt(this);
+        }
+
+        public final Token keyword;
+        public final Expr value;
     }
     
     // Parameter class for typed function parameters

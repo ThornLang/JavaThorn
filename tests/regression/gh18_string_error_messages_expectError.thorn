@@ -4,4 +4,10 @@ text = "hello world";
 print("Testing string error messages...");
 
 // This should give a helpful error message
-upper = text.toUpperCase();
+try {
+    upper = text.toUpperCase();
+    print("ERROR: Expected exception but none was thrown");
+} catch (e) {
+    print("Successfully caught error: " + e);
+    print("PASS: Caught expected error for undefined string method");
+}

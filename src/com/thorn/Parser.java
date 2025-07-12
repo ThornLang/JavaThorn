@@ -169,6 +169,8 @@ class Parser {
         if (match(RETURN)) return returnStatement();
         if (match(WHILE)) return whileStatement();
         if (match(FOR)) return forStatement();
+        if (match(TRY)) return tryCatchStatement();
+        if (match(THROW)) return throwStatement();
         if (match(LEFT_BRACE)) return new Stmt.Block(block());
 
         return expressionStatement();
@@ -278,6 +280,30 @@ class Parser {
         }
         
         return statements;
+    }
+
+    private Stmt tryCatchStatement() {
+        Stmt tryBlock = statement();
+        
+        consume(CATCH, "Expected 'catch' after try block.");
+        
+        // Optional catch variable
+        Token catchVariable = null;
+        if (match(LEFT_PAREN)) {
+            catchVariable = consume(IDENTIFIER, "Expected catch variable name.");
+            consume(RIGHT_PAREN, "Expected ')' after catch variable.");
+        }
+        
+        Stmt catchBlock = statement();
+        
+        return new Stmt.TryCatch(tryBlock, catchVariable, catchBlock);
+    }
+
+    private Stmt throwStatement() {
+        Token keyword = previous();
+        Expr value = expression();
+        consume(SEMICOLON, "Expected ';' after throw value.");
+        return new Stmt.Throw(keyword, value);
     }
 
     private Stmt function(String kind) {

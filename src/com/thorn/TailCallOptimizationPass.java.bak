@@ -202,16 +202,6 @@ public class TailCallOptimizationPass extends OptimizationPass {
             public Stmt visitExportStmt(Stmt.Export stmt) { return stmt; }
             @Override
             public Stmt visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) { return stmt; }
-            @Override
-            public Stmt visitTryCatchStmt(Stmt.TryCatch stmt) { 
-                return new Stmt.TryCatch(
-                    transformStatement(stmt.tryBlock, functionName, tempVars),
-                    stmt.catchVariable,
-                    transformStatement(stmt.catchBlock, functionName, tempVars)
-                ); 
-            }
-            @Override
-            public Stmt visitThrowStmt(Stmt.Throw stmt) { return stmt; }
         });
     }
     

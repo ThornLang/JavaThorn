@@ -213,6 +213,20 @@ public class BranchOptimizationPass extends OptimizationPass {
                 public Stmt visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
                     return stmt;
                 }
+                
+                @Override
+                public Stmt visitTryCatchStmt(Stmt.TryCatch stmt) {
+                    return new Stmt.TryCatch(
+                        optimizeStatement(stmt.tryBlock),
+                        stmt.catchVariable,
+                        optimizeStatement(stmt.catchBlock)
+                    );
+                }
+                
+                @Override
+                public Stmt visitThrowStmt(Stmt.Throw stmt) {
+                    return stmt;
+                }
             });
         }
         

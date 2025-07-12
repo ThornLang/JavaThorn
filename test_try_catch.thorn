@@ -1,0 +1,19 @@
+// Basic try-catch test
+try {
+    print("In try block");
+    throw "Test error";
+    print("This should not execute");
+} catch (e) {
+    print("Caught: " + e);
+}
+
+print("After try-catch");
+
+// Try-catch without variable
+try {
+    throw "Another error";
+} catch {
+    print("Caught error without variable");
+}
+
+print("Done");

@@ -77,12 +77,26 @@ jobs:
           echo "   Interpreter mode:"
           echo "   Running: java com.thorn.Thorn \"$test_file\""
           if timeout 30s java com.thorn.Thorn "$test_file" > interpreter_output.tmp 2>&1; then
-            echo "   ✅ PASSED"
-            ((passed++))
-            echo "   Output:"
-            cat interpreter_output.tmp | head -3 | sed 's/^/     /'
+            # Check for test framework output
+            if grep -q "All tests passed!" interpreter_output.tmp; then
+              echo "   ✅ PASSED (all tests passed)"
+              ((passed++))
+              # Show test summary
+              grep -E "(✅|❌|📊|🎉)" interpreter_output.tmp | head -5 | sed 's/^/     /'
+            elif grep -q "Failed tests:" interpreter_output.tmp; then
+              echo "   ❌ FAILED (some tests failed)"
+              ((failed++))
+              # Show failure details
+              grep -A 5 "Failed tests:" interpreter_output.tmp | sed 's/^/     /'
+            else
+              # No test framework detected, check exit code
+              echo "   ✅ PASSED (exit code 0)"
+              ((passed++))
+              echo "   Output:"
+              cat interpreter_output.tmp | head -3 | sed 's/^/     /'
+            fi
           else
-            echo "   ❌ FAILED"
+            echo "   ❌ FAILED (runtime error)"
             ((failed++))
             echo "   Error output:"
             cat interpreter_output.tmp | head -10 | sed 's/^/     /'
@@ -92,12 +106,26 @@ jobs:
           echo "   VM mode:"
           echo "   Running: java com.thorn.Thorn \"$test_file\" --vm"
           if timeout 30s java com.thorn.Thorn "$test_file" --vm > vm_output.tmp 2>&1; then
-            echo "   ✅ PASSED"
-            ((passed++))
-            echo "   Output:"
-            cat vm_output.tmp | head -3 | sed 's/^/     /'
+            # Check for test framework output
+            if grep -q "All tests passed!" vm_output.tmp; then
+              echo "   ✅ PASSED (all tests passed)"
+              ((passed++))
+              # Show test summary
+              grep -E "(✅|❌|📊|🎉)" vm_output.tmp | head -5 | sed 's/^/     /'
+            elif grep -q "Failed tests:" vm_output.tmp; then
+              echo "   ❌ FAILED (some tests failed)"
+              ((failed++))
+              # Show failure details
+              grep -A 5 "Failed tests:" vm_output.tmp | sed 's/^/     /'
+            else
+              # No test framework detected, check exit code
+              echo "   ✅ PASSED (exit code 0)"
+              ((passed++))
+              echo "   Output:"
+              cat vm_output.tmp | head -3 | sed 's/^/     /'
+            fi
           else
-            echo "   ❌ FAILED"
+            echo "   ❌ FAILED (runtime error)"
             ((failed++))
             echo "   Error output:"
             cat vm_output.tmp | head -10 | sed 's/^/     /'

@@ -153,7 +153,7 @@ public class Compression {
     /**
      * Extract files from a ZIP archive
      * @param data ZIP archive bytes
-     * @return Map of filename to content bytes
+     * @return Map of filename to content (string for text files, byte list for binary)
      */
     public static Map<String, Object> zipExtract(Object data) {
         try {
@@ -170,7 +170,20 @@ public class Compression {
                         while ((len = zis.read(buffer)) > 0) {
                             baos.write(buffer, 0, len);
                         }
-                        files.put(entry.getName(), bytesToList(baos.toByteArray()));
+                        byte[] content = baos.toByteArray();
+                        
+                        // Try to detect if it's text content
+                        // For simplicity, check if filename ends with common text extensions
+                        // or if the content looks like text
+                        String filename = entry.getName().toLowerCase();
+                        if (filename.endsWith(".txt") || filename.endsWith(".md") || 
+                            filename.endsWith(".json") || filename.endsWith(".xml") ||
+                            filename.endsWith(".csv") || filename.endsWith(".thorn") ||
+                            isLikelyText(content)) {
+                            files.put(entry.getName(), new String(content, java.nio.charset.StandardCharsets.UTF_8));
+                        } else {
+                            files.put(entry.getName(), bytesToList(content));
+                        }
                     }
                     zis.closeEntry();
                 }
@@ -198,7 +211,24 @@ public class Compression {
                 while ((entry = zis.getNextEntry()) != null) {
                     Map<String, Object> info = new HashMap<>();
                     info.put("name", entry.getName());
-                    info.put("size", (double) entry.getSize());
+                    
+                    // ZipInputStream doesn't know sizes until the entry is read
+                    // So we need to read the entry to get its size
+                    long size = entry.getSize();
+                    if (size == -1 && !entry.isDirectory()) {
+                        // Read the entry to determine its size
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        byte[] buffer = new byte[8192];
+                        int len;
+                        while ((len = zis.read(buffer)) > 0) {
+                            baos.write(buffer, 0, len);
+                        }
+                        size = baos.size();
+                    } else if (entry.isDirectory()) {
+                        size = 0;
+                    }
+                    
+                    info.put("size", (double) size);
                     info.put("compressed_size", (double) entry.getCompressedSize());
                     info.put("is_directory", entry.isDirectory());
                     info.put("time", (double) entry.getTime());
@@ -303,5 +333,24 @@ public class Compression {
             list.add((double)(b & 0xFF));
         }
         return list;
+    }
+    
+    private static boolean isLikelyText(byte[] bytes) {
+        if (bytes.length == 0) return true;
+        
+        // Check first 512 bytes or entire content if smaller
+        int checkLength = Math.min(bytes.length, 512);
+        int textChars = 0;
+        
+        for (int i = 0; i < checkLength; i++) {
+            byte b = bytes[i];
+            // Count printable ASCII chars, tabs, newlines, carriage returns
+            if ((b >= 32 && b <= 126) || b == 9 || b == 10 || b == 13) {
+                textChars++;
+            }
+        }
+        
+        // If more than 95% are text characters, consider it text
+        return (double) textChars / checkLength > 0.95;
     }
 }

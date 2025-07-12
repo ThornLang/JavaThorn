@@ -174,6 +174,20 @@ public class DeadCodeEliminator {
                 }
                 return null;
             }
+            
+            @Override
+            public Void visitThrowStmt(Stmt.Throw stmt) {
+                if (stmt.value != null) {
+                    collectDefinitionsFromExpr(stmt.value);
+                }
+                return null;
+            }
+            
+            @Override
+            public Void visitTypeAliasStmt(Stmt.TypeAlias stmt) {
+                // Type aliases are compile-time only, no optimization needed
+                return null;
+            }
         });
     }
     
@@ -387,6 +401,14 @@ public class DeadCodeEliminator {
             }
             
             @Override
+            public Void visitThrowStmt(Stmt.Throw stmt) {
+                if (stmt.value != null) {
+                    collectUsagesFromExpr(stmt.value);
+                }
+                return null;
+            }
+            
+            @Override
             public Void visitBlockStmt(Stmt.Block stmt) {
                 for (Stmt blockStmt : stmt.statements) {
                     collectUsages(blockStmt);
@@ -408,6 +430,12 @@ public class DeadCodeEliminator {
             
             @Override
             public Void visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
+                return null;
+            }
+            
+            @Override
+            public Void visitTypeAliasStmt(Stmt.TypeAlias stmt) {
+                // Type aliases are compile-time only, no optimization needed
                 return null;
             }
         });
@@ -686,6 +714,14 @@ public class DeadCodeEliminator {
             }
             
             @Override
+            public Void visitThrowStmt(Stmt.Throw stmt) {
+                if (stmt.value != null) {
+                    analyzeLocalExpression(stmt.value, scope);
+                }
+                return null;
+            }
+            
+            @Override
             public Void visitIfStmt(Stmt.If stmt) {
                 analyzeLocalExpression(stmt.condition, scope);
                 analyzeLocalStatement(stmt.thenBranch, scope);
@@ -726,6 +762,7 @@ public class DeadCodeEliminator {
             @Override public Void visitImportStmt(Stmt.Import stmt) { return null; }
             @Override public Void visitExportStmt(Stmt.Export stmt) { return null; }
             @Override public Void visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) { return null; }
+            @Override public Void visitTypeAliasStmt(Stmt.TypeAlias stmt) { return null; }
         });
     }
     

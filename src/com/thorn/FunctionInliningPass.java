@@ -168,6 +168,7 @@ public class FunctionInliningPass extends OptimizationPass {
                 @Override public Void visitExpressionStmt(Stmt.Expression stmt) { return null; }
                 @Override public Void visitVarStmt(Stmt.Var stmt) { return null; }
                 @Override public Void visitReturnStmt(Stmt.Return stmt) { return null; }
+                @Override public Void visitThrowStmt(Stmt.Throw stmt) { return null; }
                 @Override public Void visitImportStmt(Stmt.Import stmt) { return null; }
                 @Override public Void visitExportStmt(Stmt.Export stmt) { 
                     analyzeFunctionDefinitions(stmt.declaration);
@@ -175,6 +176,11 @@ public class FunctionInliningPass extends OptimizationPass {
                 }
                 
                 @Override public Void visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
+                    return null;
+                }
+                
+                @Override public Void visitTypeAliasStmt(Stmt.TypeAlias stmt) {
+                    // Type aliases are compile-time only, no optimization needed
                     return null;
                 }
             });
@@ -309,6 +315,13 @@ public class FunctionInliningPass extends OptimizationPass {
                 }
                 
                 @Override
+                public Stmt visitThrowStmt(Stmt.Throw stmt) {
+                    Expr transformedValue = stmt.value != null ? 
+                        transformExpression(stmt.value) : null;
+                    return new Stmt.Throw(stmt.keyword, transformedValue);
+                }
+                
+                @Override
                 public Stmt visitIfStmt(Stmt.If stmt) {
                     Expr transformedCondition = transformExpression(stmt.condition);
                     Stmt transformedThen = transformStatement(stmt.thenBranch);
@@ -378,6 +391,12 @@ public class FunctionInliningPass extends OptimizationPass {
                 
                 @Override
                 public Stmt visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
+                    return stmt;
+                }
+                
+                @Override
+                public Stmt visitTypeAliasStmt(Stmt.TypeAlias stmt) {
+                    // Type aliases are compile-time only, no optimization needed
                     return stmt;
                 }
             });
@@ -645,6 +664,14 @@ public class FunctionInliningPass extends OptimizationPass {
                     }
                     
                     @Override
+                    public Void visitThrowStmt(Stmt.Throw stmt) {
+                        if (stmt.value != null) {
+                            calculateExpressionSize(stmt.value);
+                        }
+                        return null;
+                    }
+                    
+                    @Override
                     public Void visitIfStmt(Stmt.If stmt) {
                         calculateExpressionSize(stmt.condition);
                         calculateStatementSize(stmt.thenBranch);
@@ -707,6 +734,12 @@ public class FunctionInliningPass extends OptimizationPass {
                     public Void visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
                         return null;
                     }
+                    
+                    @Override
+                    public Void visitTypeAliasStmt(Stmt.TypeAlias stmt) {
+                        // Type aliases are compile-time only, no optimization needed
+                        return null;
+                    }
                 });
             }
             
@@ -741,6 +774,11 @@ public class FunctionInliningPass extends OptimizationPass {
                     
                     @Override
                     public Boolean visitReturnStmt(Stmt.Return stmt) {
+                        return stmt.value != null && checkExpression(stmt.value);
+                    }
+                    
+                    @Override
+                    public Boolean visitThrowStmt(Stmt.Throw stmt) {
                         return stmt.value != null && checkExpression(stmt.value);
                     }
                     
@@ -797,6 +835,12 @@ public class FunctionInliningPass extends OptimizationPass {
                     
                     @Override
                     public Boolean visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
+                        return false;
+                    }
+                    
+                    @Override
+                    public Boolean visitTypeAliasStmt(Stmt.TypeAlias stmt) {
+                        // Type aliases are compile-time only, no optimization needed
                         return false;
                     }
                 });
@@ -896,6 +940,14 @@ public class FunctionInliningPass extends OptimizationPass {
                     }
                     
                     @Override
+                    public Void visitThrowStmt(Stmt.Throw stmt) {
+                        if (stmt.value != null) {
+                            countCallsInExpression(stmt.value);
+                        }
+                        return null;
+                    }
+                    
+                    @Override
                     public Void visitIfStmt(Stmt.If stmt) {
                         countCallsInExpression(stmt.condition);
                         countCalls(stmt.thenBranch);
@@ -956,6 +1008,12 @@ public class FunctionInliningPass extends OptimizationPass {
                     
                     @Override
                     public Void visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
+                        return null;
+                    }
+                    
+                    @Override
+                    public Void visitTypeAliasStmt(Stmt.TypeAlias stmt) {
+                        // Type aliases are compile-time only, no optimization needed
                         return null;
                     }
                 });
@@ -1066,6 +1124,13 @@ public class FunctionInliningPass extends OptimizationPass {
                     }
                     
                     @Override
+                    public Stmt visitThrowStmt(Stmt.Throw stmt) {
+                        Expr inlinedValue = stmt.value != null ? 
+                            inlineExpression(stmt.value) : null;
+                        return new Stmt.Throw(stmt.keyword, inlinedValue);
+                    }
+                    
+                    @Override
                     public Stmt visitIfStmt(Stmt.If stmt) {
                         Expr inlinedCondition = inlineExpression(stmt.condition);
                         Stmt inlinedThen = inlineStatement(stmt.thenBranch);
@@ -1121,6 +1186,12 @@ public class FunctionInliningPass extends OptimizationPass {
                     
                     @Override
                     public Stmt visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
+                        return stmt;
+                    }
+                    
+                    @Override
+                    public Stmt visitTypeAliasStmt(Stmt.TypeAlias stmt) {
+                        // Type aliases are compile-time only, no optimization needed
                         return stmt;
                     }
                 });

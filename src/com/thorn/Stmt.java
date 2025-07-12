@@ -9,6 +9,7 @@ public abstract class Stmt {
         R visitFunctionStmt(Function stmt);
         R visitIfStmt(If stmt);
         R visitReturnStmt(Return stmt);
+        R visitThrowStmt(Throw stmt);
         R visitVarStmt(Var stmt);
         R visitWhileStmt(While stmt);
         R visitForStmt(For stmt);
@@ -16,6 +17,7 @@ public abstract class Stmt {
         R visitImportStmt(Import stmt);
         R visitExportStmt(Export stmt);
         R visitExportIdentifierStmt(ExportIdentifier stmt);
+        R visitTypeAliasStmt(TypeAlias stmt);
     }
 
     abstract <R> R accept(Visitor<R> visitor);
@@ -97,6 +99,21 @@ public abstract class Stmt {
         @Override
         <R> R accept(Visitor<R> visitor) {
             return visitor.visitReturnStmt(this);
+        }
+
+        public final Token keyword;
+        public final Expr value;
+    }
+
+    public static class Throw extends Stmt {
+        Throw(Token keyword, Expr value) {
+            this.keyword = keyword;
+            this.value = value;
+        }
+
+        @Override
+        <R> R accept(Visitor<R> visitor) {
+            return visitor.visitThrowStmt(this);
         }
 
         public final Token keyword;
@@ -225,6 +242,22 @@ public abstract class Stmt {
         
         public final Token name;
         public final Expr type;  // null if no type annotation
+    }
+    
+    // Type alias statement: % TypeName = Type;
+    public static class TypeAlias extends Stmt {
+        TypeAlias(Token name, Expr type) {
+            this.name = name;
+            this.type = type;
+        }
+
+        @Override
+        <R> R accept(Visitor<R> visitor) {
+            return visitor.visitTypeAliasStmt(this);
+        }
+
+        public final Token name;
+        public final Expr type;
     }
     
     // Type parameter class for generic types

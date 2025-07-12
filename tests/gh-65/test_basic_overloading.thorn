@@ -1,0 +1,71 @@
+import { assert_equals, test, suite, run_all } from "test";
+
+// Basic function overloading tests
+
+suite("Basic Function Overloading", $() => {
+    test("overloading with different arity", $() => {
+        $ greet() {
+            return "Hello, World!";
+        }
+
+        $ greet(name: string) {
+            return "Hello, " + name + "!";
+        }
+
+        $ greet(name: string, age: number) {
+            return "Hello, " + name + ", age " + age + "!";
+        }
+
+        // Test the overloads
+        result1: string = greet();
+        assert_equals("Hello, World!", result1, "No args should use first overload");
+
+        result2: string = greet("Alice");
+        assert_equals("Hello, Alice!", result2, "One arg should use second overload");
+
+        result3: string = greet("Bob", 25);
+        assert_equals("Hello, Bob, age 25!", result3, "Two args should use third overload");
+    });
+
+    test("overloading with same arity but different types", $() => {
+        $ process(x: number) {
+            return x * 2;
+        }
+
+        $ process(x: string) {
+            return x + x;
+        }
+
+        // These should pick the right overload based on type
+        num_result: number = process(5);
+        assert_equals(10, num_result, "Number arg should use number overload");
+
+        str_result: string = process("Hi");
+        assert_equals("HiHi", str_result, "String arg should use string overload");
+    });
+
+    test("untyped parameter overloading (arity-based only)", $() => {
+        $ compute(x) {
+            return x + 1;
+        }
+
+        $ compute(x, y) {
+            return x + y;
+        }
+
+        $ compute(x, y, z) {
+            return x + y + z;
+        }
+
+        res1: number = compute(10);
+        assert_equals(11, res1, "One untyped arg should use first overload");
+
+        res2: number = compute(10, 20);
+        assert_equals(30, res2, "Two untyped args should use second overload");
+
+        res3: number = compute(10, 20, 30);
+        assert_equals(60, res3, "Three untyped args should use third overload");
+    });
+});
+
+run_all();

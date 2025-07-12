@@ -261,11 +261,23 @@ public abstract class Expr {
             public final Expr pattern;
             public final Expr guard;  // optional: if condition
             public final Expr value;
+            public final List<Stmt> stmts;  // optional: for block cases
+            public final boolean isBlock;
 
             Case(Expr pattern, Expr guard, Expr value) {
                 this.pattern = pattern;
                 this.guard = guard;
                 this.value = value;
+                this.stmts = null;
+                this.isBlock = false;
+            }
+            
+            Case(Expr pattern, Expr guard, List<Stmt> stmts) {
+                this.pattern = pattern;
+                this.guard = guard;
+                this.value = null;
+                this.stmts = stmts;
+                this.isBlock = true;
             }
         }
 

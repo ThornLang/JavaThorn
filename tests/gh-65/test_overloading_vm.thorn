@@ -1,0 +1,143 @@
+import { assert_equals, test, suite, run_all } from "test";
+
+// Test function overloading in VM mode
+// Run with: java com.thorn.Thorn test_overloading_vm.thorn --vm
+
+suite("VM Function Overloading", $() => {
+    test("basic VM overloading", $() => {
+        $ vmFunc() {
+            return "no args";
+        }
+
+        $ vmFunc(x: number) {
+            return "number: " + x;
+        }
+
+        $ vmFunc(x: string) {
+            return "string: " + x;
+        }
+
+        $ vmFunc(x: number, y: number) {
+            return "sum: " + (x + y);
+        }
+
+        assert_equals("no args", vmFunc(), "No-arg overload should work");
+        assert_equals("number: 42", vmFunc(42), "Number overload should work");
+        assert_equals("string: hello", vmFunc("hello"), "String overload should work");
+        assert_equals("sum: 30", vmFunc(10, 20), "Two-number overload should work");
+    });
+
+    test("overloading in loops (VM optimization)", $() => {
+        $ loopFunc(n: number) {
+            return n * n;
+        }
+
+        $ loopFunc(s: string) {
+            return s + s;
+        }
+
+        // Test numeric overload in loop
+        sum: number = 0;
+        for (i = 0; i < 100; i = i + 1) {
+            sum = sum + loopFunc(i);
+        }
+        assert_equals(328350, sum, "Sum of squares should be correct");
+
+        // Test string overload in loop
+        concat: string = "";
+        for (j = 0; j < 5; j = j + 1) {
+            concat = concat + loopFunc("x");
+        }
+        assert_equals("xxxxxxxxxx", concat, "String concatenation should work");
+    });
+
+    test("recursive overloaded functions", $() => {
+        $ factorial(n: number): number {
+            if (n <= 1) {
+                return 1;
+            }
+            return n * factorial(n - 1);
+        }
+
+        $ factorial(s: string): string {
+            if (s.length <= 1) {
+                return s;
+            }
+            return s + factorial(s.slice(1, s.length));
+        }
+
+        fact5: number = factorial(5);
+        assert_equals(120, fact5, "Numeric factorial should work");
+
+        strFact: string = factorial("abc");
+        assert_equals("abcbcc", strFact, "String factorial should work");
+    });
+
+    test("overloading with closures", $() => {
+        $ makeCounter(start: number) {
+            count: number = start;
+            
+            $ increment() {
+                count = count + 1;
+                return count;
+            }
+            
+            $ increment(step: number) {
+                count = count + step;
+                return count;
+            }
+            
+            return increment;
+        }
+
+        counter = makeCounter(10);
+        assert_equals(11, counter(), "First increment by 1");
+        assert_equals(16, counter(5), "Increment by 5");
+        assert_equals(17, counter(), "Second increment by 1");
+        assert_equals(18, counter(), "Third increment by 1");
+    });
+
+    test("performance with many overloads", $() => {
+        $ manyOverloads(a: number) { return a; }
+        $ manyOverloads(a: number, b: number) { return a + b; }
+        $ manyOverloads(a: number, b: number, c: number) { return a + b + c; }
+        $ manyOverloads(a: number, b: number, c: number, d: number) { return a + b + c + d; }
+        $ manyOverloads(a: number, b: number, c: number, d: number, e: number) { return a + b + c + d + e; }
+
+        // Test each overload
+        assert_equals(1, manyOverloads(1), "1-arg overload");
+        assert_equals(3, manyOverloads(1, 2), "2-arg overload");
+        assert_equals(6, manyOverloads(1, 2, 3), "3-arg overload");
+        assert_equals(10, manyOverloads(1, 2, 3, 4), "4-arg overload");
+        assert_equals(15, manyOverloads(1, 2, 3, 4, 5), "5-arg overload");
+
+        // Performance test
+        total: number = 0;
+        for (k = 0; k < 1000; k = k + 1) {
+            total = total + manyOverloads(1);
+            total = total + manyOverloads(1, 2);
+            total = total + manyOverloads(1, 2, 3);
+            total = total + manyOverloads(1, 2, 3, 4);
+            total = total + manyOverloads(1, 2, 3, 4, 5);
+        }
+        assert_equals(35000, total, "Performance test total should be correct");
+    });
+
+    test("VM-specific edge cases", $() => {
+        // Test overloading with different return types
+        $ getVal(): number {
+            return 42;
+        }
+
+        $ getVal(asString: boolean): string {
+            if (asString) return "forty-two";
+            return "42";
+        }
+
+        assert_equals(42, getVal(), "No-arg returns number");
+        assert_equals("forty-two", getVal(true), "With true returns forty-two");
+        assert_equals("42", getVal(false), "With false returns 42");
+    });
+});
+
+run_all();

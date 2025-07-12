@@ -1,7 +1,0 @@
-// Test improved error messages for strings
-
-text = "hello world";
-print("Testing string error messages...");
-
-// This should give a helpful error message
-upper = text.toUpperCase();

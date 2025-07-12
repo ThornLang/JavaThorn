@@ -1,0 +1,98 @@
+import { assert_equals, assert_true, assert_false, test, suite, run_all } from "test";
+
+// Test type aliases
+
+suite("Type Aliases", $() => {
+    test("basic type aliases", $() => {
+        // Basic type alias
+        % UserId = number;
+        % Username = string;
+
+        userId: UserId = 12345;
+        username: Username = "alice";
+
+        assert_equals(12345, userId, "UserId type alias should work");
+        assert_equals("alice", username, "Username type alias should work");
+    });
+
+    test("composite type aliases", $() => {
+        % UserId = number;
+        % Username = string;
+        % UserInfo = Dict[string, Any];
+        % UserList = Array[UserInfo];
+
+        userId: UserId = 12345;
+        username: Username = "alice";
+
+        userInfo: UserInfo = {
+            "id": userId,
+            "name": username,
+            "active": true
+        };
+
+        assert_equals(12345, userInfo["id"], "UserInfo should store id");
+        assert_equals("alice", userInfo["name"], "UserInfo should store name");
+        assert_equals(true, userInfo["active"], "UserInfo should store active");
+
+        users: UserList = [userInfo];
+        assert_equals(1, users.length, "UserList should have one user");
+        assert_equals(userInfo, users[0], "UserList should contain userInfo");
+    });
+
+    test("function type aliases", $() => {
+        % Validator = Function[(string), boolean];
+
+        isValid: Validator = $(s) => s.length > 0;
+        
+        assert_true(isValid("test"), "Validator should return true for non-empty string");
+        assert_false(isValid(""), "Validator should return false for empty string");
+    });
+
+    test("nested type aliases", $() => {
+        % Id = number;
+        % Name = string;
+        % Score = number;
+        % ScoreMap = Dict[Name, Score];
+        % StudentRecord = Dict[string, Any];
+
+        scores: ScoreMap = {
+            "Alice": 95,
+            "Bob": 87,
+            "Charlie": 92
+        };
+
+        assert_equals(95, scores["Alice"], "ScoreMap should work for Alice");
+        assert_equals(87, scores["Bob"], "ScoreMap should work for Bob");
+        assert_equals(92, scores["Charlie"], "ScoreMap should work for Charlie");
+
+        record: StudentRecord = {
+            "id": 123,
+            "name": "Alice",
+            "scores": scores
+        };
+
+        assert_equals(123, record["id"], "StudentRecord should have id");
+        assert_equals("Alice", record["name"], "StudentRecord should have name");
+        assert_equals(scores, record["scores"], "StudentRecord should have scores");
+    });
+
+    test("array type aliases", $() => {
+        % IntArray = Array[number];
+        % StringArray = Array[string];
+        % Matrix = Array[IntArray];
+
+        numbers: IntArray = [1, 2, 3, 4, 5];
+        words: StringArray = ["hello", "world"];
+        
+        assert_equals(5, numbers.length, "IntArray should have 5 elements");
+        assert_equals(2, words.length, "StringArray should have 2 elements");
+
+        matrix: Matrix = [[1, 2], [3, 4], [5, 6]];
+        assert_equals(3, matrix.length, "Matrix should have 3 rows");
+        assert_equals(2, matrix[0].length, "Matrix row should have 2 columns");
+        assert_equals(1, matrix[0][0], "Matrix[0][0] should be 1");
+        assert_equals(6, matrix[2][1], "Matrix[2][1] should be 6");
+    });
+});
+
+run_all();

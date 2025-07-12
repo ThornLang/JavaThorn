@@ -1,0 +1,134 @@
+import { assert_equals, test, suite, run_all } from "test";
+
+// Test error cases for function overloading
+
+suite("Function Overloading Error Cases", $() => {
+    test("no matching overload", $() => {
+        $ strictFunc(x: number, y: number) {
+            return x + y;
+        }
+
+        $ strictFunc(x: string, y: string) {
+            return x + y;
+        }
+
+        // Test valid calls
+        result1 = strictFunc(1, 2);
+        assert_equals(3, result1, "Number overload should work");
+
+        result2 = strictFunc("hello", "world");
+        assert_equals("helloworld", result2, "String overload should work");
+
+        // Note: Cannot test invalid calls (3 arguments) without runtime error catching
+        // strictFunc(1, 2, 3) would fail with "No matching overload"
+    });
+
+    test("ambiguous overload resolution", $() => {
+        $ ambiguous(x) {
+            return "untyped: " + x;
+        }
+
+        $ ambiguous(x) {
+            return "also untyped: " + x;
+        }
+
+        // Both have same signature - first one wins
+        result: string = ambiguous(42);
+        assert_equals("untyped: 42", result, "First definition with same signature wins");
+    });
+
+    test("method overloading limitation", $() => {
+        // Method overloading within classes is not yet supported
+        // Only the last method definition will be active
+        class Calculator {
+            $ init() {
+                this.name = "Calculator";
+            }
+            
+            // These will override each other - only the last one remains
+            $ add(x: number) {
+                return x + x;
+            }
+            
+            $ add(x: number, y: number) {
+                return x + y;
+            }
+            
+            $ add(x: number, y: number, z: number) {
+                return x + y + z;
+            }
+        }
+
+        calc: Calculator = Calculator();
+        // Only the 3-argument version will work
+        result = calc.add(5, 3, 2);
+        assert_equals(10, result, "Only last method definition should be active");
+
+        // Calling with 1 or 2 args would fail since only 3-arg version exists
+    });
+
+    test("overloading with different function arities", $() => {
+        $ applyFunc(fn) {
+            return "lambda result: " + fn();
+        }
+
+        $ applyFunc(fn, arg) {
+            return "lambda with arg: " + fn(arg);
+        }
+
+        noArgFn = $() => "no args";
+        oneArgFn = $(x) => x + "!";
+
+        result1: string = applyFunc(noArgFn);
+        assert_equals("lambda result: no args", result1, "No-arg function application");
+
+        result2: string = applyFunc(oneArgFn, "test");
+        assert_equals("lambda with arg: test!", result2, "One-arg function application");
+    });
+
+    test("duplicate function signatures", $() => {
+        // Test what happens with identical signatures
+        $ duplicate(x: number): string {
+            return "first: " + x;
+        }
+
+        $ duplicate(x: number): string {
+            return "second: " + x;
+        }
+
+        $ duplicate(x: number): string {
+            return "third: " + x;
+        }
+
+        // First definition wins
+        result = duplicate(42);
+        assert_equals("first: 42", result, "First duplicate definition wins");
+    });
+
+    test("overload selection priority", $() => {
+        // Test type-based selection priority
+        $ priority(x: Any) {
+            return "any: " + x;
+        }
+
+        $ priority(x: number) {
+            return "number: " + x;
+        }
+
+        $ priority(x: string) {
+            return "string: " + x;
+        }
+
+        // Specific types should be preferred over Any
+        result1 = priority(42);
+        assert_equals("number: 42", result1, "Number type should be preferred over Any");
+
+        result2 = priority("hello");
+        assert_equals("string: hello", result2, "String type should be preferred over Any");
+
+        result3 = priority(true);
+        assert_equals("any: true", result3, "Boolean should match Any");
+    });
+});
+
+run_all();

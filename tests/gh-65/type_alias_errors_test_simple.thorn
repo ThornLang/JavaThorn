@@ -1,0 +1,120 @@
+// Simple type alias error tests
+// Tests type checking with type aliases
+// Run each test individually to see error messages
+
+// ==================== Setup Type Aliases ====================
+
+% StrictNumber = number;
+% StrictString = string;
+% NumberList = Array[number];
+% StringDict = Dict[string, string];
+
+print("Type Alias Error Tests (Simple)");
+print("================================");
+print("Note: Comment out individual tests to see different errors\n");
+
+// ==================== Test 1: Correct usage (should work) ====================
+
+print("Test 1: Correct type alias usage");
+correctNum: StrictNumber = 42;
+correctStr: StrictString = "hello";
+correctList: NumberList = [1, 2, 3];
+print("✅ All correct assignments work!");
+
+// ==================== Test 2: Type mismatch examples ====================
+// Uncomment each line individually to see the error
+
+print("\nTest 2: Type mismatches (uncomment to test):");
+
+// ERROR: Type error: cannot assign string to variable 'wrongNum' of type number
+// wrongNum: StrictNumber = "not a number";
+
+// ERROR: Type error: cannot assign number to variable 'wrongStr' of type string  
+// wrongStr: StrictString = 123;
+
+// ERROR: Type error: cannot assign HashMap to variable 'wrongList' of type Array[number]
+// wrongList: NumberList = {"key": "value"};
+
+// ERROR: Mixed array types
+// mixedArray: NumberList = [1, 2, "three", 4];
+
+// ERROR: Wrong dictionary value type
+// wrongDict: StringDict = {"key1": "value1", "key2": 42};
+
+print("✅ See comments for type mismatch examples");
+
+// ==================== Test 3: Function type checking ====================
+
+% NumberFunction = Function[(number), number];
+% StringFunction = Function[(string), string];
+
+print("\nTest 3: Function type aliases");
+
+// Correct function types
+goodNumFn: NumberFunction = $(n) => n * 2;
+goodStrFn: StringFunction = $(s) => s + "!";
+
+print("Number function result: " + goodNumFn(5));
+print("String function result: " + goodStrFn("hello"));
+
+// ERROR: Function type mismatches (uncomment to test)
+// badNumFn: NumberFunction = $(n) => "result: " + n;  // Returns string, not number
+// badStrFn: StringFunction = $(s) => s.length;        // Returns number, not string
+
+// ==================== Test 4: Null handling ====================
+
+print("\nTest 4: Null handling");
+
+// Using Any for nullable types
+% MaybeNumber = Any;
+% MaybeString = Any;
+
+maybeNum: MaybeNumber = 42;
+maybeNum = null;  // This works with Any
+print("Maybe number (null): " + maybeNum);
+
+// ERROR: Direct null assignment to strict types (uncomment to test)
+// strictNull: StrictNumber = null;
+
+// ==================== Test 5: Working with collections ====================
+
+print("\nTest 5: Collection type safety");
+
+% UserInfo = Dict[string, Any];
+% UserList = Array[UserInfo];
+
+// Correct usage
+user1: UserInfo = {"name": "Alice", "age": 25};
+user2: UserInfo = {"name": "Bob", "age": 30};
+users: UserList = [user1, user2];
+
+print("Users count: " + users.length);
+
+// Type-safe operations
+users.push({"name": "Charlie", "age": 35});
+print("After push: " + users.length);
+
+// ==================== Test 6: Type alias scoping ====================
+
+% GlobalAlias = string;
+
+$ testScoping(): void {
+    % LocalAlias = number;
+    % GlobalAlias = boolean;  // Shadows the global one
+    
+    local: LocalAlias = 42;
+    shadowed: GlobalAlias = true;
+    
+    print("\nTest 6: Scoping");
+    print("Local alias value: " + local);
+    print("Shadowed global (boolean): " + shadowed);
+}
+
+testScoping();
+
+// Global is unchanged
+globalValue: GlobalAlias = "still a string";
+print("Global alias (string): " + globalValue);
+
+print("\n✅ Type alias error tests completed!");
+print("Uncomment individual error lines to see type checking in action.");

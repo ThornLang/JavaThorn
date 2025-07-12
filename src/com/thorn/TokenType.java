@@ -24,7 +24,7 @@ public enum TokenType {
 
     // Keywords
     AND, CLASS, ELSE, FALSE, FOR, IF, NULL, OR,
-    RETURN, TRUE, WHILE, THIS,
+    RETURN, THROW, TRUE, WHILE, THIS,
     IMPORT, EXPORT, FROM, IN,
     MATCH, UNDERSCORE,  // _ for pattern matching default
     

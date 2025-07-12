@@ -1,0 +1,15 @@
+// Basic test of the test framework
+import { assert_true, assert_equals, test, run_all } from "test";
+
+test("basic assertions", $() => {
+    assert_true(true, "true should be true");
+    assert_equals(5, 5, "5 should equal 5");
+    assert_equals("hello", "hello", "strings should match");
+});
+
+test("math operations", $() => {
+    result = 2 + 3;
+    assert_equals(5, result, "2 + 3 should equal 5");
+});
+
+run_all();

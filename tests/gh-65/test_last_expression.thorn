@@ -1,0 +1,80 @@
+import { assert_equals, test, suite, run_all } from "test";
+
+// Test that last expression in match block works
+
+suite("Last Expression Return", $() => {
+    test("match block last expression", $() => {
+        $ testFunction() {
+            return Ok("hello");
+        }
+
+        result = testFunction();
+
+        output = match (result) {
+            Ok(value) => {
+                prefix = "processed";
+                suffix = "result";
+                formatted = prefix + "-" + value + "-" + suffix;
+                formatted;  // This should be the return value
+            },
+            Error(msg) => "error: " + msg,
+        };
+
+        assert_equals("processed-hello-result", output, "Last expression in match block should be return value");
+    });
+
+    test("nested block last expression", $() => {
+        value = 10;
+        
+        result = match (value) {
+            10 => {
+                x = 5;
+                y = 10;
+                x + y;  // Last expression of block
+            },
+            _ => 0,
+        };
+
+        assert_equals(15, result, "Nested block last expression should work");
+    });
+
+    test("function last expression", $() => {
+        $ calculate(x: number) {
+            temp = x * 2;
+            adjusted = temp + 5;
+            return adjusted - 3;  // Explicit return required
+        }
+
+        result = calculate(10);
+        assert_equals(22, result, "Function last expression should be return value");
+    });
+
+    test("match with mixed expression styles", $() => {
+        $ process(n: number) {
+            if (n < 0) return Error("negative");
+            if (n > 100) return Error("too large");
+            return Ok(n);
+        }
+
+        // Test with block
+        result1 = process(50);
+        msg1 = match (result1) {
+            Ok(val) => {
+                doubled = val * 2;
+                "Value: " + doubled;
+            },
+            Error(e) => "Error: " + e,
+        };
+        assert_equals("Value: 100", msg1, "Block last expression should work");
+
+        // Test with single expression
+        result2 = process(-5);
+        msg2 = match (result2) {
+            Ok(val) => "Value: " + val,
+            Error(e) => "Error: " + e,
+        };
+        assert_equals("Error: negative", msg2, "Single expression should work");
+    });
+});
+
+run_all();

@@ -1,93 +1,122 @@
 import "system";
+import { assert_not_null, assert_true, assert_equals, assert_greater_than, test, suite, run_all } from "test";
 
 // Test: System module functionality  
 // Tests system information, environment variables, and process operations
 
-// Test 1: System information
-print("Platform: " + platform());
-print("Architecture: " + architecture());
-print("Hostname: " + hostname());
-print("Username: " + username());
-print("Home directory: " + home_dir());
-print("Temp directory: " + temp_dir());
-print("CPU count: " + cpu_count());
-print("Total memory: " + (total_memory() / 1024 / 1024) + " MB");
-print("Available memory: " + (available_memory() / 1024 / 1024) + " MB");
+suite("System Module Tests", $() => {
+    test("system information", $() => {
+        assert_not_null(platform(), "platform should return non-null");
+        assert_not_null(architecture(), "architecture should return non-null");
+        assert_not_null(hostname(), "hostname should return non-null");
+        assert_not_null(username(), "username should return non-null");
+        assert_not_null(home_dir(), "home_dir should return non-null");
+        assert_not_null(temp_dir(), "temp_dir should return non-null");
+        
+        cpus = cpu_count();
+        assert_greater_than(cpus, 0, "CPU count should be positive");
+        
+        total_mem = total_memory();
+        avail_mem = available_memory();
+        assert_greater_than(total_mem, 0, "Total memory should be positive");
+        assert_greater_than(avail_mem, 0, "Available memory should be positive");
+    });
 
-// Test 2: Environment variables
-path = getenv("PATH");
-print("PATH exists: " + (path != null));
+    test("environment variables", $() => {
+        path = getenv("PATH");
+        assert_not_null(path, "PATH environment variable should exist");
+        
+        // Get all environment variables
+        env_vars = environ();
+        assert_not_null(env_vars, "environ() should return non-null");
+        assert_greater_than(env_vars.keys().length, 0, "Should have at least one env var");
+    });
 
-// Test setting an environment variable (note: this may not work in all environments)
-// setenv("THORN_TEST", "hello");
-// test_var = getenv("THORN_TEST");
-// print("Test env var: " + test_var);
+    test("process information", $() => {
+        current_pid = pid();
+        parent_pid = ppid();
+        
+        assert_greater_than(current_pid, 0, "Current PID should be positive");
+        assert_greater_than(parent_pid, 0, "Parent PID should be positive");
+    });
 
-// Get all environment variables
-env_vars = environ();
-print("Number of env vars: " + env_vars.keys().length);
+    test("working directory", $() => {
+        curr_dir = cwd();
+        assert_not_null(curr_dir, "Current directory should not be null");
+        assert_true(curr_dir.length > 0, "Current directory should not be empty");
+    });
 
-// Test 3: Process information
-print("Current PID: " + pid());
-print("Parent PID: " + ppid());
+    test("path operations", $() => {
+        home = home_dir();
+        config_path = join_path([home, ".config", "test"]);
+        
+        assert_not_null(config_path, "join_path should return non-null");
+        assert_true(config_path.includes(".config"), "Joined path should contain .config");
+        assert_true(config_path.includes("test"), "Joined path should contain test");
+        
+        // Test realpath (on current directory)
+        real = realpath(".");
+        assert_not_null(real, "realpath should return non-null");
+        assert_true(real.length > 0, "Real path should not be empty");
+    });
 
-// Test 4: Working directory
-curr_dir = cwd();
-print("Current directory: " + curr_dir);
+    test("time functions", $() => {
+        start_time = time();
+        start_millis = time_millis();
+        start_nanos = time_nanos();
+        
+        assert_greater_than(start_time, 0, "time() should return positive value");
+        assert_greater_than(start_millis, 0, "time_millis() should return positive value");
+        assert_greater_than(start_nanos, 0, "time_nanos() should return positive value");
+        
+        // Sleep for 0.1 seconds
+        sleep(0.1);
+        
+        end_time = time();
+        elapsed = end_time - start_time;
+        assert_greater_than(elapsed, 0.09, "Should have slept at least 0.09 seconds");
+    });
 
-// Test changing directory (careful with this)
-// home = home_dir();
-// chdir(home);
-// new_cwd = cwd();
-// print("Changed to: " + new_cwd);
-// chdir(curr_dir); // Change back
+    test("process execution", $() => {
+        // Execute a simple command
+        proc = null;
+        if (platform() == "windows") {
+            // Windows command
+            proc = exec("cmd", ["/c", "echo", "Hello from Windows"]);
+        } else {
+            // Unix-like command  
+            proc = exec("echo", ["Hello from Unix"]);
+        }
+        
+        assert_not_null(proc, "exec should return a process object");
+        
+        proc_pid = proc.get_pid();
+        assert_greater_than(proc_pid, 0, "Process PID should be positive");
+        
+        exit_code = proc.wait_for();
+        assert_equals(0, exit_code, "Echo command should exit with code 0");
+    });
 
-// Test 5: Path operations
-home = home_dir();
-config_path = join_path([home, ".config", "test"]);
-print("Joined path: " + config_path);
+    test("environment variable expansion", $() => {
+        test_string = "Home is $HOME and path is ${PATH}";
+        expanded = expand_env(test_string);
+        
+        assert_not_null(expanded, "expand_env should return non-null");
+        assert_true(!expanded.includes("$HOME"), "Should expand $HOME variable");
+        assert_true(!expanded.includes("${PATH}"), "Should expand ${PATH} variable");
+    });
 
-// Test realpath (on current directory)
-real = realpath(".");
-print("Real path of '.': " + real);
+    test("process alive check", $() => {
+        // Use a slightly longer sleep to ensure it stays alive
+        proc2 = exec("sleep", ["0.3"]);
+        
+        immediate_alive = proc2.is_alive();
+        assert_true(immediate_alive, "Process should be alive immediately after start");
+        
+        sleep(0.4);
+        after_sleep_alive = proc2.is_alive();
+        assert_true(!after_sleep_alive, "Process should not be alive after sleep completes");
+    });
+});
 
-// Test 6: Time functions
-start_time = time();
-start_millis = time_millis();
-start_nanos = time_nanos();
-
-// Sleep for 0.1 seconds
-sleep(0.1);
-
-end_time = time();
-elapsed = end_time - start_time;
-print("Elapsed time: " + elapsed + " seconds");
-
-// Test 7: Process execution
-// Execute a simple command
-proc = null;
-if (platform() == "windows") {
-    // Windows command
-    proc = exec("cmd", ["/c", "echo", "Hello from Windows"]);
-} else {
-    // Unix-like command  
-    proc = exec("echo", ["Hello from Unix"]);
-}
-
-print("Started process with PID: " + proc.get_pid());
-exit_code = proc.wait_for();
-print("Process exited with code: " + exit_code);
-
-// Test 8: Environment variable expansion
-test_string = "Home is $HOME and path is ${PATH}";
-expanded = expand_env(test_string);
-print("Original: " + test_string);
-print("Expanded: " + expanded);
-
-// Test 9: Check if a process is alive
-proc2 = exec("sleep", ["0.1"]);
-print("Process alive immediately: " + proc2.is_alive());
-sleep(0.2);
-print("Process alive after 0.2s: " + proc2.is_alive());
-
-print("✅ System module tests completed!");
+run_all();

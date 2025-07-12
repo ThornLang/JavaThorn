@@ -1,0 +1,176 @@
+// VM-specific type alias tests
+// Tests that type aliases work correctly in bytecode VM mode
+
+// Run this test with: java com.thorn.Thorn type_alias_vm_test.thorn --vm
+
+// ==================== Basic VM Type Alias Tests ====================
+
+% VMNumber = number;
+% VMString = string;
+% VMBoolean = boolean;
+
+// Test basic types in VM
+vmNum: VMNumber = 42;
+vmStr: VMString = "VM Test";
+vmBool: VMBoolean = true;
+
+print("VM Basic Type Aliases:");
+print("Number: " + vmNum);
+print("String: " + vmStr);
+print("Boolean: " + vmBool);
+
+// ==================== VM Performance Test ====================
+
+% Counter = number;
+% TimeStamp = number;
+
+$ vmPerformanceTest(): void {
+    start: TimeStamp = clock();
+    sum: Counter = 0;
+    
+    // Test loop performance with type aliases
+    for (i = 0; i < 10000; i = i + 1) {
+        sum = sum + i;
+    }
+    
+    end: TimeStamp = clock();
+    duration: TimeStamp = end - start;
+    
+    print("\nVM Performance Test:");
+    print("Sum: " + sum);
+    print("Duration: " + duration + "ms");
+}
+
+vmPerformanceTest();
+
+// ==================== VM Collections Test ====================
+
+% VMArray = Array[number];
+% VMDict = Dict[string, number];
+
+$ vmCollectionsTest(): void {
+    // Test arrays in VM
+    arr: VMArray = [];
+    for (i = 0; i < 100; i = i + 1) {
+        arr.push(i * 2);
+    }
+    
+    print("\nVM Collections Test:");
+    print("Array length: " + arr.length);
+    print("First element: " + arr[0]);
+    print("Last element: " + arr[99]);
+    
+    // Test dictionaries in VM
+    dict: VMDict = {};
+    dict["one"] = 1;
+    dict["two"] = 2;
+    dict["three"] = 3;
+    
+    print("Dict size: " + dict.size());
+    print("Dict['two']: " + dict["two"]);
+}
+
+vmCollectionsTest();
+
+// ==================== VM Function Types Test ====================
+
+% VMFunction = Function[(number), number];
+% VMPredicate = Function[(number), boolean];
+
+$ vmFunctionTest(): void {
+    // Test function types in VM
+    square: VMFunction = $(n) => n * n;
+    isPositive: VMPredicate = $(n) => n > 0;
+    
+    print("\nVM Function Types Test:");
+    print("Square of 5: " + square(5));
+    print("Is 10 positive? " + isPositive(10));
+    print("Is -5 positive? " + isPositive(-5));
+    
+    // Test higher-order functions
+    $ applyFunction(n: number, fn: VMFunction): number {
+        return fn(n);
+    }
+    
+    result: number = applyFunction(7, square);
+    print("Apply square to 7: " + result);
+}
+
+vmFunctionTest();
+
+// ==================== VM Class Integration Test ====================
+
+% StudentId = number;
+% StudentName = string;
+% GradeMap = Dict[string, number];
+
+class VMStudent {
+    $ init(id: StudentId, name: StudentName) {
+        this.id = id;
+        this.name = name;
+        this.grades = {};
+    }
+    
+    $ addGrade(subject: string, grade: number): void {
+        grades: GradeMap = this.grades;
+        grades[subject] = grade;
+    }
+    
+    $ getAverage(): number {
+        grades: GradeMap = this.grades;
+        sum: number = 0;
+        count: number = 0;
+        
+        for (subject in grades.keys()) {
+            sum = sum + grades[subject];
+            count = count + 1;
+        }
+        
+        if (count == 0) {
+            return 0;
+        }
+        return sum / count;
+    }
+}
+
+$ vmClassTest(): void {
+    student: VMStudent = VMStudent(1001, "Alice");
+    student.addGrade("Math", 95);
+    student.addGrade("Science", 88);
+    student.addGrade("English", 92);
+    
+    print("\nVM Class Integration Test:");
+    print("Student: " + student.name);
+    print("Average grade: " + student.getAverage());
+}
+
+vmClassTest();
+
+// ==================== VM Recursive Type Test ====================
+
+% TreeNode = Dict[string, Any];
+% TreeValue = number;
+
+$ createTree(value: TreeValue, depth: number): TreeNode {
+    node: TreeNode = {"value": value};
+    
+    if (depth > 0) {
+        node["left"] = createTree(value * 2, depth - 1);
+        node["right"] = createTree(value * 2 + 1, depth - 1);
+    }
+    
+    return node;
+}
+
+$ vmRecursiveTest(): void {
+    tree: TreeNode = createTree(1, 3);
+    
+    print("\nVM Recursive Type Test:");
+    print("Root value: " + tree["value"]);
+    print("Left child value: " + tree["left"]["value"]);
+    print("Right child value: " + tree["right"]["value"]);
+}
+
+vmRecursiveTest();
+
+print("\n✅ VM type alias tests completed!");

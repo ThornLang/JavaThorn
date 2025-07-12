@@ -1,0 +1,19 @@
+// Test escape sequences in strings
+print("Testing escape sequences:");
+print("Quote: \"Hello World\"");
+print("Newline: Hello\nWorld");
+print("Tab: Hello\tWorld");
+print("Backslash: Hello\\World");
+print("Carriage return: Hello\rWorld");
+
+// Test in variables
+quoted = "He said \"Hello\"";
+print("Quoted string: " + quoted);
+
+// Test in match expressions
+message = "Error: \"File not found\"";
+if (message.includes("\"File not found\"")) {
+    print("Match result: Found file error");
+} else {
+    print("Match result: Other error");
+}

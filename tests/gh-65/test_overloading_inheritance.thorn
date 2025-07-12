@@ -1,0 +1,215 @@
+import { assert_equals, assert_not_null, test, suite, run_all } from "test";
+
+// Test function overloading with classes and inheritance patterns
+
+suite("Function Overloading with Classes", $() => {
+    test("method variations (not true overloading)", $() => {
+        // Note: Method overloading within classes is not yet supported
+        // We'll simulate it with different method names
+        class Rectangle {
+            $ init(width: number, height: number) {
+                this.width = width;
+                this.height = height;
+            }
+            
+            $ area() {
+                return this.width * this.height;
+            }
+            
+            $ areaScaled(scale: number) {
+                return this.area() * scale;
+            }
+            
+            $ perimeter() {
+                return 2 * (this.width + this.height);
+            }
+            
+            $ perimeterScaled(scale: number) {
+                return this.perimeter() * scale;
+            }
+        }
+
+        rect: Rectangle = Rectangle(4, 5);
+        assert_equals(20, rect.area(), "Rectangle area should be 20");
+        assert_equals(40, rect.areaScaled(2), "Scaled area should be 40");
+        assert_equals(18, rect.perimeter(), "Rectangle perimeter should be 18");
+        assert_equals(54, rect.perimeterScaled(3), "Scaled perimeter should be 54");
+    });
+
+    test("constructor-like overloading with factory functions", $() => {
+        $ createPoint() {
+            return {"x": 0, "y": 0};
+        }
+
+        $ createPoint(x: number) {
+            return {"x": x, "y": 0};
+        }
+
+        $ createPoint(x: number, y: number) {
+            return {"x": x, "y": y};
+        }
+
+        p1 = createPoint();
+        p2 = createPoint(5);
+        p3 = createPoint(3, 4);
+
+        assert_equals(0, p1["x"], "p1.x should be 0");
+        assert_equals(0, p1["y"], "p1.y should be 0");
+        assert_equals(5, p2["x"], "p2.x should be 5");
+        assert_equals(0, p2["y"], "p2.y should be 0");
+        assert_equals(3, p3["x"], "p3.x should be 3");
+        assert_equals(4, p3["y"], "p3.y should be 4");
+    });
+
+    test("static-like method variations", $() => {
+        class MathUtils {
+            $ init() {
+                this.name = "MathUtils";
+            }
+            
+            $ max2(a: number, b: number) {
+                if (a > b) return a;
+                return b;
+            }
+            
+            $ max3(a: number, b: number, c: number) {
+                return this.max2(this.max2(a, b), c);
+            }
+            
+            $ maxArray(arr: Array[number]) {
+                if (arr.length == 0) return null;
+                max_val: number = arr[0];
+                for (val in arr) {
+                    if (val > max_val) {
+                        max_val = val;
+                    }
+                }
+                return max_val;
+            }
+        }
+
+        math: MathUtils = MathUtils();
+        assert_equals(5, math.max2(5, 3), "max2 should return 5");
+        assert_equals(7, math.max3(5, 3, 7), "max3 should return 7");
+        assert_equals(8, math.maxArray([2, 8, 1, 6]), "maxArray should return 8");
+    });
+
+    test("method chaining with different append methods", $() => {
+        class StringBuilder {
+            $ init() {
+                this.buffer = "";
+            }
+            
+            $ appendString(s: string) {
+                this.buffer = this.buffer + s;
+                return this;
+            }
+            
+            $ appendNumber(n: number) {
+                this.buffer = this.buffer + n;
+                return this;
+            }
+            
+            $ appendBoolean(b: boolean) {
+                if (b) {
+                    this.buffer = this.buffer + "true";
+                } else {
+                    this.buffer = this.buffer + "false";
+                }
+                return this;
+            }
+            
+            $ toString() {
+                return this.buffer;
+            }
+        }
+
+        sb: StringBuilder = StringBuilder();
+        result: string = sb.appendString("Count: ")
+                          .appendNumber(42)
+                          .appendString(", Active: ")
+                          .appendBoolean(true)
+                          .toString();
+        
+        assert_equals("Count: 42, Active: true", result, "StringBuilder should chain correctly");
+    });
+
+    test("method variations with 'this' binding", $() => {
+        class Counter {
+            $ init(start: number) {
+                this.count = start;
+            }
+            
+            $ increment() {
+                this.count = this.count + 1;
+                return this.count;
+            }
+            
+            $ incrementBy(step: number) {
+                this.count = this.count + step;
+                return this.count;
+            }
+            
+            $ reset() {
+                this.count = 0;
+            }
+            
+            $ resetTo(value: number) {
+                this.count = value;
+            }
+        }
+
+        counter: Counter = Counter(10);
+        assert_equals(10, counter.count, "Initial count should be 10");
+        assert_equals(11, counter.increment(), "increment() should return 11");
+        assert_equals(16, counter.incrementBy(5), "incrementBy(5) should return 16");
+        
+        counter.reset();
+        assert_equals(0, counter.count, "After reset() count should be 0");
+        
+        counter.resetTo(100);
+        assert_equals(100, counter.count, "After resetTo(100) count should be 100");
+    });
+
+    test("factory pattern with overloaded creators", $() => {
+        class Shape {
+            $ init(type: string) {
+                this.type = type;
+                this.area = 0;
+            }
+        }
+
+        $ createShape(radius: number) {
+            shape = Shape("circle");
+            shape.area = 3.14159 * radius * radius;
+            return shape;
+        }
+
+        $ createShape(width: number, height: number) {
+            shape = Shape("rectangle");
+            shape.area = width * height;
+            return shape;
+        }
+
+        $ createShape(side1: number, side2: number, side3: number) {
+            shape = Shape("triangle");
+            // Using Heron's formula
+            s = (side1 + side2 + side3) / 2;
+            shape.area = s; // Simplified for testing
+            return shape;
+        }
+
+        circle = createShape(5);
+        assert_equals("circle", circle.type, "Should create circle");
+        
+        rectangle = createShape(4, 6);
+        assert_equals("rectangle", rectangle.type, "Should create rectangle");
+        assert_equals(24, rectangle.area, "Rectangle area should be 24");
+        
+        triangle = createShape(3, 4, 5);
+        assert_equals("triangle", triangle.type, "Should create triangle");
+        assert_equals(6, triangle.area, "Triangle semi-perimeter should be 6");
+    });
+});
+
+run_all();

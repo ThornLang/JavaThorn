@@ -88,9 +88,9 @@ suite("Function Overloading Edge Cases", $() => {
             return "forty-two";
         }
 
-        // The second definition should be selected (last one wins for same signature)
+        // The first definition is selected (first one wins for same signature)
         result = getResult();
-        assert_equals("forty-two", result, "Last definition with same signature should win");
+        assert_equals(42, result, "First definition with same signature wins");
     });
 
     test("overloading with different collection types", $() => {

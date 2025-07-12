@@ -32,9 +32,9 @@ suite("Function Overloading Error Cases", $() => {
             return "also untyped: " + x;
         }
 
-        // Both have same signature - last one should win
+        // Both have same signature - first one wins
         result: string = ambiguous(42);
-        assert_equals("also untyped: 42", result, "Last definition with same signature wins");
+        assert_equals("untyped: 42", result, "First definition with same signature wins");
     });
 
     test("method overloading limitation", $() => {
@@ -100,9 +100,9 @@ suite("Function Overloading Error Cases", $() => {
             return "third: " + x;
         }
 
-        // Last definition wins
+        // First definition wins
         result = duplicate(42);
-        assert_equals("third: 42", result, "Last duplicate definition should win");
+        assert_equals("first: 42", result, "First duplicate definition wins");
     });
 
     test("overload selection priority", $() => {

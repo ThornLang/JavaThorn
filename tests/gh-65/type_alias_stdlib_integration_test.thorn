@@ -44,9 +44,9 @@ suite("Type Alias Basic Tests", $() => {
             "English": 92
         };
         
-        assert_equals(95, scores["Math"]);
-        assert_equals(88, scores["Science"]);
-        assert_equals(3, scores.size());
+        assert_equals(95, scores["Math"], "Math score should be 95");
+        assert_equals(88, scores["Science"], "Science score should be 88");
+        assert_equals(3, scores.size(), "Scores map should have 3 entries");
     });
 });
 

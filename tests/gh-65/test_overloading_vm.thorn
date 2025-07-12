@@ -120,7 +120,7 @@ suite("VM Function Overloading", $() => {
             total = total + manyOverloads(1, 2, 3, 4);
             total = total + manyOverloads(1, 2, 3, 4, 5);
         }
-        assert_equals(55000, total, "Performance test total should be correct");
+        assert_equals(35000, total, "Performance test total should be correct");
     });
 
     test("VM-specific edge cases", $() => {

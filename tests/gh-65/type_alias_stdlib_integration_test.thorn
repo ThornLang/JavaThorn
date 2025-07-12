@@ -32,9 +32,9 @@ suite("Type Alias Basic Tests", $() => {
         name: TestName = "Math Test";
         passed: TestPassed = true;
         
-        assert_equals(95.5, score);
-        assert_equals("Math Test", name);
-        assert_true(passed);
+        assert_equals(95.5, score, "Score should be 95.5");
+        assert_equals("Math Test", name, "Name should be Math Test");
+        assert_true(passed, "TestPassed should be true");
     });
     
     test("Collection type aliases", $() => {
@@ -60,7 +60,7 @@ suite("Generic Type Alias Tests", $() => {
     test("Generic array aliases", $() => {
         numbers: NumberList = [1, 2, 3, 4, 5];
         
-        assert_equals(5, numbers.length);
+        assert_equals(5, numbers.length, "NumberList should have 5 elements");
         assert_includes(numbers, 3);
         assert_not_empty(numbers);
     });
@@ -69,9 +69,9 @@ suite("Generic Type Alias Tests", $() => {
         isEven: NumberPredicate = $(n) => n % 2 == 0;
         parseNumber: StringToNumber = $(s) => 42; // Simple stub
         
-        assert_true(isEven(4));
-        assert_false(isEven(5));
-        assert_equals(42, parseNumber("42"));
+        assert_true(isEven(4), "4 should be even");
+        assert_false(isEven(5), "5 should not be even");
+        assert_equals(42, parseNumber("42"), "StringToNumber function should return 42");
     });
 });
 
@@ -90,9 +90,9 @@ suite("Complex Type Alias Tests", $() => {
         };
         
         alice: UserData = users["1001"];
-        assert_equals("Alice", alice["name"]);
-        assert_equals(25, alice["age"]);
-        assert_true(alice["active"]);
+        assert_equals("Alice", alice["name"], "Alice's name should be 'Alice'");
+        assert_equals(25, alice["age"], "Alice's age should be 25");
+        assert_true(alice["active"], "Alice should be active");
     });
     
     test("Type aliases with functions", $() => {
@@ -111,8 +111,8 @@ suite("Complex Type Alias Tests", $() => {
         original: UserData = {"name": "alice", "age": 25};
         processed: UserData = capitalize(original);
         
-        assert_equals("CAPS[alice]", processed["name"]);
-        assert_equals(25, processed["age"]);
+        assert_equals("CAPS[alice]", processed["name"], "UserProcessor should capitalize name to 'CAPS[alice]'");
+        assert_equals(25, processed["age"], "UserProcessor should preserve age as 25");
     });
 });
 
@@ -123,13 +123,13 @@ suite("Complex Type Alias Tests", $() => {
 suite("Type Alias Scope Tests", $() => {
     test("Global type aliases", $() => {
         global: GlobalScope = "I am global";
-        assert_equals("I am global", global);
+        assert_equals("I am global", global, "GlobalScope variable should contain 'I am global'");
     });
     
     test("Local type aliases shadow global", $() => {
         % GlobalScope = number; // Local shadows global
         local: GlobalScope = 42;
-        assert_equals(42, local);
+        assert_equals(42, local, "Local GlobalScope should shadow global and contain 42");
     });
 });
 
@@ -143,17 +143,17 @@ suite("Type Alias Scope Tests", $() => {
 suite("Collection Type Alias Tests", $() => {
     test("Array type aliases", $() => {
         coord: Coordinate = [10, 20, 30];
-        assert_equals(3, coord.length);
-        assert_equals(10, coord[0]);
-        assert_equals(20, coord[1]);
-        assert_equals(30, coord[2]);
+        assert_equals(3, coord.length, "Coordinate array should have 3 elements");
+        assert_equals(10, coord[0], "First coordinate should be 10");
+        assert_equals(20, coord[1], "Second coordinate should be 20");
+        assert_equals(30, coord[2], "Third coordinate should be 30");
     });
     
     test("Dictionary type aliases", $() => {
         point: Point = {"x": 10, "y": 20};
-        assert_equals(10, point["x"]);
-        assert_equals(20, point["y"]);
-        assert_equals(2, point.size());
+        assert_equals(10, point["x"], "Point x coordinate should be 10");
+        assert_equals(20, point["y"], "Point y coordinate should be 20");
+        assert_equals(2, point.size(), "Point dictionary should have 2 entries");
     });
     
     test("Nested collection aliases", $() => {
@@ -163,12 +163,12 @@ suite("Collection Type Alias Tests", $() => {
             {"x": 20, "y": 20}
         ];
         
-        assert_equals(3, points.length);
-        assert_equals(10, points[1]["x"]);
+        assert_equals(3, points.length, "PointList should have 3 points");
+        assert_equals(10, points[1]["x"], "Second point x coordinate should be 10");
         
         matrix: Matrix = [[1, 2], [3, 4], [5, 6]];
-        assert_equals(3, matrix.length);
-        assert_equals(4, matrix[1][1]);
+        assert_equals(3, matrix.length, "Matrix should have 3 rows");
+        assert_equals(4, matrix[1][1], "Matrix element at [1][1] should be 4");
     });
 });
 
@@ -185,10 +185,10 @@ suite("Function Type Alias Tests", $() => {
         toUpper: Transformer = $(s) => "UPPER[" + s + "]";
         add: Calculator = $(a, b) => a + b;
         
-        assert_true(isValid("test"));
-        assert_false(isValid(null));
-        assert_equals("UPPER[hello]", toUpper("hello"));
-        assert_equals(7, add(3, 4));
+        assert_true(isValid("test"), "isValid should return true for 'test'");
+        assert_false(isValid(null), "isValid should return false for null");
+        assert_equals("UPPER[hello]", toUpper("hello"), "Transformer should convert 'hello' to 'UPPER[hello]'");
+        assert_equals(7, add(3, 4), "Calculator should add 3 + 4 = 7");
     });
     
     test("Void function aliases", $() => {
@@ -196,9 +196,9 @@ suite("Function Type Alias Tests", $() => {
         increment: AsyncTask = $() => { counter = counter + 1; };
         
         increment();
-        assert_equals(1, counter);
+        assert_equals(1, counter, "Counter should be 1 after first increment");
         increment();
-        assert_equals(2, counter);
+        assert_equals(2, counter, "Counter should be 2 after second increment");
     });
 });
 

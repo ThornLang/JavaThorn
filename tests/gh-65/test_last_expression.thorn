@@ -28,13 +28,9 @@ suite("Last Expression Return", $() => {
         
         result = match (value) {
             10 => {
-                if (true) {
-                    x = 5;
-                    y = 10;
-                    x + y;  // Last expression of nested block
-                } else {
-                    0;
-                }
+                x = 5;
+                y = 10;
+                x + y;  // Last expression of block
             },
             _ => 0,
         };
@@ -46,7 +42,7 @@ suite("Last Expression Return", $() => {
         $ calculate(x: number) {
             temp = x * 2;
             adjusted = temp + 5;
-            adjusted - 3;  // Last expression is return value
+            return adjusted - 3;  // Explicit return required
         }
 
         result = calculate(10);

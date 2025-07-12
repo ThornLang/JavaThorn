@@ -176,6 +176,14 @@ public class DeadCodeEliminator {
             }
             
             @Override
+            public Void visitThrowStmt(Stmt.Throw stmt) {
+                if (stmt.value != null) {
+                    collectDefinitionsFromExpr(stmt.value);
+                }
+                return null;
+            }
+            
+            @Override
             public Void visitTypeAliasStmt(Stmt.TypeAlias stmt) {
                 // Type aliases are compile-time only, no optimization needed
                 return null;
@@ -386,6 +394,14 @@ public class DeadCodeEliminator {
             
             @Override
             public Void visitReturnStmt(Stmt.Return stmt) {
+                if (stmt.value != null) {
+                    collectUsagesFromExpr(stmt.value);
+                }
+                return null;
+            }
+            
+            @Override
+            public Void visitThrowStmt(Stmt.Throw stmt) {
                 if (stmt.value != null) {
                     collectUsagesFromExpr(stmt.value);
                 }
@@ -691,6 +707,14 @@ public class DeadCodeEliminator {
             
             @Override
             public Void visitReturnStmt(Stmt.Return stmt) {
+                if (stmt.value != null) {
+                    analyzeLocalExpression(stmt.value, scope);
+                }
+                return null;
+            }
+            
+            @Override
+            public Void visitThrowStmt(Stmt.Throw stmt) {
                 if (stmt.value != null) {
                     analyzeLocalExpression(stmt.value, scope);
                 }

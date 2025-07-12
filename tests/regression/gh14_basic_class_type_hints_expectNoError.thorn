@@ -1,22 +1,55 @@
+import { assert_equals, assert_not_null, test, suite, run_all } from "test";
+
 // Test basic class type hinting
 
-class Person {
-    $ init(name: string, age: number) {
-        this.name = name;
-        this.age = age;
-    }
+suite("Basic Class Type Hints", $() => {
+    test("class instantiation with type hints", $() => {
+        class Person {
+            $ init(name: string, age: number) {
+                this.name = name;
+                this.age = age;
+            }
+            
+            $ greet() {
+                return "Hello, I'm " + this.name;
+            }
+        }
+        
+        // Type hinted class instances
+        person1: Person = Person("Alice", 25);
+        person2: Person = Person("Bob", 30);
+        
+        assert_not_null(person1, "person1 should be created");
+        assert_not_null(person2, "person2 should be created");
+        
+        assert_equals("Hello, I'm Alice", person1.greet(), "person1 greet should work");
+        assert_equals("Hello, I'm Bob", person2.greet(), "person2 greet should work");
+        
+        assert_equals(25, person1.age, "person1 age should be 25");
+        assert_equals(30, person2.age, "person2 age should be 30");
+        
+        assert_equals("Alice", person1.name, "person1 name should be Alice");
+        assert_equals("Bob", person2.name, "person2 name should be Bob");
+    });
     
-    $ greet() {
-        return "Hello, I'm " + this.name;
-    }
-}
+    test("class type hint assignment", $() => {
+        class Animal {
+            $ init(species: string) {
+                this.species = species;
+            }
+            
+            $ sound() {
+                return "Some sound";
+            }
+        }
+        
+        // Test variable reassignment with type hints
+        animal: Animal = Animal("Dog");
+        assert_equals("Dog", animal.species, "First animal should be Dog");
+        
+        animal = Animal("Cat");
+        assert_equals("Cat", animal.species, "Reassigned animal should be Cat");
+    });
+});
 
-// Type hinted class instances
-person1: Person = Person("Alice", 25);
-person2: Person = Person("Bob", 30);
-
-// Test that they work
-print(person1.greet());
-print(person2.greet());
-print("person1 age: " + person1.age);
-print("person2 age: " + person2.age);
+run_all();

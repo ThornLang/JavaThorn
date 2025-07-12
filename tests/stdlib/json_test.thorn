@@ -1,90 +1,131 @@
 import "json";
+import { assert_equals, assert_true, assert_not_null, test, suite, run_all } from "test";
 
 // Test: JSON module functionality
 // Tests parsing, stringifying, and manipulation of JSON data
 
-// Test 1: Basic parsing
-// Using object literal instead of JSON string until escape sequences are supported
-data = {"name": "Alice", "age": 30, "active": true};
-print("Object name: " + get(data, "name"));
-print("Object age: " + get(data, "age"));
-print("Object active: " + get(data, "active"));
+suite("JSON Module Tests", $() => {
+    test("basic data access", $() => {
+        // Using object literal instead of JSON string until escape sequences are supported
+        data = {"name": "Alice", "age": 30, "active": true};
+        
+        assert_equals("Alice", get(data, "name"), "should get correct name");
+        assert_equals(30, get(data, "age"), "should get correct age");
+        assert_equals(true, get(data, "active"), "should get correct active status");
+    });
 
-// Test 2: Stringify
-obj = {"hello": "world", "number": 42};
-json_output = stringify(obj);
-print("Stringified: " + json_output);
+    test("stringify operations", $() => {
+        obj = {"hello": "world", "number": 42};
+        json_output = stringify(obj);
+        
+        assert_not_null(json_output, "stringify should return non-null result");
+        assert_true(json_output.length > 0, "stringify should return non-empty string");
+        
+        // Test pretty print
+        pretty = stringify_pretty(obj, 4);
+        assert_true(pretty.length > json_output.length, "pretty print should be longer than compact");
+    });
 
-// Test 3: Pretty print
-pretty = stringify_pretty(obj, 4);
-print("Pretty printed (length): " + pretty.length + " characters");
+    test("array operations", $() => {
+        arr = [1, 2, 3, "four", true, null];
+        assert_equals(6, arr.length, "array should have correct length");
+    });
 
-// Test 4: Arrays
-arr = [1, 2, 3, "four", true, null];
-print("Array length: " + arr.length);
+    test("nested object access", $() => {
+        nested = {
+            "user": {
+                "profile": {
+                    "name": "Bob",
+                    "email": "bob@example.com"
+                },
+                "settings": {
+                    "theme": "dark",
+                    "notifications": true
+                }
+            }
+        };
 
-// Test 5: Nested objects
-nested = {
-    "user": {
-        "profile": {
-            "name": "Bob",
-            "email": "bob@example.com"
-        },
-        "settings": {
-            "theme": "dark",
-            "notifications": true
-        }
-    }
-};
+        // Test dot notation access
+        user_name = get(nested, "user.profile.name");
+        theme = get(nested, "user.settings.theme");
+        
+        assert_equals("Bob", user_name, "should access nested user name");
+        assert_equals("dark", theme, "should access nested theme setting");
+    });
 
-// Test dot notation access
-user_name = get(nested, "user.profile.name");
-theme = get(nested, "user.settings.theme");
-print("User name from nested: " + user_name);
-print("Theme from nested: " + theme);
+    test("set operations", $() => {
+        nested = {
+            "user": {
+                "profile": {
+                    "name": "Bob"
+                }
+            }
+        };
 
-// Test 6: Set values
-set(nested, "user.profile.age", 25);
-set(nested, "user.settings.language", "en");
-print("After set operations:");
-print(stringify_pretty(nested, 2));
+        set(nested, "user.profile.age", 25);
+        set(nested, "user.settings.language", "en");
+        
+        age = get(nested, "user.profile.age");
+        language = get(nested, "user.settings.language");
+        
+        assert_equals(25, age, "should set nested age value");
+        assert_equals("en", language, "should set nested language value");
+    });
 
-// Test 7: Merge objects
-defaults = {"timeout": 30, "retries": 3, "debug": false};
-user_config = {"timeout": 60, "debug": true};
-merged = merge(defaults, user_config);
-print("Merged config:");
-print(stringify(merged));
+    test("merge operations", $() => {
+        defaults = {"timeout": 30, "retries": 3, "debug": false};
+        user_config = {"timeout": 60, "debug": true};
+        merged = merge(defaults, user_config);
+        
+        assert_equals(60, get(merged, "timeout"), "should use user config timeout");
+        assert_equals(3, get(merged, "retries"), "should use default retries");
+        assert_equals(true, get(merged, "debug"), "should use user config debug");
+    });
 
-// Test 8: Validation - skip until escape sequences work
-// For now just test with stringify output
-valid_obj = {"valid": true};
-valid_json = stringify(valid_obj);
-print("Is valid JSON: " + is_valid(valid_json));
-print("Is invalid JSON: " + is_valid("not json at all"));
+    test("validation", $() => {
+        valid_obj = {"valid": true};
+        valid_json = stringify(valid_obj);
+        
+        assert_true(is_valid(valid_json), "should validate stringified JSON");
+        assert_true(!is_valid("not json at all"), "should reject invalid JSON");
+    });
 
-// Test 9: Has method
-print("Has user.profile.name: " + has(nested, "user.profile.name"));
-print("Has user.profile.phone: " + has(nested, "user.profile.phone"));
+    test("has method", $() => {
+        nested = {
+            "user": {
+                "profile": {
+                    "name": "Bob"
+                }
+            }
+        };
 
-// Test 10: Complex data types
-complex = {
-    "string": "hello",
-    "number": 3.14159,
-    "boolean": true,
-    "null_value": null,
-    "array": [1, 2, 3],
-    "object": {"nested": "value"}
-};
-print("Complex object stringified:");
-print(stringify_pretty(complex, 2));
+        assert_true(has(nested, "user.profile.name"), "should find existing nested property");
+        assert_true(!has(nested, "user.profile.phone"), "should not find missing nested property");
+    });
 
-// Test 11: Round-trip test
-round_trip = {"test": "value", "num": 123};
-round_json = stringify(round_trip);
-print("Stringified: " + round_json);
-parsed_back = parse(round_json);
-print("Parsed back test: " + get(parsed_back, "test"));
-print("Parsed back num: " + get(parsed_back, "num"));
+    test("complex data types", $() => {
+        complex = {
+            "string": "hello",
+            "number": 3.14159,
+            "boolean": true,
+            "null_value": null,
+            "array": [1, 2, 3],
+            "object": {"nested": "value"}
+        };
+        
+        json_str = stringify_pretty(complex, 2);
+        assert_not_null(json_str, "should stringify complex object");
+        assert_true(json_str.length > 0, "stringified complex object should not be empty");
+    });
 
-print("✅ JSON module tests completed!");
+    test("round-trip parsing", $() => {
+        round_trip = {"test": "value", "num": 123};
+        round_json = stringify(round_trip);
+        parsed_back = parse(round_json);
+        
+        assert_equals("value", get(parsed_back, "test"), "should parse back test value");
+        assert_equals(123, get(parsed_back, "num"), "should parse back num value");
+    });
+});
+
+run_all();

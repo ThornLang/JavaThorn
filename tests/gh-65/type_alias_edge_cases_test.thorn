@@ -1,0 +1,165 @@
+// Edge case tests for type aliases in ThornLang
+// Test unusual or boundary conditions
+
+// ==================== Recursive-like Type Aliases ====================
+
+// Type aliases that reference complex structures
+% JsonValue = Any; // In a real implementation, this would be a union type
+% JsonObject = Dict[string, JsonValue];
+% JsonArray = Array[JsonValue];
+
+// Test recursive-like structures
+data: JsonObject = {
+    "name": "Test",
+    "count": 42,
+    "nested": {
+        "array": [1, 2, 3],
+        "flag": true
+    }
+};
+
+print("Recursive-like type aliases:");
+print("Name: " + data["name"]);
+print("Count: " + data["count"]);
+
+// ==================== Very Long Type Aliases ====================
+
+% VeryLongTypeAliasNameThatTestsParserLimits = number;
+% AnotherExtremelyLongTypeAliasNameForTestingPurposes = string;
+
+longVar: VeryLongTypeAliasNameThatTestsParserLimits = 12345;
+longStr: AnotherExtremelyLongTypeAliasNameForTestingPurposes = "Testing long names";
+
+print("\nVery long type alias names:");
+print("Long number: " + longVar);
+print("Long string: " + longStr);
+
+// ==================== Unicode in Type Aliases ====================
+
+% ChineseNum = number;  // Unicode not supported yet  
+% SpanishNum = number;  // Using ASCII names
+
+chineseNum: ChineseNum = 888;
+spanishNum: SpanishNum = 777;
+
+print("\nUnicode-inspired type aliases:");
+print("Chinese-style number: " + chineseNum);
+print("Spanish-style number: " + spanishNum);
+
+// ==================== Type Aliases with Special Characters ====================
+
+% _PrivateType = string;
+% SpecialType = number;  // $ not allowed in type names
+% Type_With_Underscores = boolean;
+
+private: _PrivateType = "private data";
+special: SpecialType = 999;
+underscored: Type_With_Underscores = true;
+
+print("\nSpecial characters in type aliases:");
+print("Private: " + private);
+print("Special: " + special);
+print("Underscored: " + underscored);
+
+// ==================== Empty Collections with Type Aliases ====================
+
+% EmptyList = Array[number];
+% EmptyDict = Dict[string, string];
+
+emptyNums: EmptyList = [];
+emptyMap: EmptyDict = {};
+
+print("\nEmpty collections:");
+print("Empty list length: " + emptyNums.length);
+print("Empty dict size: " + emptyMap.size());
+
+// ==================== Type Aliases in Different Scopes ====================
+
+% GlobalType = string;
+
+$ functionScope(): void {
+    % LocalType = number;
+    % GlobalType = boolean; // Shadows global
+    
+    local: LocalType = 42;
+    shadowed: GlobalType = true;
+    
+    print("\nInside function:");
+    print("Local type: " + local);
+    print("Shadowed GlobalType (boolean): " + shadowed);
+}
+
+functionScope();
+
+// Global is still accessible
+global: GlobalType = "Still a string";
+print("Outside function, GlobalType (string): " + global);
+
+// ==================== Multiple Type Aliases on One Line ====================
+
+% A = number; % B = string; % C = boolean;
+
+a: A = 1;
+b: B = "two";
+c: C = true;
+
+print("\nMultiple type aliases:");
+print("A: " + a + ", B: " + b + ", C: " + c);
+
+// ==================== Type Aliases with Function Generics ====================
+
+% NumberTransform = Function[(number), number];
+% GenericTransform = Function[(Any), Any];
+
+$ applyTransform[T](value: T, transform: GenericTransform): T {
+    return transform(value);
+}
+
+double: NumberTransform = $(n) => n * 2;
+result: number = applyTransform(21, double);
+
+print("\nType aliases with generics:");
+print("Transform result: " + result);
+
+// ==================== Null and Void Type Aliases ====================
+
+% MaybeString = Any; // Would be string | null with union types
+% NoReturn = void;
+
+maybeValue: MaybeString = "has value";
+maybeNull: MaybeString = null;
+
+$ doNothing(): NoReturn {
+    // Function returns nothing
+}
+
+print("\nNull and void aliases:");
+print("Maybe value: " + maybeValue);
+print("Maybe null: " + maybeNull);
+doNothing(); // Returns null implicitly
+
+// ==================== Complex Function Type Composition ====================
+
+% Parser = Function[(string), Any];
+% Validator = Function[(Any), boolean];
+% Pipeline = Function[(string), boolean];
+
+parse: Parser = $(s) => {
+    // Simple number parser
+    return 42; // Always returns 42 for testing
+};
+
+validate: Validator = $(value) => {
+    return value != null && value > 0;
+};
+
+// Compose functions
+pipeline: Pipeline = $(input) => {
+    parsed: Any = parse(input);
+    return validate(parsed);
+};
+
+print("\nFunction composition:");
+print("Pipeline result: " + pipeline("test"));
+
+print("\n✅ Edge case tests passed!");

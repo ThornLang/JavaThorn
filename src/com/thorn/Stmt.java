@@ -9,6 +9,7 @@ public abstract class Stmt {
         R visitFunctionStmt(Function stmt);
         R visitIfStmt(If stmt);
         R visitReturnStmt(Return stmt);
+        R visitThrowStmt(Throw stmt);
         R visitVarStmt(Var stmt);
         R visitWhileStmt(While stmt);
         R visitForStmt(For stmt);
@@ -98,6 +99,21 @@ public abstract class Stmt {
         @Override
         <R> R accept(Visitor<R> visitor) {
             return visitor.visitReturnStmt(this);
+        }
+
+        public final Token keyword;
+        public final Expr value;
+    }
+
+    public static class Throw extends Stmt {
+        Throw(Token keyword, Expr value) {
+            this.keyword = keyword;
+            this.value = value;
+        }
+
+        @Override
+        <R> R accept(Visitor<R> visitor) {
+            return visitor.visitThrowStmt(this);
         }
 
         public final Token keyword;

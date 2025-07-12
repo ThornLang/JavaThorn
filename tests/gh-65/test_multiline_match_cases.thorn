@@ -1,0 +1,152 @@
+import { assert_equals, test, suite, run_all } from "test";
+
+// Test multi-line match case expressions functionality
+
+suite("Multi-line Match Cases", $() => {
+    test("basic multi-line match with Result types", $() => {
+        $ safeDivide(a: number, b: number) {
+            if (b == 0) {
+                return Error("Division by zero");
+            }
+            return Ok(a / b);
+        }
+
+        result1 = safeDivide(10, 2);
+        result2 = safeDivide(10, 0);
+
+        // Test multi-line Ok case
+        message1: string = match (result1) {
+            Ok(value) => {
+                doubled: number = value * 2;
+                str: string = "Result: " + value + ", Doubled: " + doubled;
+                str;
+            },
+            Error(msg) => "Error: " + msg,
+        };
+        assert_equals("Result: 5, Doubled: 10", message1, "Multi-line Ok case should work");
+
+        // Test multi-line Error case
+        message2: string = match (result2) {
+            Ok(value) => "Success: " + value,
+            Error(msg) => {
+                errorCode: number = 404;
+                formatted: string = "Error " + errorCode + ": " + msg;
+                formatted;
+            },
+        };
+        assert_equals("Error 404: Division by zero", message2, "Multi-line Error case should work");
+    });
+
+    test("variable scoping in match blocks", $() => {
+        globalVar: string = "global";
+
+        testResult = Ok(42);
+        scopeTest: string = match (testResult) {
+            Ok(value) => {
+                localVar: string = "local";
+                combined: string = globalVar + "-" + localVar + "-" + value;
+                combined;
+            },
+            Error(msg) => "error",
+        };
+
+        assert_equals("global-local-42", scopeTest, "Variable scoping should work correctly");
+    });
+
+    test("nested match expressions with blocks", $() => {
+        $ processValue(n: number) {
+            if (n < 0) return Error("negative");
+            if (n == 0) return Error("zero");
+            return Ok(n);
+        }
+
+        testValue: number = 5;
+        nestedResult: string = match (processValue(testValue)) {
+            Ok(value) => {
+                // Simple categorization
+                category: string = "processed-" + value;
+                "positive-" + category;
+            },
+            Error(msg) => {
+                "failed-" + msg;
+            },
+        };
+
+        assert_equals("positive-processed-5", nestedResult, "Nested match with blocks should work");
+    });
+
+    test("match blocks with different statement types", $() => {
+        counter: number = 0;
+
+        $ increment() {
+            counter = counter + 1;
+            return Ok(counter);
+        }
+
+        counterResult = increment();
+        blockTest: string = match (counterResult) {
+            Ok(value) => {
+                // Variable declaration
+                temp: number = value;
+                
+                // If statement
+                if (temp > 0) {
+                    temp = temp * 2;
+                }
+                
+                // For loop
+                sum: number = 0;
+                for (i = 1; i <= temp; i = i + 1) {
+                    sum = sum + i;
+                }
+                
+                // Return expression
+                "sum: " + sum;
+            },
+            Error(msg) => "error: " + msg,
+        };
+
+        assert_equals("sum: 3", blockTest, "Complex block statements should work");
+    });
+
+    test("multiple statements with final expression", $() => {
+        testValue = Ok("hello");
+
+        finalExprTest: string = match (testValue) {
+            Ok(str) => {
+                prefix: string = "processed";
+                suffix: string = "result";
+                // Last expression becomes the return value
+                prefix + "-" + str + "-" + suffix;
+            },
+            Error(msg) => {
+                "error-" + msg;
+            },
+        };
+
+        assert_equals("processed-hello-result", finalExprTest, "Final expression should be return value");
+    });
+
+    test("match with empty blocks", $() => {
+        $ testEmpty(x: number) {
+            if (x > 0) return Ok(x);
+            return Error("not positive");
+        }
+
+        result = testEmpty(5);
+        
+        // Test that we can have side effects but still return a value
+        output: string = match (result) {
+            Ok(val) => {
+                // Multiple statements but simple return
+                temp = val * val;
+                "squared: " + temp;
+            },
+            Error(e) => e,
+        };
+
+        assert_equals("squared: 25", output, "Match with computation should work");
+    });
+});
+
+run_all();

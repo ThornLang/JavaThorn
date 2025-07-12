@@ -59,6 +59,27 @@ class Environment {
     }
 
     void define(String name, Object value, boolean isImmutable) {
+        // Check if we're defining a function and if one already exists
+        if (value instanceof ThornCallable && values.containsKey(name)) {
+            Object existing = values.get(name);
+            
+            // If existing is already a FunctionGroup, add to it
+            if (existing instanceof FunctionGroup) {
+                FunctionGroup group = (FunctionGroup) existing;
+                group.addOverload((ThornCallable) value);
+                return;
+            }
+            
+            // If existing is a callable, create a new FunctionGroup
+            if (existing instanceof ThornCallable) {
+                FunctionGroup group = new FunctionGroup(name);
+                group.addOverload((ThornCallable) existing);
+                group.addOverload((ThornCallable) value);
+                values.put(name, group);
+                return;
+            }
+        }
+        
         values.put(name, value);
         if (isImmutable) {
             immutables.put(name, true);

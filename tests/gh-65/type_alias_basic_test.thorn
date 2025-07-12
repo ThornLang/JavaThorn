@@ -1,0 +1,128 @@
+import { assert_equals, assert_not_null, test, suite, run_all } from "test";
+
+// Basic type alias tests for ThornLang
+// Test simple type aliases and their usage
+
+suite("Basic Type Aliases", $() => {
+    test("primitive type aliases", $() => {
+        // Primitive type aliases
+        % Count = number;
+        % Message = string;
+        % Flag = boolean;
+        % Nothing = Any; // null is not a type, use Any for nullable
+        % Anything = Any;
+
+        // Test primitive type aliases
+        count: Count = 42;
+        message: Message = "Hello, Type Aliases!";
+        flag: Flag = true;
+        nothing: Nothing = null;
+        anything: Anything = "can be anything";
+
+        assert_equals(42, count, "Count type alias should work");
+        assert_equals("Hello, Type Aliases!", message, "Message type alias should work");
+        assert_equals(true, flag, "Flag type alias should work");
+        assert_equals(null, nothing, "Nothing type alias should work");
+        assert_equals("can be anything", anything, "Anything type alias should work");
+
+        // Test reassignment
+        count = 100;
+        message = "Updated message";
+        flag = false;
+        anything = 123;
+
+        assert_equals(100, count, "Count reassignment should work");
+        assert_equals("Updated message", message, "Message reassignment should work");
+        assert_equals(false, flag, "Flag reassignment should work");
+        assert_equals(123, anything, "Anything reassignment should work");
+    });
+
+    test("functions with type aliases", $() => {
+        % Count = number;
+        % Message = string;
+
+        $ processData(input: Message, times: Count): Message {
+            result: Message = "";
+            for (i = 0; i < times; i = i + 1) {
+                result = result + input + " ";
+            }
+            return result;
+        }
+
+        result = processData("repeat", 3);
+        assert_equals("repeat repeat repeat ", result, "Function with type aliases should work");
+    });
+
+    test("arrays with type aliases", $() => {
+        % NumberList = Array[number];
+        % StringList = Array[string];
+
+        numbers: NumberList = [1, 2, 3, 4, 5];
+        strings: StringList = ["a", "b", "c"];
+
+        assert_equals(5, numbers.length, "NumberList should have 5 elements");
+        assert_equals(3, strings.length, "StringList should have 3 elements");
+
+        // Test array operations
+        numbers.push(6);
+        strings.push("d");
+
+        assert_equals(6, numbers.length, "NumberList should have 6 elements after push");
+        assert_equals(4, strings.length, "StringList should have 4 elements after push");
+        assert_equals(6, numbers[5], "Last element should be 6");
+        assert_equals("d", strings[3], "Last element should be 'd'");
+    });
+
+    test("nested type aliases", $() => {
+        % UserId = number;
+        % UserName = string;
+        % UserAge = number;
+
+        // Type alias using other type aliases
+        % UserTuple = Array[Any]; // Would be better as tuple when supported
+
+        $ createUser(id: UserId, name: UserName, age: UserAge): UserTuple {
+            return [id, name, age];
+        }
+
+        user: UserTuple = createUser(1, "Alice", 25);
+        
+        assert_equals(1, user[0], "User ID should be 1");
+        assert_equals("Alice", user[1], "User name should be Alice");
+        assert_equals(25, user[2], "User age should be 25");
+    });
+
+    test("type alias shadowing", $() => {
+        % Count = number;
+        globalCount: Count = 999;
+
+        $ testShadowing(): string {
+            // Local type alias shadows global one
+            % Count = string;
+            localCount: Count = "This is a string!";
+            return localCount;
+        }
+
+        shadowResult = testShadowing();
+        
+        assert_equals("This is a string!", shadowResult, "Local type alias should shadow global");
+        assert_equals(999, globalCount, "Global type alias should still work");
+    });
+
+    test("complex type aliases", $() => {
+        % Point = Array[number];
+        % Line = Array[Point];
+        
+        point1: Point = [10, 20];
+        point2: Point = [30, 40];
+        line: Line = [point1, point2];
+        
+        assert_equals(2, line.length, "Line should have 2 points");
+        assert_equals(10, line[0][0], "First point x should be 10");
+        assert_equals(20, line[0][1], "First point y should be 20");
+        assert_equals(30, line[1][0], "Second point x should be 30");
+        assert_equals(40, line[1][1], "Second point y should be 40");
+    });
+});
+
+run_all();

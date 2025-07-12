@@ -162,6 +162,11 @@ public class UnreachableCodeEliminationPass extends OptimizationPass {
                 }
                 
                 @Override
+                public Stmt visitThrowStmt(Stmt.Throw stmt) {
+                    return stmt;
+                }
+                
+                @Override
                 public Stmt visitFunctionStmt(Stmt.Function stmt) {
                     List<Stmt> body = removeUnreachableCode(stmt.body);
                     return new Stmt.Function(stmt.name, stmt.params, stmt.returnType, body);

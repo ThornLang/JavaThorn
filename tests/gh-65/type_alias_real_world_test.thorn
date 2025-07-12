@@ -1,0 +1,239 @@
+// Real-world example using type aliases
+// Simulates a simple user management system
+
+// ==================== Type Definitions ====================
+
+// Basic types
+% UserId = number;
+% Username = string;
+% Email = string;
+% Age = number;
+% Timestamp = number;
+
+// Composite types
+% UserProfile = Dict[string, Any];
+% UserDatabase = Dict[string, UserProfile];  // Keys must be strings
+% EmailIndex = Dict[Email, UserId];
+
+// Function types
+% UserValidator = Function[(UserProfile), boolean];
+% UserTransformer = Function[(UserProfile), UserProfile];
+% UserPredicate = Function[(UserProfile), boolean];
+
+// ==================== User Management System ====================
+
+class UserManager {
+    $ init() {
+        this.users = {};
+        this.emailIndex = {};
+        this.nextId = 1000;
+    }
+    
+    $ createUser(username: Username, email: Email, age: Age): UserId {
+        // Validate inputs
+        if (username.length < 3) {
+            print("Error: Username too short");
+            return 0;
+        }
+        
+        if (!email.includes("@")) {
+            print("Error: Invalid email format");
+            return 0;
+        }
+        
+        if (age < 13 || age > 120) {
+            print("Error: Invalid age");
+            return 0;
+        }
+        
+        // Check if email already exists
+        emailIdx: EmailIndex = this.emailIndex;
+        if (emailIdx.has(email)) {
+            print("Error: Email already registered");
+            return 0;
+        }
+        
+        // Create user
+        userId: UserId = this.nextId;
+        this.nextId = this.nextId + 1;
+        
+        profile: UserProfile = {
+            "id": userId,
+            "username": username,
+            "email": email,
+            "age": age,
+            "created": clock(),
+            "active": true
+        };
+        
+        // Store in database
+        db: UserDatabase = this.users;
+        db["" + userId] = profile;
+        
+        // Update email index
+        emailIdx[email] = userId;
+        
+        return userId;
+    }
+    
+    $ getUser(userId: UserId): UserProfile {
+        db: UserDatabase = this.users;
+        return db["" + userId];
+    }
+    
+    $ findByEmail(email: Email): UserProfile {
+        emailIdx: EmailIndex = this.emailIndex;
+        if (!emailIdx.has(email)) {
+            return null;
+        }
+        
+        userId: UserId = emailIdx[email];
+        return this.getUser(userId);
+    }
+    
+    $ updateUser(userId: UserId, updates: UserProfile): boolean {
+        db: UserDatabase = this.users;
+        key: string = "" + userId;
+        
+        if (!db.has(key)) {
+            return false;
+        }
+        
+        current: UserProfile = db[key];
+        
+        // Merge updates
+        for (field in updates.keys()) {
+            if (field != "id" && field != "created") {  // Don't allow changing these
+                current[field] = updates[field];
+            }
+        }
+        
+        return true;
+    }
+    
+    $ listUsers(filter: UserPredicate): Array[UserProfile] {
+        db: UserDatabase = this.users;
+        result: Array[UserProfile] = [];
+        
+        for (key in db.keys()) {
+            user: UserProfile = db[key];
+            if (filter(user)) {
+                result.push(user);
+            }
+        }
+        
+        return result;
+    }
+    
+    $ deactivateUser(userId: UserId): boolean {
+        return this.updateUser(userId, {"active": false});
+    }
+    
+    $ getUserCount(): number {
+        db: UserDatabase = this.users;
+        return db.size();
+    }
+}
+
+// ==================== Usage Example ====================
+
+print("User Management System Demo");
+print("===========================\n");
+
+// Create manager
+manager: UserManager = UserManager();
+
+// Create some users
+print("Creating users...");
+id1: UserId = manager.createUser("alice_wonder", "alice@example.com", 25);
+id2: UserId = manager.createUser("bob_builder", "bob@example.com", 30);
+id3: UserId = manager.createUser("charlie_brown", "charlie@example.com", 22);
+
+print("Created user IDs: " + id1 + ", " + id2 + ", " + id3);
+
+// Try to create duplicate email
+print("\nTrying duplicate email...");
+duplicate: UserId = manager.createUser("alice_smith", "alice@example.com", 28);
+
+// Find user by email
+print("\nFinding user by email...");
+alice: UserProfile = manager.findByEmail("alice@example.com");
+if (alice != null) {
+    print("Found: " + alice["username"] + " (ID: " + alice["id"] + ")");
+}
+
+// Update user
+print("\nUpdating Bob's age...");
+success: boolean = manager.updateUser(id2, {"age": 31});
+print("Update successful: " + success);
+
+bob: UserProfile = manager.getUser(id2);
+print("Bob's new age: " + bob["age"]);
+
+// List active users
+print("\nActive users:");
+isActive: UserPredicate = $(user) => user["active"];
+activeUsers: Array[UserProfile] = manager.listUsers(isActive);
+
+for (user in activeUsers) {
+    print("  - " + user["username"] + " (age: " + user["age"] + ")");
+}
+
+// Deactivate a user
+print("\nDeactivating Charlie...");
+manager.deactivateUser(id3);
+
+// List young users (under 30)
+print("\nUsers under 30:");
+isYoung: UserPredicate = $(user) => user["age"] < 30 && user["active"];
+youngUsers: Array[UserProfile] = manager.listUsers(isYoung);
+
+for (user in youngUsers) {
+    print("  - " + user["username"] + " (age: " + user["age"] + ")");
+}
+
+// Statistics
+print("\nStatistics:");
+print("Total users: " + manager.getUserCount());
+print("Active users: " + activeUsers.length);
+print("Young active users: " + youngUsers.length);
+
+// ==================== Advanced Type Alias Usage ====================
+
+// Type aliases for analytics
+% AgeGroup = string;
+% UserStats = Dict[AgeGroup, number];
+
+$ categorizeUsers(users: Array[UserProfile]): UserStats {
+    stats: UserStats = {
+        "teen": 0,
+        "young_adult": 0,
+        "adult": 0,
+        "senior": 0
+    };
+    
+    for (user in users) {
+        age: Age = user["age"];
+        if (age < 20) {
+            stats["teen"] = stats["teen"] + 1;
+        } else if (age < 30) {
+            stats["young_adult"] = stats["young_adult"] + 1;
+        } else if (age < 60) {
+            stats["adult"] = stats["adult"] + 1;
+        } else {
+            stats["senior"] = stats["senior"] + 1;
+        }
+    }
+    
+    return stats;
+}
+
+allUsers: Array[UserProfile] = manager.listUsers($(u) => true);
+ageStats: UserStats = categorizeUsers(allUsers);
+
+print("\nAge distribution:");
+for (group in ageStats.keys()) {
+    print("  " + group + ": " + ageStats[group] + " users");
+}
+
+print("\n✅ Real-world type alias example completed!");

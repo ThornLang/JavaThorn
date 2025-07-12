@@ -1,0 +1,161 @@
+import { assert_equals, test, suite, run_all } from "test";
+
+// Complex overloading scenarios and stress tests
+
+suite("Complex Function Overloading", $() => {
+    test("overloading with different data structures", $() => {
+        $ processData(data) {
+            return "Single value: " + data;
+        }
+
+        $ processData(data: Array[Any]) {
+            return "Array of " + data.length + " items";
+        }
+
+        // Note: Dict type overloading would require full generic support
+        // For now, we'll use a different approach
+        $ processDict(data) {
+            // For now, just return a fixed message since dict iteration isn't supported
+            return "Dict with entries";
+        }
+
+        assert_equals("Single value: 42", processData(42), "Should process single value");
+        assert_equals("Array of 5 items", processData([1, 2, 3, 4, 5]), "Should process array");
+        assert_equals("Dict with entries", processDict({"a": 1, "b": 2, "c": 3}), "Should process dict");
+    });
+
+    test("nested function calls with overloading", $() => {
+        $ outer(x: number) {
+            $ inner(y: number) {
+                return x + y;
+            }
+            
+            $ inner(y: string) {
+                return x + " " + y;
+            }
+            
+            return inner;
+        }
+
+        innerFunc = outer(10);
+        assert_equals(15, innerFunc(5), "Nested number overload should work");
+        assert_equals("10 hello", innerFunc("hello"), "Nested string overload should work");
+    });
+
+    test("overloading with default-like behavior", $() => {
+        $ configure() {
+            return {"debug": false, "timeout": 30};
+        }
+
+        $ configure(debug: boolean) {
+            return {"debug": debug, "timeout": 30};
+        }
+
+        $ configure(debug: boolean, timeout: number) {
+            return {"debug": debug, "timeout": timeout};
+        }
+
+        config1 = configure();
+        config2 = configure(true);
+        config3 = configure(true, 60);
+
+        assert_equals(false, config1["debug"], "Default debug should be false");
+        assert_equals(30, config1["timeout"], "Default timeout should be 30");
+        
+        assert_equals(true, config2["debug"], "Debug should be true");
+        assert_equals(30, config2["timeout"], "Timeout should still be 30");
+        
+        assert_equals(true, config3["debug"], "Debug should be true");
+        assert_equals(60, config3["timeout"], "Timeout should be 60");
+    });
+
+    test("overloading with Result types", $() => {
+        $ divide(a: number, b: number) {
+            if (b == 0) {
+                return Error("Division by zero");
+            }
+            return Ok(a / b);
+        }
+
+        $ divide(a: string, b: string) {
+            parts: Array[string] = [];
+            // Simple string split simulation
+            if (b == "") {
+                return Error("Empty delimiter");
+            }
+            // For this test, just return a mock result
+            return Ok(["part1", "part2"]);
+        }
+
+        numResult = divide(10, 2);
+        strResult = divide("hello,world", ",");
+        errorResult = divide(10, 0);
+
+        numMsg: string = match (numResult) {
+            Ok(value) => "10 / 2 = " + value,
+            Error(msg) => "Error: " + msg,
+        };
+        assert_equals("10 / 2 = 5", numMsg, "Number division should work");
+
+        strMsg: string = match (strResult) {
+            Ok(value) => "String split result: array",
+            Error(msg) => "Error: " + msg,
+        };
+        assert_equals("String split result: array", strMsg, "String division should work");
+
+        errMsg: string = match (errorResult) {
+            Ok(value) => "Should not reach here",
+            Error(msg) => "Expected error: " + msg,
+        };
+        assert_equals("Expected error: Division by zero", errMsg, "Error case should work");
+    });
+
+    test("stress test with many parameters", $() => {
+        $ stress() { return 0; }
+        $ stress(a: number) { return 1; }
+        $ stress(a: number, b: number) { return 2; }
+        $ stress(a: number, b: number, c: number) { return 3; }
+        $ stress(a: number, b: number, c: number, d: number) { return 4; }
+        $ stress(a: number, b: number, c: number, d: number, e: number) { return 5; }
+        $ stress(a: number, b: number, c: number, d: number, e: number, f: number) { return 6; }
+        $ stress(a: number, b: number, c: number, d: number, e: number, f: number, g: number) { return 7; }
+
+        assert_equals(0, stress(), "0 params should return 0");
+        assert_equals(1, stress(1), "1 param should return 1");
+        assert_equals(2, stress(1, 2), "2 params should return 2");
+        assert_equals(3, stress(1, 2, 3), "3 params should return 3");
+        assert_equals(4, stress(1, 2, 3, 4), "4 params should return 4");
+        assert_equals(5, stress(1, 2, 3, 4, 5), "5 params should return 5");
+        assert_equals(6, stress(1, 2, 3, 4, 5, 6), "6 params should return 6");
+        assert_equals(7, stress(1, 2, 3, 4, 5, 6, 7), "7 params should return 7");
+    });
+
+    test("overloading with mixed return types", $() => {
+        $ convert(x: number): string {
+            return "" + x;
+        }
+
+        $ convert(x: string): number {
+            // Simple string to number conversion
+            if (x == "0") return 0;
+            if (x == "1") return 1;
+            if (x == "42") return 42;
+            return -1;  // Error case
+        }
+
+        $ convert(x: boolean): number {
+            if (x) return 1;
+            return 0;
+        }
+
+        str_result: string = convert(42);
+        num_result: number = convert("42");
+        bool_result: number = convert(true);
+
+        assert_equals("42", str_result, "Number to string conversion");
+        assert_equals(42, num_result, "String to number conversion");
+        assert_equals(1, bool_result, "Boolean to number conversion");
+    });
+});
+
+run_all();

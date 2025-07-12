@@ -487,7 +487,53 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                     Object guardResult = evaluate(matchCase.guard);
                     if (!isTruthy(guardResult)) continue;
                 }
-                return evaluate(matchCase.value);
+                
+                if (matchCase.isBlock) {
+                    // Execute block statements in a new environment
+                    Environment blockEnv = new Environment(environment);
+                    Object result = null;
+                    
+                    // Save current return state
+                    Object previousReturnValue = returnValue;
+                    boolean previousHasReturned = hasReturned;
+                    returnValue = null;
+                    hasReturned = false;
+                    
+                    try {
+                        Environment previous = this.environment;
+                        this.environment = blockEnv;
+                        try {
+                            for (int i = 0; i < matchCase.stmts.size(); i++) {
+                                Stmt stmt = matchCase.stmts.get(i);
+                                
+                                // If this is the last statement and it's an expression statement,
+                                // capture its value as the block result
+                                if (i == matchCase.stmts.size() - 1 && stmt instanceof Stmt.Expression) {
+                                    Stmt.Expression exprStmt = (Stmt.Expression) stmt;
+                                    result = evaluate(exprStmt.expression);
+                                } else {
+                                    execute(stmt);
+                                }
+                                
+                                if (hasReturned) {
+                                    result = returnValue;
+                                    break;
+                                }
+                            }
+                        } finally {
+                            this.environment = previous;
+                        }
+                    } finally {
+                        // Restore return state
+                        returnValue = previousReturnValue;
+                        hasReturned = previousHasReturned;
+                    }
+                    
+                    return result; // result of last expression or null for void blocks
+                } else {
+                    // Evaluate single expression
+                    return evaluate(matchCase.value);
+                }
             }
         }
 
@@ -1106,6 +1152,14 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         returnValue = value;
         hasReturned = true;
         return null;
+    }
+
+    @Override
+    public Void visitThrowStmt(Stmt.Throw stmt) {
+        Object value = null;
+        if (stmt.value != null) value = evaluate(stmt.value);
+
+        throw new Thorn.RuntimeError(stmt.keyword, stringify(value));
     }
 
     @Override

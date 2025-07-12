@@ -1,107 +1,161 @@
 import "compression";
+import { assert_equals, assert_not_equals, assert_not_null, assert_true, assert_greater_than, assert_less_than, assert_greater_equal, test, suite, run_all } from "test";
 
 // Test: Compression module functionality
 // Tests GZIP, DEFLATE, ZIP compression and checksums
 
-// Test 1: GZIP compression/decompression
-print("Test 1: GZIP compression");
-original = "Hello, World! This is a test string for compression. It should compress well because it has some repetition.";
+suite("Compression Module Tests", $() => {
+    test("GZIP compression/decompression", $() => {
+        original = "Hello, World! This is a test string for compression. It should compress well because it has some repetition.";
+        
+        compressed = gzip_compress(original);
+        assert_not_null(compressed, "gzip_compress should return non-null");
+        assert_greater_than(compressed.length, 0, "Compressed data should have non-zero length");
+        assert_less_than(compressed.length, original.length, "Compressed size should be smaller than original");
+        
+        ratio = compression_ratio(original.length, compressed.length);
+        assert_greater_than(ratio, 0, "Compression ratio should be positive");
+        
+        decompressed = gzip_decompress(compressed);
+        assert_not_null(decompressed, "gzip_decompress should return non-null");
+        assert_equals(original.length, decompressed.length, "Decompressed size should match original");
+    });
 
-compressed = gzip_compress(original);
-print("Original size: " + original.length + " bytes");
-print("Compressed size: " + compressed.length + " bytes");
-ratio = compression_ratio(original.length, compressed.length);
-print("Compression ratio: " + ratio + "%");
+    test("DEFLATE compression with different levels", $() => {
+        test_data = "AAAAAAAAAABBBBBBBBBBCCCCCCCCCCDDDDDDDDDD"; // Highly compressible
+        
+        // Test that higher compression levels produce smaller output
+        compressed_level_0 = deflate_compress(test_data, 0);
+        compressed_level_6 = deflate_compress(test_data, 6);
+        compressed_level_9 = deflate_compress(test_data, 9);
+        
+        assert_not_null(compressed_level_0, "deflate_compress level 0 should return non-null");
+        assert_not_null(compressed_level_6, "deflate_compress level 6 should return non-null");
+        assert_not_null(compressed_level_9, "deflate_compress level 9 should return non-null");
+        
+        // Level 0 (no compression) should be larger than level 9 (max compression)
+        assert_greater_than(compressed_level_0.length, compressed_level_9.length, 
+                           "Level 0 should produce larger output than level 9");
+        
+        // Test decompression
+        decompressed = deflate_decompress(compressed_level_6);
+        assert_not_null(decompressed, "deflate_decompress should return non-null");
+        assert_equals(test_data.length, decompressed.length, "DEFLATE round-trip should preserve size");
+    });
 
-decompressed = gzip_decompress(compressed);
-print("Decompressed size: " + decompressed.length + " bytes");
-// Can't easily convert back to string without String methods
+    test("string compression helpers", $() => {
+        test_string = "This is a longer string that should benefit from compression. " +
+                      "It contains repeated words and patterns. Compression, compression, compression!";
+        
+        compressed_str = compress_string(test_string);
+        assert_not_null(compressed_str, "compress_string should return non-null");
+        assert_greater_than(compressed_str.length, 0, "Compressed string should not be empty");
+        
+        decompressed_str = decompress_string(compressed_str);
+        assert_equals(test_string, decompressed_str, "String round-trip should preserve content");
+    });
 
-// Test 2: DEFLATE compression with different levels
-print("\nTest 2: DEFLATE compression levels");
-test_data = "AAAAAAAAAABBBBBBBBBBCCCCCCCCCCDDDDDDDDDD"; // Highly compressible
+    test("ZIP archive creation and extraction", $() => {
+        files = {
+            "file1.txt": "This is the content of file 1",
+            "file2.txt": "This is the content of file 2", 
+            "folder/file3.txt": "This is file 3 in a folder"
+        };
+        
+        // Create ZIP
+        zip_data = zip_create(files);
+        assert_not_null(zip_data, "zip_create should return non-null");
+        assert_greater_than(zip_data.length, 0, "ZIP archive should have non-zero size");
+        
+        // List ZIP contents
+        entries = zip_list(zip_data);
+        assert_not_null(entries, "zip_list should return non-null");
+        assert_equals(3, entries.length, "ZIP should contain 3 files");
+        
+        // Verify each entry has required fields
+        for (entry in entries) {
+            assert_not_null(entry["name"], "ZIP entry should have name");
+            assert_not_null(entry["size"], "ZIP entry should have size");
+            assert_greater_equal(entry["size"], 0, "ZIP entry size should be non-negative");
+        }
+        
+        // Extract ZIP
+        extracted = zip_extract(zip_data);
+        assert_not_null(extracted, "zip_extract should return non-null");
+        assert_equals(3, extracted.keys().length, "Should extract 3 files");
+        
+        // Verify extracted content matches original
+        assert_equals(files["file1.txt"], extracted["file1.txt"], "Extracted file1 should match original");
+        assert_equals(files["file2.txt"], extracted["file2.txt"], "Extracted file2 should match original");
+        assert_equals(files["folder/file3.txt"], extracted["folder/file3.txt"], "Extracted file3 should match original");
+    });
 
-// Test different compression levels
-for (level = 0; level <= 9; level = level + 3) {
-    compressed = deflate_compress(test_data, level);
-    print("Level " + level + ": " + compressed.length + " bytes");
-}
+    test("checksums", $() => {
+        test_data = "Test data for checksum";
+        
+        crc = crc32(test_data);
+        adler = adler32(test_data);
+        
+        assert_not_null(crc, "crc32 should return non-null");
+        assert_not_null(adler, "adler32 should return non-null");
+        assert_greater_than(crc, 0, "CRC32 should be positive");
+        assert_greater_than(adler, 0, "Adler32 should be positive");
+        
+        // Verify checksums are consistent
+        crc2 = crc32(test_data);
+        adler2 = adler32(test_data);
+        assert_equals(crc, crc2, "CRC32 should be consistent");
+        assert_equals(adler, adler2, "Adler32 should be consistent");
+        
+        // Different data should produce different checksums
+        different_data = "Different test data";
+        crc_different = crc32(different_data);
+        adler_different = adler32(different_data);
+        assert_not_equals(crc, crc_different, "Different data should have different CRC32");
+        assert_not_equals(adler, adler_different, "Different data should have different Adler32");
+    });
 
-// Test decompression
-compressed = deflate_compress(test_data, 6);
-decompressed = deflate_decompress(compressed);
-print("DEFLATE round-trip successful: " + (decompressed.length > 0));
+    test("large data compression", $() => {
+        large_data = "";
+        for (i = 0; i < 100; i = i + 1) {
+            large_data = large_data + "Pattern " + i + " repeats. ";
+        }
+        
+        compressed_large = gzip_compress(large_data);
+        assert_not_null(compressed_large, "Large data compression should return non-null");
+        assert_less_than(compressed_large.length, large_data.length, "Large data should compress well");
+        
+        ratio = compression_ratio(large_data.length, compressed_large.length);
+        assert_greater_than(ratio, 50, "Large repetitive data should achieve >50% compression");
+        
+        // Verify round-trip
+        decompressed_large = gzip_decompress(compressed_large);
+        assert_equals(large_data.length, decompressed_large.length, "Large data round-trip should preserve size");
+    });
 
-// Test 3: String compression helpers
-print("\nTest 3: String compression helpers");
-test_string = "This is a longer string that should benefit from compression. " +
-              "It contains repeated words and patterns. Compression, compression, compression!";
-              
-compressed_str = compress_string(test_string);
-print("Original length: " + test_string.length);
-print("Compressed (base64) length: " + compressed_str.length);
+    test("binary data compression", $() => {
+        binary_data = [];
+        for (i = 0; i < 256; i = i + 1) {
+            binary_data.push(i);
+        }
+        
+        compressed_binary = gzip_compress(binary_data);
+        assert_not_null(compressed_binary, "Binary compression should return non-null");
+        assert_greater_than(compressed_binary.length, 0, "Compressed binary should have non-zero size");
+        
+        decompressed_binary = gzip_decompress(compressed_binary);
+        assert_not_null(decompressed_binary, "Binary decompression should return non-null");
+        assert_equals(binary_data.length, decompressed_binary.length, "Binary round-trip should preserve size");
+        
+        // Verify content is preserved
+        all_match = true;
+        for (i = 0; i < binary_data.length; i = i + 1) {
+            if (binary_data[i] != decompressed_binary[i]) {
+                all_match = false;
+            }
+        }
+        assert_true(all_match, "Binary data content should be preserved after round-trip");
+    });
+});
 
-decompressed_str = decompress_string(compressed_str);
-print("String round-trip successful: " + (decompressed_str == test_string));
-
-// Test 4: ZIP archive creation and extraction
-print("\nTest 4: ZIP archives");
-files = {
-    "file1.txt": "This is the content of file 1",
-    "file2.txt": "This is the content of file 2",
-    "folder/file3.txt": "This is file 3 in a folder"
-};
-
-// Create ZIP
-zip_data = zip_create(files);
-print("ZIP archive created: " + zip_data.length + " bytes");
-
-// List ZIP contents
-entries = zip_list(zip_data);
-print("ZIP contains " + entries.length + " files:");
-for (entry in entries) {
-    print("  - " + entry["name"] + " (" + entry["size"] + " bytes)");
-}
-
-// Extract ZIP
-extracted = zip_extract(zip_data);
-print("Extracted " + extracted.keys().length + " files");
-
-// Test 5: Checksums
-print("\nTest 5: Checksums");
-test_data = "Test data for checksum";
-crc = crc32(test_data);
-adler = adler32(test_data);
-print("CRC32: " + crc);
-print("Adler32: " + adler);
-
-// Verify checksums are consistent
-crc2 = crc32(test_data);
-adler2 = adler32(test_data);
-print("CRC32 consistent: " + (crc == crc2));
-print("Adler32 consistent: " + (adler == adler2));
-
-// Test 6: Large data compression
-print("\nTest 6: Large data compression");
-large_data = "";
-for (i = 0; i < 100; i = i + 1) {
-    large_data = large_data + "Pattern " + i + " repeats. ";
-}
-
-compressed_large = gzip_compress(large_data);
-ratio = compression_ratio(large_data.length, compressed_large.length);
-print("Large data compression ratio: " + ratio + "%");
-
-// Test 7: Binary data compression
-print("\nTest 7: Binary data compression");
-binary_data = [];
-for (i = 0; i < 256; i = i + 1) {
-    binary_data.push(i);
-}
-compressed_binary = gzip_compress(binary_data);
-decompressed_binary = gzip_decompress(compressed_binary);
-print("Binary data size: " + binary_data.length);
-print("Compressed size: " + compressed_binary.length);
-print("Binary round-trip successful: " + (decompressed_binary.length == binary_data.length));
-
-print("\n✅ Compression module tests completed!");
+run_all();

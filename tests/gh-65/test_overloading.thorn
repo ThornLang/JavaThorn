@@ -1,0 +1,98 @@
+import { assert_equals, test, suite, run_all } from "test";
+
+// Test function overloading
+
+suite("Function Overloading", $() => {
+    test("basic overloading with different arities", $() => {
+        messages = [];
+        
+        // Define multiple functions with the same name but different signatures
+        $ greet() {
+            messages.push("Hello!");
+            return "Hello!";
+        }
+
+        $ greet(name: string) {
+            msg = "Hello, " + name + "!";
+            messages.push(msg);
+            return msg;
+        }
+
+        $ greet(name: string, age: number) {
+            msg = "Hello, " + name + "! You are " + age + " years old.";
+            messages.push(msg);
+            return msg;
+        }
+
+        // Test the overloaded functions
+        result1 = greet();
+        assert_equals("Hello!", result1, "No-arg greet should work");
+
+        result2 = greet("Alice");
+        assert_equals("Hello, Alice!", result2, "Single-arg greet should work");
+
+        result3 = greet("Bob", 30);
+        assert_equals("Hello, Bob! You are 30 years old.", result3, "Two-arg greet should work");
+
+        assert_equals(3, messages.length, "Should have called 3 different overloads");
+    });
+
+    test("untyped parameter overloading", $() => {
+        $ calculate(x) {
+            return x * 2;
+        }
+
+        $ calculate(x, y) {
+            return x + y;
+        }
+
+        result1 = calculate(5);
+        assert_equals(10, result1, "Single-arg calculate should double");
+
+        result2 = calculate(3, 4);
+        assert_equals(7, result2, "Two-arg calculate should add");
+    });
+
+    test("mixed typed and untyped parameters", $() => {
+        $ process(x: number) {
+            return "typed: " + x;
+        }
+
+        $ process(x) {
+            return "untyped: " + x;
+        }
+
+        // The typed version should be preferred when passing a number
+        result1 = process(42);
+        assert_equals("typed: 42", result1, "Typed overload should be preferred for numbers");
+
+        // But we can still use the untyped version with non-numbers
+        result2 = process("hello");
+        assert_equals("untyped: hello", result2, "Untyped overload should handle strings");
+    });
+
+    test("overloading with return types", $() => {
+        $ getValue(): number {
+            return 42;
+        }
+
+        $ getValue(multiplier: number): number {
+            return 42 * multiplier;
+        }
+
+        $ getValue(prefix: string): string {
+            return prefix + "42";
+        }
+
+        result1: number = getValue();
+        assert_equals(42, result1, "No-arg getValue should return 42");
+
+        result2: number = getValue(2);
+        assert_equals(84, result2, "Number-arg getValue should multiply");
+
+        result3: string = getValue("answer: ");
+        assert_equals("answer: 42", result3, "String-arg getValue should concatenate");
+    });
+});
+
+run_all();

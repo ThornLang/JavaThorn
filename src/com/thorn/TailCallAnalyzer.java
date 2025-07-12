@@ -59,6 +59,11 @@ public class TailCallAnalyzer {
             }
             
             @Override
+            public Boolean visitThrowStmt(Stmt.Throw stmt) {
+                return false; // Throw statements don't contain tail calls
+            }
+            
+            @Override
             public Boolean visitIfStmt(Stmt.If stmt) {
                 boolean thenHasTail = containsTailCall(stmt.thenBranch, currentFunction);
                 boolean elseHasTail = stmt.elseBranch != null && 
@@ -153,6 +158,11 @@ public class TailCallAnalyzer {
                     tailCalls.add(stmt);
                 }
                 return null;
+            }
+            
+            @Override
+            public Void visitThrowStmt(Stmt.Throw stmt) {
+                return null; // Throw statements don't contain tail calls
             }
             
             @Override

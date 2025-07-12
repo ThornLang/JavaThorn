@@ -184,6 +184,13 @@ public class BranchOptimizationPass extends OptimizationPass {
                 }
                 
                 @Override
+                public Stmt visitThrowStmt(Stmt.Throw stmt) {
+                    Expr optimizedValue = stmt.value != null ? 
+                        optimizeExpression(stmt.value) : null;
+                    return new Stmt.Throw(stmt.keyword, optimizedValue);
+                }
+                
+                @Override
                 public Stmt visitFunctionStmt(Stmt.Function stmt) {
                     List<Stmt> optimizedBody = optimizeStatementList(stmt.body);
                     return new Stmt.Function(stmt.name, stmt.params, stmt.returnType, optimizedBody);

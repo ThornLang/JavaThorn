@@ -1,32 +1,38 @@
+import { assert_true, assert_false, assert_equals, assert_not_null, test, suite, run_all } from "test";
+
 // Test: Basic Result type functionality
 // Expected: Ok and Error constructors work, helper methods return correct values
 
-// Test Ok and Error construction
-ok_result = Ok("success");
-error_result = Error("failure");
+suite("Result Type Basic Functionality", $() => {
+    test("Ok and Error construction", $() => {
+        ok_result = Ok("success");
+        error_result = Error("failure");
+        
+        assert_not_null(ok_result, "Ok result should be non-null");
+        assert_not_null(error_result, "Error result should be non-null");
+    });
 
-print("Ok result: " + ok_result);
-print("Error result: " + error_result);
+    test("Ok result helper methods", $() => {
+        ok_result = Ok("success");
+        
+        assert_true(ok_result.is_ok(), "Ok result should return true for is_ok()");
+        assert_false(ok_result.is_error(), "Ok result should return false for is_error()");
+    });
 
-// Test helper methods
-print("ok_result.is_ok(): " + ok_result.is_ok());
-print("ok_result.is_error(): " + ok_result.is_error());
-print("error_result.is_ok(): " + error_result.is_ok());
-print("error_result.is_error(): " + error_result.is_error());
+    test("Error result helper methods", $() => {
+        error_result = Error("failure");
+        
+        assert_false(error_result.is_ok(), "Error result should return false for is_ok()");
+        assert_true(error_result.is_error(), "Error result should return true for is_error()");
+    });
 
-// Test unwrap_or
-print("ok_result.unwrap_or('default'): " + ok_result.unwrap_or("default"));
-print("error_result.unwrap_or('default'): " + error_result.unwrap_or("default"));
+    test("unwrap_or functionality", $() => {
+        ok_result = Ok("success");
+        error_result = Error("failure");
+        
+        assert_equals("success", ok_result.unwrap_or("default"), "Ok result should unwrap to its value");
+        assert_equals("default", error_result.unwrap_or("default"), "Error result should return default");
+    });
+});
 
-// Verify basic functionality
-if (ok_result.is_ok() && !ok_result.is_error()) {
-    print("✅ Ok result methods work correctly");
-} else {
-    print("❌ Ok result methods failed");
-}
-
-if (!error_result.is_ok() && error_result.is_error()) {
-    print("✅ Error result methods work correctly");
-} else {
-    print("❌ Error result methods failed");
-}
+run_all();

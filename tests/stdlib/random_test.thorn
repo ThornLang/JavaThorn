@@ -1,103 +1,165 @@
 import "random";
+import { assert_true, assert_equals, assert_not_null, assert_greater_equal, assert_less_equal, test, suite, run_all } from "test";
 
 // Test: Random module functionality
 // Tests random number generation, sampling, and distributions
 
-// Test 1: Basic random generation
-print("Random float [0,1): " + random());
-print("Random int [1,10]: " + randint(1, 10));
-print("Random float [0,100): " + randfloat(0, 100));
-print("Random boolean: " + randbool());
+suite("Random Module Tests", $() => {
+    test("basic random generation", $() => {
+        rand_float = random();
+        rand_int = randint(1, 10);
+        rand_float_range = randfloat(0, 100);
+        rand_bool = randbool();
+        
+        assert_greater_equal(rand_float, 0, "random() should be >= 0");
+        assert_less_equal(rand_float, 1, "random() should be < 1");
+        assert_greater_equal(rand_int, 1, "randint should be >= min");
+        assert_less_equal(rand_int, 10, "randint should be <= max");
+        assert_greater_equal(rand_float_range, 0, "randfloat should be >= min");
+        assert_less_equal(rand_float_range, 100, "randfloat should be < max");
+        assert_true(rand_bool == true || rand_bool == false, "randbool should be boolean");
+    });
 
-// Test 2: Random bytes
-bytes = randbytes(5);
-print("Random bytes (5): [" + bytes[0] + ", " + bytes[1] + ", " + bytes[2] + ", " + bytes[3] + ", " + bytes[4] + "]");
+    test("random bytes", $() => {
+        bytes = randbytes(5);
+        assert_not_null(bytes, "randbytes should return non-null");
+        assert_equals(5, bytes.length, "randbytes should return correct length");
+        
+        // Each byte should be in valid range
+        for (i = 0; i < bytes.length; i = i + 1) {
+            byte_val = bytes[i];
+            assert_greater_equal(byte_val, 0, "byte should be >= 0");
+            assert_less_equal(byte_val, 255, "byte should be <= 255");
+        }
+    });
 
-// Test 3: Seeding for reproducibility
-seed(42);
-val1 = random();
-val2 = random();
-seed(42);  // Reset with same seed
-val3 = random();
-val4 = random();
-print("Seeded values match: " + (val1 == val3) + " and " + (val2 == val4));
+    test("seeding for reproducibility", $() => {
+        seed(42);
+        val1 = random();
+        val2 = random();
+        seed(42);  // Reset with same seed
+        val3 = random();
+        val4 = random();
+        
+        assert_equals(val1, val3, "first seeded values should match");
+        assert_equals(val2, val4, "second seeded values should match");
+    });
 
-// Test 4: Choice and sampling
-colors = ["red", "green", "blue", "yellow", "purple"];
-print("Random color: " + choice(colors));
+    test("choice and sampling", $() => {
+        colors = ["red", "green", "blue", "yellow", "purple"];
+        
+        // Test single choice
+        chosen_color = choice(colors);
+        assert_not_null(chosen_color, "choice should return non-null");
+        assert_true(colors.includes(chosen_color), "choice should return item from array");
+        
+        // Multiple choices with replacement
+        picks = choices(colors, 3, null);
+        assert_equals(3, picks.length, "choices should return correct length");
+        
+        // Sample without replacement
+        sample_colors = sample(colors, 3);
+        assert_equals(3, sample_colors.length, "sample should return correct length");
+        
+        // Check no duplicates in sample
+        unique_count = 0;
+        for (i = 0; i < sample_colors.length; i = i + 1) {
+            is_unique = true;
+            for (j = 0; j < i; j = j + 1) {
+                if (sample_colors[i] == sample_colors[j]) {
+                    is_unique = false;
+                }
+            }
+            if (is_unique) {
+                unique_count = unique_count + 1;
+            }
+        }
+        assert_equals(3, unique_count, "sample should have no duplicates");
+    });
 
-// Multiple choices with replacement
-picks = choices(colors, 3, null);
-print("3 random colors (with replacement): [" + picks[0] + ", " + picks[1] + ", " + picks[2] + "]");
+    test("shuffling", $() => {
+        numbers = [1, 2, 3, 4, 5];
+        original_sum = numbers[0] + numbers[1] + numbers[2] + numbers[3] + numbers[4];
+        
+        // Test shuffled copy
+        shuffled_copy = shuffled(numbers);
+        shuffled_sum = shuffled_copy[0] + shuffled_copy[1] + shuffled_copy[2] + shuffled_copy[3] + shuffled_copy[4];
+        
+        assert_equals(5, shuffled_copy.length, "shuffled copy should have same length");
+        assert_equals(original_sum, shuffled_sum, "shuffled copy should have same elements");
+        
+        // Test in-place shuffle
+        shuffle(numbers);
+        new_sum = numbers[0] + numbers[1] + numbers[2] + numbers[3] + numbers[4];
+        assert_equals(original_sum, new_sum, "in-place shuffle should preserve elements");
+    });
 
-// Sample without replacement
-sample_colors = sample(colors, 3);
-print("3 color sample (no replacement): [" + sample_colors[0] + ", " + sample_colors[1] + ", " + sample_colors[2] + "]");
+    test("distributions", $() => {
+        normal_val = normal(0, 1);
+        normal_val2 = normal(100, 15);
+        exp_val = exponential(0.5);
+        uniform_val = uniform(10, 20);
+        
+        assert_not_null(normal_val, "normal distribution should return value");
+        assert_not_null(normal_val2, "normal distribution with params should return value");
+        assert_greater_equal(exp_val, 0, "exponential should be >= 0");
+        assert_greater_equal(uniform_val, 10, "uniform should be >= min");
+        assert_less_equal(uniform_val, 20, "uniform should be <= max");
+    });
 
-// Test 5: Shuffling
-numbers = [1, 2, 3, 4, 5];
-shuffled_copy = shuffled(numbers);
-print("Original: [" + numbers[0] + ", " + numbers[1] + ", " + numbers[2] + ", " + numbers[3] + ", " + numbers[4] + "]");
-print("Shuffled copy: [" + shuffled_copy[0] + ", " + shuffled_copy[1] + ", " + shuffled_copy[2] + ", " + shuffled_copy[3] + ", " + shuffled_copy[4] + "]");
+    test("string generation", $() => {
+        rand_str = rand_string(10, null);
+        assert_not_null(rand_str, "rand_string should return non-null");
+        assert_equals(10, rand_str.length, "rand_string should have correct length");
+        
+        custom_chars = "ABC123";
+        custom_str = rand_string(8, custom_chars);
+        assert_equals(8, custom_str.length, "custom rand_string should have correct length");
+        
+        // Check all chars are from custom set
+        valid_chars = true;
+        for (i = 0; i < custom_str.length; i = i + 1) {
+            char = custom_str[i];
+            if (!custom_chars.includes(char)) {
+                valid_chars = false;
+            }
+        }
+        assert_true(valid_chars, "custom string should only use specified characters");
+        
+        // UUID generation
+        uuid = uuid4();
+        assert_not_null(uuid, "UUID should be generated");
+        assert_equals(36, uuid.length, "UUID should have standard length");
+        
+        // Hex string
+        hex_str = hex_string(8);
+        assert_equals(16, hex_str.length, "hex string should be 2x byte count");
+    });
 
-// In-place shuffle
-shuffle(numbers);
-print("After in-place shuffle: [" + numbers[0] + ", " + numbers[1] + ", " + numbers[2] + ", " + numbers[3] + ", " + numbers[4] + "]");
+    test("cryptographic random", $() => {
+        crypto_val = crypto_random();
+        crypto_int = crypto_randint(1000, 9999);
+        crypto_bytes = crypto_randbytes(4);
+        crypto_tok = crypto_token(16);
+        
+        assert_greater_equal(crypto_val, 0, "crypto random should be >= 0");
+        assert_less_equal(crypto_val, 1, "crypto random should be < 1");
+        assert_greater_equal(crypto_int, 1000, "crypto randint should be >= min");
+        assert_less_equal(crypto_int, 9999, "crypto randint should be <= max");
+        assert_equals(4, crypto_bytes.length, "crypto bytes should have correct length");
+        assert_not_null(crypto_tok, "crypto token should be generated");
+    });
 
-// Test 6: Distributions
-print("\nDistribution samples:");
-print("Normal(0, 1): " + normal(0, 1));
-print("Normal(100, 15): " + normal(100, 15));
-print("Exponential(0.5): " + exponential(0.5));
-print("Uniform(10, 20): " + uniform(10, 20));
+    test("weighted choice", $() => {
+        items = [["common", 10.0], ["rare", 2.0], ["legendary", 0.5]];
+        
+        // Test a few weighted choices
+        for (i = 0; i < 10; i = i + 1) {
+            item = weighted_choice(items);
+            valid_item = (item == "common" || item == "rare" || item == "legendary");
+            assert_true(valid_item, "weighted choice should return valid item");
+        }
+    });
+});
 
-// Test 7: String generation
-rand_str = rand_string(10, null);
-print("Random alphanumeric (10): " + rand_str);
-
-custom_chars = "ABC123";
-custom_str = rand_string(8, custom_chars);
-print("Random from 'ABC123' (8): " + custom_str);
-
-// UUID generation
-uuid = uuid4();
-print("UUID v4: " + uuid);
-
-// Hex string
-hex_str = hex_string(8);
-print("Random hex (8 bytes): " + hex_str);
-
-// Test 8: Cryptographic random
-crypto_val = crypto_random();
-print("\nCrypto random float: " + crypto_val);
-
-crypto_int = crypto_randint(1000, 9999);
-print("Crypto random int [1000,9999]: " + crypto_int);
-
-crypto_bytes = crypto_randbytes(4);
-print("Crypto random bytes (4): [" + crypto_bytes[0] + ", " + crypto_bytes[1] + ", " + crypto_bytes[2] + ", " + crypto_bytes[3] + "]");
-
-crypto_tok = crypto_token(16);
-print("Crypto token (16): " + crypto_tok);
-
-// Test 9: Weighted choice
-items = [["common", 10.0], ["rare", 2.0], ["legendary", 0.5]];
-counts = {"common": 0, "rare": 0, "legendary": 0};
-
-// Run many times to see distribution
-for (i = 0; i < 100; i = i + 1) {
-    item = weighted_choice(items);
-    counts[item] = counts[item] + 1;
-}
-
-print("\nWeighted choice distribution (100 runs):");
-print("Common: " + counts["common"]);
-print("Rare: " + counts["rare"]);
-print("Legendary: " + counts["legendary"]);
-
-// Test 10: Create custom generator
-gen = RandomGenerator(12345);
-print("\nCustom generator values:");
-// Note: RandomGenerator methods might need different names due to Java conventions
-
-print("\n✅ Random module tests completed!");
+run_all();

@@ -103,50 +103,49 @@ jobs:
           test_name=$(basename "$test_file")
           echo "Running: $test_name"
           
-          # Determine expected behavior based on filename
-          if [[ "$test_name" == *"_expectError"* ]]; then
-            EXPECT_FAILURE=true
-            echo "  (expecting error)"
-          elif [[ "$test_name" == *"_expectNoError"* ]]; then
-            EXPECT_FAILURE=false
-            echo "  (expecting success)"
-          else
-            # Default behavior - expect success
-            EXPECT_FAILURE=false
-          fi
-          
           # Run the test and capture output
           if java com.thorn.Thorn "$test_file" > "/tmp/test_logs/${test_name}.log" 2>&1; then
-            # Test executed successfully
-            if [ "$EXPECT_FAILURE" = true ]; then
-              echo "  ❌ UNEXPECTED PASS (expected to fail)"
-              echo "    Test succeeded but was expected to fail"
-              FAILED=$(cat /tmp/failed_count)
-              FAILED=$((FAILED + 1))
-              echo "$FAILED" > /tmp/failed_count
-              echo "- $test_name (unexpected pass)" >> /tmp/unexpected_results
-            else
-              echo "  ✅ PASSED"
+            # Test executed successfully (exit code 0)
+            # Check output for test framework results
+            if grep -q "All tests passed!" "/tmp/test_logs/${test_name}.log"; then
+              echo "  ✅ PASSED (all tests passed)"
               PASSED=$(cat /tmp/passed_count)
               PASSED=$((PASSED + 1))
               echo "$PASSED" > /tmp/passed_count
-            fi
-          else
-            # Test failed
-            if [ "$EXPECT_FAILURE" = true ]; then
-              echo "  ✅ EXPECTED FAILURE"
-              PASSED=$(cat /tmp/passed_count)
-              PASSED=$((PASSED + 1))
-              echo "$PASSED" > /tmp/passed_count
-            else
-              echo "  ❌ FAILED"
-              echo "  First 10 lines of output:"
-              head -10 "/tmp/test_logs/${test_name}.log" | sed 's/^/    /'
+            elif grep -q "Failed tests:" "/tmp/test_logs/${test_name}.log"; then
+              echo "  ❌ FAILED (some tests failed)"
+              echo "  Test output:"
+              grep -A 10 "Failed tests:" "/tmp/test_logs/${test_name}.log" | sed 's/^/    /'
               FAILED=$(cat /tmp/failed_count)
               FAILED=$((FAILED + 1))
               echo "$FAILED" > /tmp/failed_count
               echo "- $test_name" >> /tmp/failed_tests
+            else
+              # No test framework output detected, check if it's a legacy test
+              if [[ "$test_name" == *"_expectError"* ]]; then
+                # Legacy test expecting error - mark as needing update
+                echo "  ⚠️  LEGACY TEST (needs update to new framework)"
+                echo "- $test_name (legacy format)" >> /tmp/failed_tests
+                FAILED=$(cat /tmp/failed_count)
+                FAILED=$((FAILED + 1))
+                echo "$FAILED" > /tmp/failed_count
+              else
+                # Assume success for non-framework tests
+                echo "  ✅ PASSED (no test framework detected)"
+                PASSED=$(cat /tmp/passed_count)
+                PASSED=$((PASSED + 1))
+                echo "$PASSED" > /tmp/passed_count
+              fi
             fi
+          else
+            # Test failed with non-zero exit code
+            echo "  ❌ FAILED (runtime error)"
+            echo "  First 10 lines of output:"
+            head -10 "/tmp/test_logs/${test_name}.log" | sed 's/^/    /'
+            FAILED=$(cat /tmp/failed_count)
+            FAILED=$((FAILED + 1))
+            echo "$FAILED" > /tmp/failed_count
+            echo "- $test_name" >> /tmp/failed_tests
           fi
           echo ""
         done

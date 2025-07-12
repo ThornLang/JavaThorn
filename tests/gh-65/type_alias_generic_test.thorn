@@ -1,0 +1,140 @@
+// Generic type alias tests for ThornLang
+// Test type aliases with generic types
+
+// ==================== Generic Collection Type Aliases ====================
+
+% IntList = Array[number];
+% StringList = Array[string];
+% BoolList = Array[boolean];
+% ListOfLists = Array[Array[number]];
+
+// Test generic array type aliases
+integers: IntList = [1, 2, 3, 4, 5];
+strings: StringList = ["hello", "world", "thorn"];
+booleans: BoolList = [true, false, true];
+matrix: ListOfLists = [[1, 2], [3, 4], [5, 6]];
+
+print("Generic array type aliases:");
+print("Integers: " + integers.length + " items");
+print("Strings: " + strings.length + " items");
+print("Booleans: " + booleans.length + " items");
+print("Matrix: " + matrix.length + " rows");
+
+// ==================== Dictionary Type Aliases ====================
+
+% StringMap = Dict[string, string];
+% NumberMap = Dict[string, number];
+% ConfigMap = Dict[string, Any];
+% NestedMap = Dict[string, Dict[string, number]];
+
+// Test dictionary type aliases
+translations: StringMap = {
+    "hello": "hola",
+    "goodbye": "adios",
+    "thanks": "gracias"
+};
+
+scores: NumberMap = {
+    "Alice": 95,
+    "Bob": 87,
+    "Charlie": 92
+};
+
+config: ConfigMap = {
+    "host": "localhost",
+    "port": 8080,
+    "debug": true,
+    "timeout": 30.5
+};
+
+departments: NestedMap = {
+    "engineering": {"Alice": 95000, "Bob": 87000},
+    "sales": {"Charlie": 92000, "David": 88000}
+};
+
+print("\nDictionary type aliases:");
+print("Translations has " + translations.size() + " entries");
+print("Hello in Spanish: " + translations["hello"]);
+print("Alice's score: " + scores["Alice"]);
+print("Config port: " + config["port"]);
+print("Alice's salary: " + departments["engineering"]["Alice"]);
+
+// ==================== Function Type Aliases ====================
+
+% Predicate = Function[(number), boolean];
+% Transformer = Function[(string), string];
+% BinaryOp = Function[(number, number), number];
+% Consumer = Function[(Any), void];
+% Supplier = Function[(), number];
+
+// Test function type aliases
+isEven: Predicate = $(n) => n % 2 == 0;
+toUpper: Transformer = $(s) => {
+    // Simple uppercase simulation
+    return "UPPER[" + s + "]";
+};
+add: BinaryOp = $(a, b) => a + b;
+log: Consumer = $(value) => { print("Log: " + value); };
+getRandom: Supplier = $() => 42; // Always returns 42
+
+print("\nFunction type aliases:");
+print("Is 4 even? " + isEven(4));
+print("Is 5 even? " + isEven(5));
+print("Transform 'hello': " + toUpper("hello"));
+print("Add 3 + 5: " + add(3, 5));
+log("Testing consumer");
+print("Random number: " + getRandom());
+
+// ==================== Complex Nested Type Aliases ====================
+
+% StudentId = number;
+% CourseName = string;
+% Grade = number;
+% StudentGrades = Dict[CourseName, Grade];
+% GradeBook = Dict[string, StudentGrades];  // Keys must be strings
+
+// Create a gradebook
+gradebook: GradeBook = {
+    "1001": {"Math": 95, "Science": 88, "English": 92},
+    "1002": {"Math": 87, "Science": 93, "English": 85}
+};
+
+print("\nComplex nested type aliases:");
+print("Student 1001's Math grade: " + gradebook["1001"]["Math"]);
+print("Student 1002's Science grade: " + gradebook["1002"]["Science"]);
+
+// ==================== Type Aliases with Classes ====================
+
+class Student {
+    $ init(id: StudentId, grades: StudentGrades) {
+        this.id = id;
+        this.grades = grades;
+    }
+    
+    $ getGrade(course: CourseName): Grade {
+        return this.grades[course] ?? 0;
+    }
+}
+
+% StudentList = Array[Student];
+
+students: StudentList = [
+    Student(1001, {"Math": 95, "Science": 88}),
+    Student(1002, {"Math": 87, "Science": 93})
+];
+
+print("\nType aliases with classes:");
+print("First student Math grade: " + students[0].getGrade("Math"));
+print("Second student Science grade: " + students[1].getGrade("Science"));
+
+// ==================== Type Alias Chains ====================
+
+% Id = number;
+% UserId = Id;
+% AdminId = UserId;
+
+adminUser: AdminId = 999;
+print("\nType alias chains:");
+print("Admin ID: " + adminUser);
+
+print("\n✅ Generic type alias tests passed!");

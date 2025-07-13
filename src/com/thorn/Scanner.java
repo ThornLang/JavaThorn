@@ -27,6 +27,7 @@ class Scanner {
         keywords.put("null", NULL);
         keywords.put("or", OR);
         keywords.put("return", RETURN);
+        keywords.put("throw", THROW);
         keywords.put("true", TRUE);
         keywords.put("while", WHILE);
         keywords.put("this", THIS);
@@ -48,6 +49,7 @@ class Scanner {
         keywords.put("void", VOID_TYPE);
         keywords.put("Array", ARRAY_TYPE);
         keywords.put("Function", FUNCTION_TYPE);
+        keywords.put("Dict", DICT_TYPE);
     }
 
     Scanner(String source) {
@@ -222,9 +224,50 @@ class Scanner {
     }
 
     private void string() {
+        StringBuilder value = new StringBuilder();
+        
         while (peek() != '"' && !isAtEnd()) {
-            if (peek() == '\n') line++;
-            advance();
+            if (peek() == '\\') {
+                // Handle escape sequences
+                advance(); // consume the backslash
+                if (isAtEnd()) {
+                    Thorn.error(line, "Unterminated string escape sequence.");
+                    return;
+                }
+                
+                char escaped = advance();
+                switch (escaped) {
+                    case 'n':
+                        value.append('\n');
+                        break;
+                    case 't':
+                        value.append('\t');
+                        break;
+                    case 'r':
+                        value.append('\r');
+                        break;
+                    case '\\':
+                        value.append('\\');
+                        break;
+                    case '"':
+                        value.append('"');
+                        break;
+                    case '\'':
+                        value.append('\'');
+                        break;
+                    case '0':
+                        value.append('\0');
+                        break;
+                    default:
+                        // For unknown escape sequences, just include the character
+                        Thorn.error(line, "Unknown escape sequence: \\" + escaped);
+                        value.append(escaped);
+                        break;
+                }
+            } else {
+                if (peek() == '\n') line++;
+                value.append(advance());
+            }
         }
 
         if (isAtEnd()) {
@@ -235,9 +278,7 @@ class Scanner {
         // The closing "
         advance();
 
-        // Trim the surrounding quotes
-        String value = source.substring(start + 1, current - 1);
-        addToken(STRING, value);
+        addToken(STRING, value.toString());
     }
 
     private boolean match(char expected) {

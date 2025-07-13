@@ -1,0 +1,76 @@
+// Test: Dict[K,V] error conditions (Issue #10)
+// Tests expected error conditions - uncomment lines to test specific errors
+
+print("Testing Dict[K,V] error conditions...");
+
+// These tests demonstrate what SHOULD cause errors
+// Uncomment individual test cases to verify error messages
+
+print("=== Valid cases (should work) ===");
+
+// Valid: correct types
+validDict: Dict[string, number] = {"alice": 95, "bob": 87};
+print("✓ Valid Dict[string, number] works");
+
+// Valid: Any accepts anything
+anyDict: Dict[string, Any] = {"num": 42, "str": "hello", "bool": true};
+print("✓ Dict[string, Any] accepts mixed types");
+
+// Valid: empty dict
+emptyDict: Dict[string, number] = {};
+print("✓ Empty typed Dict works");
+
+print("\n=== Error cases (commented out) ===");
+print("Uncomment lines below to test specific error conditions:");
+
+// ERROR: Mixed number/string values in strict number dict
+print("1. Mixed types in strict Dict:");
+// mixedTypes: Dict[string, number] = {"alice": 95, "bob": "invalid"};
+
+// ERROR: Wrong value type in nested dict  
+print("2. Wrong nested type:");
+// wrongNested: Dict[string, Dict[string, number]] = {
+//     "scores": {"alice": 95, "bob": "invalid"}
+// };
+
+// ERROR: Wrong function parameter type
+$ requiresNumbers(data: Dict[string, number]): void {
+    print("Processing numbers...");
+}
+
+print("3. Wrong function parameter:");
+stringDict: Dict[string, string] = {"a": "text", "b": "more"};
+// requiresNumbers(stringDict); // Should error: cannot pass Dict[string, string] to Dict[string, number]
+
+// ERROR: Wrong function return type
+print("4. Wrong function return type:");
+$ shouldReturnNumbers(): Dict[string, number] {
+    // return {"a": "text", "b": "more"}; // Should error: cannot return Dict[string, string] as Dict[string, number]
+    return {"a": 1, "b": 2}; // This works
+}
+
+result = shouldReturnNumbers();
+print("Function returned valid dict: " + result["a"]);
+
+// ERROR: Type mismatch in assignment
+print("5. Assignment type mismatch:");
+numberDict: Dict[string, number] = {"x": 10, "y": 20};
+// stringDict2: Dict[string, string] = numberDict; // Should error: cannot assign Dict[string, number] to Dict[string, string]
+
+// Valid assignment (same types)
+anotherNumberDict: Dict[string, number] = numberDict;
+print("✓ Same-type assignment works: " + anotherNumberDict["x"]);
+
+// ERROR: Boolean where number expected
+print("6. Boolean in number Dict:");
+// boolInNumber: Dict[string, number] = {"flag": true, "count": 42}; // Should error: boolean not compatible with number
+
+// ERROR: Null where strict type expected (should work with Any though)
+print("7. Null in strict type:");
+// nullInNumber: Dict[string, number] = {"value": null, "count": 42}; // Should error: null not compatible with number
+nullInAny: Dict[string, Any] = {"value": null, "count": 42}; // This works
+print("✓ Null works in Any type: " + (nullInAny["value"] == null));
+
+print("\nError condition tests completed!");
+print("To test errors, uncomment specific lines and run again.");
+print("Each should produce a clear 'cannot assign dict to variable of type Dict[K,V]' error.");

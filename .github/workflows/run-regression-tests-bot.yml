@@ -1,6 +1,13 @@
 name: Run Regression Tests (Bot)
 
 on:
+  # Run when both pr-tests and test workflows complete successfully
+  workflow_run:
+    workflows: ["PR-Specific Tests", "ThornLang CI"]
+    types: [completed]
+    branches: ["**"]
+  
+  # Keep the manual trigger via comment
   issue_comment:
     types: [created]
 
@@ -14,8 +21,11 @@ jobs:
   run-regression:
     runs-on: ubuntu-latest
     if: |
-      github.event.issue.pull_request && 
-      contains(github.event.comment.body, '@run_regression')
+      (github.event_name == 'issue_comment' && 
+       github.event.issue.pull_request && 
+       contains(github.event.comment.body, '@run_regression')) ||
+      (github.event_name == 'workflow_run' && 
+       github.event.workflow_run.conclusion == 'success')
     
     steps:
     - name: Generate token
@@ -25,7 +35,8 @@ jobs:
         app_id: ${{ secrets.THORN_LANG_APP_ID }}
         private_key: ${{ secrets.THORN_LANG_APP_PRIVATE_KEY }}
     
-    - name: Add acknowledgment reaction
+    - name: Add acknowledgment reaction (manual trigger only)
+      if: github.event_name == 'issue_comment'
       uses: actions/github-script@v6
       with:
         github-token: ${{ steps.generate-token.outputs.token }}
@@ -37,12 +48,11 @@ jobs:
             content: 'rocket'
           });
     
-    - name: Checkout PR
+    - name: Checkout code
       uses: actions/checkout@v3
       with:
         token: ${{ steps.generate-token.outputs.token }}
-        # Checkout the PR branch
-        ref: refs/pull/${{ github.event.issue.number }}/head
+        ref: ${{ github.event_name == 'issue_comment' && format('refs/pull/{0}/head', github.event.issue.number) || github.event.workflow_run.head_sha }}
     
     - name: Set up Java
       uses: actions/setup-java@v3
@@ -93,50 +103,49 @@ jobs:
           test_name=$(basename "$test_file")
           echo "Running: $test_name"
           
-          # Determine expected behavior based on filename
-          if [[ "$test_name" == *"_expectError"* ]]; then
-            EXPECT_FAILURE=true
-            echo "  (expecting error)"
-          elif [[ "$test_name" == *"_expectNoError"* ]]; then
-            EXPECT_FAILURE=false
-            echo "  (expecting success)"
-          else
-            # Default behavior - expect success
-            EXPECT_FAILURE=false
-          fi
-          
           # Run the test and capture output
           if java com.thorn.Thorn "$test_file" > "/tmp/test_logs/${test_name}.log" 2>&1; then
-            # Test executed successfully
-            if [ "$EXPECT_FAILURE" = true ]; then
-              echo "  ❌ UNEXPECTED PASS (expected to fail)"
-              echo "    Test succeeded but was expected to fail"
-              FAILED=$(cat /tmp/failed_count)
-              FAILED=$((FAILED + 1))
-              echo "$FAILED" > /tmp/failed_count
-              echo "- $test_name (unexpected pass)" >> /tmp/unexpected_results
-            else
-              echo "  ✅ PASSED"
+            # Test executed successfully (exit code 0)
+            # Check output for test framework results
+            if grep -q "All tests passed!" "/tmp/test_logs/${test_name}.log"; then
+              echo "  ✅ PASSED (all tests passed)"
               PASSED=$(cat /tmp/passed_count)
               PASSED=$((PASSED + 1))
               echo "$PASSED" > /tmp/passed_count
-            fi
-          else
-            # Test failed
-            if [ "$EXPECT_FAILURE" = true ]; then
-              echo "  ✅ EXPECTED FAILURE"
-              PASSED=$(cat /tmp/passed_count)
-              PASSED=$((PASSED + 1))
-              echo "$PASSED" > /tmp/passed_count
-            else
-              echo "  ❌ FAILED"
-              echo "  First 10 lines of output:"
-              head -10 "/tmp/test_logs/${test_name}.log" | sed 's/^/    /'
+            elif grep -q "Failed tests:" "/tmp/test_logs/${test_name}.log"; then
+              echo "  ❌ FAILED (some tests failed)"
+              echo "  Test output:"
+              grep -A 10 "Failed tests:" "/tmp/test_logs/${test_name}.log" | sed 's/^/    /'
               FAILED=$(cat /tmp/failed_count)
               FAILED=$((FAILED + 1))
               echo "$FAILED" > /tmp/failed_count
               echo "- $test_name" >> /tmp/failed_tests
+            else
+              # No test framework output detected, check if it's a legacy test
+              if [[ "$test_name" == *"_expectError"* ]]; then
+                # Legacy test expecting error - mark as needing update
+                echo "  ⚠️  LEGACY TEST (needs update to new framework)"
+                echo "- $test_name (legacy format)" >> /tmp/failed_tests
+                FAILED=$(cat /tmp/failed_count)
+                FAILED=$((FAILED + 1))
+                echo "$FAILED" > /tmp/failed_count
+              else
+                # Assume success for non-framework tests
+                echo "  ✅ PASSED (no test framework detected)"
+                PASSED=$(cat /tmp/passed_count)
+                PASSED=$((PASSED + 1))
+                echo "$PASSED" > /tmp/passed_count
+              fi
             fi
+          else
+            # Test failed with non-zero exit code
+            echo "  ❌ FAILED (runtime error)"
+            echo "  First 10 lines of output:"
+            head -10 "/tmp/test_logs/${test_name}.log" | sed 's/^/    /'
+            FAILED=$(cat /tmp/failed_count)
+            FAILED=$((FAILED + 1))
+            echo "$FAILED" > /tmp/failed_count
+            echo "- $test_name" >> /tmp/failed_tests
           fi
           echo ""
         done
@@ -182,7 +191,7 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: regression-test-logs-${{ github.event.issue.number }}
+        name: regression-test-logs-${{ github.run_id }}
         path: /tmp/test_logs/
         retention-days: 7
     
@@ -212,20 +221,48 @@ jobs:
             message += 'Check the workflow logs for detailed failure information.';
           }
           
-          message += '\n\n<sub>Triggered by @' + context.payload.comment.user.login + '</sub>';
+          // Get PR number based on trigger type
+          let prNumber = null;
           
-          github.rest.issues.createComment({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            issue_number: context.issue.number,
-            body: message
-          });
+          if (context.eventName === 'issue_comment') {
+            // Manual trigger
+            prNumber = context.issue.number;
+            message += '\n\n<sub>Triggered by @' + context.payload.comment.user.login + '</sub>';
+            
+            // Add reaction
+            const reaction = status === 'passed' ? '+1' : (status === 'no-tests' ? 'confused' : '-1');
+            github.rest.reactions.createForIssueComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: context.payload.comment.id,
+              content: reaction
+            });
+          } else if (context.eventName === 'workflow_run') {
+            // Workflow completion trigger
+            message += '\n\n<sub>Automatically triggered after PR tests and CI passed</sub>';
+            
+            // Get PR number from workflow run
+            const pullRequests = context.payload.workflow_run.pull_requests;
+            if (pullRequests && pullRequests.length > 0) {
+              prNumber = pullRequests[0].number;
+            }
+          }
           
-          // Add reaction to indicate completion
-          const reaction = status === 'passed' ? '+1' : (status === 'no-tests' ? 'confused' : '-1');
-          github.rest.reactions.createForIssueComment({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            comment_id: context.payload.comment.id,
-            content: reaction
-          });
+          // Always try to post comment if we have a PR number
+          if (prNumber) {
+            try {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: message
+              });
+              console.log(`✅ Posted regression test results to PR #${prNumber}`);
+            } catch (error) {
+              console.log(`❌ Failed to post comment to PR #${prNumber}: ${error.message}`);
+            }
+          } else {
+            console.log('⚠️ No PR number found, cannot post comment');
+          }
+          
+          console.log(`🧪 Regression tests completed - Status: ${status}, Results: ${passed}/${total} passed`);

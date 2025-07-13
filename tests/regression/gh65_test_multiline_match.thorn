@@ -1,0 +1,113 @@
+import { assert_equals, test, suite, run_all } from "test";
+
+// Test multi-line match case expressions
+
+suite("Multi-line Match Cases", $() => {
+    test("match with block syntax", $() => {
+        $ divide(a: number, b: number) {
+            if (b == 0) {
+                return Error("Division by zero");
+            }
+            return Ok(a / b);
+        }
+
+        result1 = divide(10, 2);
+        result2 = divide(10, 0);
+
+        // Test with block syntax for Ok case
+        message1: string = match (result1) {
+            Ok(value) => {
+                doubled: number = value * 2;
+                "Success: " + value;
+            },
+            Error(msg) => {
+                "Error: " + msg;
+            },
+        };
+
+        assert_equals("Success: 5", message1, "Ok case should return success message");
+
+        // Test with block syntax for Error case
+        message2: string = match (result2) {
+            Ok(value) => {
+                "Success: " + value;
+            },
+            Error(msg) => {
+                errorCode: number = 500;
+                "Error " + errorCode + ": " + msg;
+            },
+        };
+
+        assert_equals("Error 500: Division by zero", message2, "Error case should return error message");
+    });
+
+    test("mixing single expressions and blocks", $() => {
+        $ processNumber(n: number) {
+            if (n < 0) return Error("Negative number");
+            if (n == 0) return Error("Zero");
+            return Ok(n);
+        }
+
+        // Test positive number (single expression)
+        result1 = processNumber(5);
+        output1: string = match (result1) {
+            Ok(value) => "Positive: " + value,
+            Error(msg) => {
+                code: string = "ERR";
+                code + ": " + msg;
+            },
+        };
+        assert_equals("Positive: 5", output1, "Positive number should use single expression");
+
+        // Test negative number (block)
+        result2 = processNumber(-1);
+        output2: string = match (result2) {
+            Ok(value) => "Positive: " + value,
+            Error(msg) => {
+                code: string = "ERR";
+                code + ": " + msg;
+            },
+        };
+        assert_equals("ERR: Negative number", output2, "Negative number should use block");
+
+        // Test zero (block)
+        result3 = processNumber(0);
+        output3: string = match (result3) {
+            Ok(value) => "Positive: " + value,
+            Error(msg) => {
+                code: string = "ERR";
+                code + ": " + msg;
+            },
+        };
+        assert_equals("ERR: Zero", output3, "Zero should use block");
+    });
+
+    test("complex expressions in match blocks", $() => {
+        $ checkAge(age: number) {
+            if (age < 0) return Error("Invalid age");
+            if (age < 18) return Error("Too young");
+            return Ok(age);
+        }
+
+        result = checkAge(25);
+        
+        message: string = match (result) {
+            Ok(age) => {
+                category: string = "";
+                if (age < 30) {
+                    category = "young adult";
+                } else if (age < 60) {
+                    category = "adult";
+                } else {
+                    category = "senior";
+                }
+                "Age " + age + " is a " + category;
+            },
+            Error(msg) => "Error: " + msg,
+        };
+
+        assert_equals("Age 25 is a young adult", message, "Should correctly categorize age");
+    });
+});
+
+run_all();

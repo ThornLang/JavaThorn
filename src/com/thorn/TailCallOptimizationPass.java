@@ -159,6 +159,11 @@ public class TailCallOptimizationPass extends OptimizationPass {
             }
             
             @Override
+            public Stmt visitThrowStmt(Stmt.Throw stmt) {
+                return stmt; // Throw statements are not optimized
+            }
+            
+            @Override
             public Stmt visitIfStmt(Stmt.If stmt) {
                 return new Stmt.If(
                     stmt.condition,
@@ -211,7 +216,10 @@ public class TailCallOptimizationPass extends OptimizationPass {
                 ); 
             }
             @Override
-            public Stmt visitThrowStmt(Stmt.Throw stmt) { return stmt; }
+            public Stmt visitTypeAliasStmt(Stmt.TypeAlias stmt) { 
+                // Type aliases are compile-time only, no optimization needed
+                return stmt; 
+            }
         });
     }
     

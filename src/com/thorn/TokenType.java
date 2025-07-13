@@ -24,14 +24,14 @@ public enum TokenType {
 
     // Keywords
     AND, CLASS, ELSE, FALSE, FOR, IF, NULL, OR,
-    RETURN, TRUE, WHILE, THIS,
+    RETURN, THROW, TRUE, WHILE, THIS,
     IMPORT, EXPORT, FROM, IN,
     MATCH, UNDERSCORE,  // _ for pattern matching default
     TRY, CATCH, THROW,
     
     // Type system keywords
     STRING_TYPE, NUMBER_TYPE, BOOLEAN_TYPE, NULL_TYPE,
-    ANY_TYPE, VOID_TYPE, ARRAY_TYPE, FUNCTION_TYPE,
+    ANY_TYPE, VOID_TYPE, ARRAY_TYPE, FUNCTION_TYPE, DICT_TYPE,
 
     // Thorn-specific tokens
     DOLLAR,          // $ for functions

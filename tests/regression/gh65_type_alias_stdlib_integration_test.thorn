@@ -1,0 +1,207 @@
+// Integration test for type aliases with stdlib test framework
+// Uses the test.thorn stdlib with type aliases
+
+// Note: This test requires the stdlib test framework
+
+import "test";
+
+print("Type Alias Integration Test");
+print("===========================");
+
+// ==================== Type Aliases for Test Data ====================
+
+% TestName = string;
+% TestScore = number;
+% TestPassed = boolean;
+% TestData = Dict[string, Any];
+% ScoreMap = Dict[TestName, TestScore];
+
+// ==================== Type Aliases for Test Data ====================
+
+% TestName = string;
+% TestScore = number;
+% TestPassed = boolean;
+% TestData = Dict[string, Any];
+% ScoreMap = Dict[TestName, TestScore];
+
+// ==================== Basic Type Alias Tests ====================
+
+suite("Type Alias Basic Tests", $() => {
+    test("Primitive type aliases", $() => {
+        score: TestScore = 95.5;
+        name: TestName = "Math Test";
+        passed: TestPassed = true;
+        
+        assert_equals(95.5, score, "Score should be 95.5");
+        assert_equals("Math Test", name, "Name should be Math Test");
+        assert_true(passed, "TestPassed should be true");
+    });
+    
+    test("Collection type aliases", $() => {
+        scores: ScoreMap = {
+            "Math": 95,
+            "Science": 88,
+            "English": 92
+        };
+        
+        assert_equals(95, scores["Math"], "Math score should be 95");
+        assert_equals(88, scores["Science"], "Science score should be 88");
+        assert_equals(3, scores.size(), "Scores map should have 3 entries");
+    });
+});
+
+// ==================== Generic Type Alias Tests ====================
+
+% NumberList = Array[number];
+% StringToNumber = Function[(string), number];
+% NumberPredicate = Function[(number), boolean];
+
+suite("Generic Type Alias Tests", $() => {
+    test("Generic array aliases", $() => {
+        numbers: NumberList = [1, 2, 3, 4, 5];
+        
+        assert_equals(5, numbers.length, "NumberList should have 5 elements");
+        assert_includes(numbers, 3);
+        assert_not_empty(numbers);
+    });
+    
+    test("Generic function aliases", $() => {
+        isEven: NumberPredicate = $(n) => n % 2 == 0;
+        parseNumber: StringToNumber = $(s) => 42; // Simple stub
+        
+        assert_true(isEven(4), "4 should be even");
+        assert_false(isEven(5), "5 should not be even");
+        assert_equals(42, parseNumber("42"), "StringToNumber function should return 42");
+    });
+});
+
+// ==================== Complex Type Alias Tests ====================
+
+% UserId = number;
+% UserData = Dict[string, Any];
+% UserMap = Dict[UserId, UserData];
+% UserProcessor = Function[(UserData), UserData];
+
+suite("Complex Type Alias Tests", $() => {
+    test("Nested type aliases", $() => {
+        users: UserMap = {
+            "1001": {"name": "Alice", "age": 25, "active": true},
+            "1002": {"name": "Bob", "age": 30, "active": false}
+        };
+        
+        alice: UserData = users["1001"];
+        assert_equals("Alice", alice["name"], "Alice's name should be 'Alice'");
+        assert_equals(25, alice["age"], "Alice's age should be 25");
+        assert_true(alice["active"], "Alice should be active");
+    });
+    
+    test("Type aliases with functions", $() => {
+        capitalize: UserProcessor = $(data) => {
+            result: UserData = {};
+            for (key in data.keys()) {
+                if (key == "name") {
+                    result[key] = "CAPS[" + data[key] + "]";
+                } else {
+                    result[key] = data[key];
+                }
+            }
+            return result;
+        };
+        
+        original: UserData = {"name": "alice", "age": 25};
+        processed: UserData = capitalize(original);
+        
+        assert_equals("CAPS[alice]", processed["name"], "UserProcessor should capitalize name to 'CAPS[alice]'");
+        assert_equals(25, processed["age"], "UserProcessor should preserve age as 25");
+    });
+});
+
+// ==================== Type Alias Scope Tests ====================
+
+% GlobalScope = string;
+
+suite("Type Alias Scope Tests", $() => {
+    test("Global type aliases", $() => {
+        global: GlobalScope = "I am global";
+        assert_equals("I am global", global, "GlobalScope variable should contain 'I am global'");
+    });
+    
+    test("Local type aliases shadow global", $() => {
+        % GlobalScope = number; // Local shadows global
+        local: GlobalScope = 42;
+        assert_equals(42, local, "Local GlobalScope should shadow global and contain 42");
+    });
+});
+
+// ==================== Type Alias with Arrays and Dicts ====================
+
+% Coordinate = Array[number];
+% Point = Dict[string, number];
+% PointList = Array[Point];
+% Matrix = Array[Array[number]];
+
+suite("Collection Type Alias Tests", $() => {
+    test("Array type aliases", $() => {
+        coord: Coordinate = [10, 20, 30];
+        assert_equals(3, coord.length, "Coordinate array should have 3 elements");
+        assert_equals(10, coord[0], "First coordinate should be 10");
+        assert_equals(20, coord[1], "Second coordinate should be 20");
+        assert_equals(30, coord[2], "Third coordinate should be 30");
+    });
+    
+    test("Dictionary type aliases", $() => {
+        point: Point = {"x": 10, "y": 20};
+        assert_equals(10, point["x"], "Point x coordinate should be 10");
+        assert_equals(20, point["y"], "Point y coordinate should be 20");
+        assert_equals(2, point.size(), "Point dictionary should have 2 entries");
+    });
+    
+    test("Nested collection aliases", $() => {
+        points: PointList = [
+            {"x": 0, "y": 0},
+            {"x": 10, "y": 10},
+            {"x": 20, "y": 20}
+        ];
+        
+        assert_equals(3, points.length, "PointList should have 3 points");
+        assert_equals(10, points[1]["x"], "Second point x coordinate should be 10");
+        
+        matrix: Matrix = [[1, 2], [3, 4], [5, 6]];
+        assert_equals(3, matrix.length, "Matrix should have 3 rows");
+        assert_equals(4, matrix[1][1], "Matrix element at [1][1] should be 4");
+    });
+});
+
+// ==================== Function Type Aliases ====================
+
+% Validator = Function[(Any), boolean];
+% Transformer = Function[(string), string];
+% Calculator = Function[(number, number), number];
+% AsyncTask = Function[(), void];
+
+suite("Function Type Alias Tests", $() => {
+    test("Simple function aliases", $() => {
+        isValid: Validator = $(value) => value != null;
+        toUpper: Transformer = $(s) => "UPPER[" + s + "]";
+        add: Calculator = $(a, b) => a + b;
+        
+        assert_true(isValid("test"), "isValid should return true for 'test'");
+        assert_false(isValid(null), "isValid should return false for null");
+        assert_equals("UPPER[hello]", toUpper("hello"), "Transformer should convert 'hello' to 'UPPER[hello]'");
+        assert_equals(7, add(3, 4), "Calculator should add 3 + 4 = 7");
+    });
+    
+    test("Void function aliases", $() => {
+        counter: number = 0;
+        increment: AsyncTask = $() => { counter = counter + 1; };
+        
+        increment();
+        assert_equals(1, counter, "Counter should be 1 after first increment");
+        increment();
+        assert_equals(2, counter, "Counter should be 2 after second increment");
+    });
+});
+
+// Run all tests
+print("\n🧪 Running Type Alias Integration Tests...\n");
+run_all();

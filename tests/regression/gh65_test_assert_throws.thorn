@@ -1,0 +1,28 @@
+import { assert_throws, assert_no_throw, test, suite, run_all } from "test";
+
+// Test assert_throws functionality
+
+suite("assert_throws tests", $() => {
+    test("assert_throws catches Error results", $() => {
+        // Test that assert_throws passes when function returns Error
+        assert_throws($() => {
+            return Error("Something went wrong");
+        });
+    });
+    
+    test("assert_throws with expected message", $() => {
+        // Test that assert_throws checks error message
+        assert_throws($() => {
+            return Error("File not found");
+        }, "not found");
+    });
+    
+    test("assert_no_throw passes for Ok results", $() => {
+        // Test that assert_no_throw passes when function returns Ok
+        assert_no_throw($() => {
+            return Ok("Success!");
+        });
+    });
+});
+
+run_all();

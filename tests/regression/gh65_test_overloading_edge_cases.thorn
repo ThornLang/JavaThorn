@@ -1,0 +1,141 @@
+import { assert_equals, test, suite, run_all } from "test";
+
+// Edge cases for function overloading
+
+suite("Function Overloading Edge Cases", $() => {
+    test("overloading with null handling", $() => {
+        $ handleValue(x) {
+            if (x == null) {
+                return "Got null (untyped)";
+            }
+            return "Got untyped: " + x;
+        }
+
+        $ handleValue(x: string) {
+            return "Got string: " + x;
+        }
+
+        $ handleValue(x: number) {
+            return "Got number: " + x;
+        }
+
+        // Test with actual null - should match untyped version
+        result1: string = handleValue(null);
+        assert_equals("Got null (untyped)", result1, "Null should match untyped overload");
+
+        // Test with typed values
+        result2: string = handleValue("hello");
+        assert_equals("Got string: hello", result2, "String should match string overload");
+
+        result3: string = handleValue(42);
+        assert_equals("Got number: 42", result3, "Number should match number overload");
+    });
+
+    test("overloading with mixed typed/untyped parameters", $() => {
+        $ mixed(x: number, y) {
+            return "typed-untyped: " + x + ", " + y;
+        }
+
+        $ mixed(x, y: string) {
+            return "untyped-typed: " + x + ", " + y;
+        }
+
+        $ mixed(x, y) {
+            return "both-untyped: " + x + ", " + y;
+        }
+
+        // The most specific match should win
+        result1: string = mixed(42, "hello");
+        assert_equals("typed-untyped: 42, hello", result1, "Should match typed number first param");
+
+        result2: string = mixed("hello", "world");
+        assert_equals("untyped-typed: hello, world", result2, "Should match typed string second param");
+
+        result3: string = mixed(true, false);
+        assert_equals("both-untyped: true, false", result3, "Should match both untyped");
+    });
+
+    test("variable arity functions", $() => {
+        $ varArgs() {
+            return "no args";
+        }
+
+        $ varArgs(a) {
+            return "one arg: " + a;
+        }
+
+        $ varArgs(a, b) {
+            return "two args: " + a + ", " + b;
+        }
+
+        $ varArgs(a, b, c) {
+            return "three args: " + a + ", " + b + ", " + c;
+        }
+
+        assert_equals("no args", varArgs(), "Zero args should work");
+        assert_equals("one arg: 1", varArgs(1), "One arg should work");
+        assert_equals("two args: 1, 2", varArgs(1, 2), "Two args should work");
+        assert_equals("three args: 1, 2, 3", varArgs(1, 2, 3), "Three args should work");
+    });
+
+    test("return type differences", $() => {
+        // Return types don't affect overload resolution
+        $ getResult(): number {
+            return 42;
+        }
+
+        $ getResult(): string {
+            return "forty-two";
+        }
+
+        // The first definition is selected (first one wins for same signature)
+        result = getResult();
+        assert_equals(42, result, "First definition with same signature wins");
+    });
+
+    test("overloading with different collection types", $() => {
+        $ processItems() {
+            return "no items";
+        }
+
+        $ processItems(item) {
+            return "one item: " + item;
+        }
+
+        $ processItems(items: Array[Any]) {
+            return "array with " + items.length + " items";
+        }
+
+        result1: string = processItems();
+        assert_equals("no items", result1, "No args should work");
+
+        result2: string = processItems("single");
+        assert_equals("one item: single", result2, "Single item should work");
+
+        result3: string = processItems([1, 2, 3, 4, 5]);
+        assert_equals("array with 5 items", result3, "Array should match array overload");
+    });
+
+    test("overloading with boolean parameters", $() => {
+        $ toggle() {
+            return false;
+        }
+
+        $ toggle(state: boolean) {
+            return !state;
+        }
+
+        $ toggle(state: boolean, force: boolean) {
+            if (force) return true;
+            return !state;
+        }
+
+        assert_equals(false, toggle(), "No-arg toggle should return false");
+        assert_equals(false, toggle(true), "Toggle true should return false");
+        assert_equals(true, toggle(false), "Toggle false should return true");
+        assert_equals(true, toggle(false, true), "Force true should always return true");
+        assert_equals(true, toggle(true, true), "Force true should always return true");
+    });
+});
+
+run_all();

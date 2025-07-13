@@ -1,92 +1,154 @@
 import "crypto";
+import { assert_equals, assert_not_null, assert_true, assert_false, test, suite, run_all } from "test";
 
-// Test 1: Basic hashing
-print("MD5 hash of 'hello': " + md5("hello"));
-print("SHA-1 hash of 'hello': " + sha1("hello"));
-print("SHA-256 hash of 'hello': " + sha256("hello"));
-print("SHA-384 hash of 'hello': " + sha384("hello"));
-print("SHA-512 hash of 'hello': " + sha512("hello"));
+suite("Crypto Module Tests", $() => {
+    test("basic hashing", $() => {
+        // Test known hash values
+        assert_equals("5d41402abc4b2a76b9719d911017c592", md5("hello"), "MD5 hash should match");
+        assert_equals("aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d", sha1("hello"), "SHA-1 hash should match");
+        
+        // Just verify these return non-empty strings
+        sha256_hash = sha256("hello");
+        sha384_hash = sha384("hello");
+        sha512_hash = sha512("hello");
+        
+        assert_not_null(sha256_hash, "SHA-256 should return non-null");
+        assert_true(sha256_hash.length > 0, "SHA-256 should return non-empty hash");
+        assert_not_null(sha384_hash, "SHA-384 should return non-null");
+        assert_true(sha384_hash.length > 0, "SHA-384 should return non-empty hash");
+        assert_not_null(sha512_hash, "SHA-512 should return non-null");
+        assert_true(sha512_hash.length > 0, "SHA-512 should return non-empty hash");
+    });
 
-// Test 2: Incremental hashing
-hasher = create_hash("SHA-256");
-hasher.update("Hello ");
-hasher.update("World");
-print("\nIncremental SHA-256 hash: " + hasher.hexdigest());
+    test("incremental hashing", $() => {
+        hasher = create_hash("SHA-256");
+        assert_not_null(hasher, "create_hash should return hasher object");
+        
+        hasher.update("Hello ");
+        hasher.update("World");
+        incremental_hash = hasher.hexdigest();
+        
+        // Compare with direct hash
+        direct_hash = sha256("Hello World");
+        assert_equals(direct_hash, incremental_hash, "Incremental hash should match direct hash");
+    });
 
-// Test 3: HMAC
-key = "secret_key";
-data = "message to authenticate";
-hmac_result = hmac(key, data, "SHA-256");
-print("\nHMAC-SHA256: " + hmac_result);
+    test("HMAC", $() => {
+        key = "secret_key";
+        data = "message to authenticate";
+        hmac_result = hmac(key, data, "SHA-256");
+        
+        assert_not_null(hmac_result, "HMAC should return non-null");
+        assert_true(hmac_result.length > 0, "HMAC should return non-empty result");
+        
+        // HMAC with same key/data should be consistent
+        hmac_result2 = hmac(key, data, "SHA-256");
+        assert_equals(hmac_result, hmac_result2, "HMAC should be consistent");
+    });
 
-// Test 4: Key generation
-key_bytes = generate_key("AES-256");
-print("\nGenerated AES-256 key length: " + key_bytes.length + " bytes");
+    test("key generation", $() => {
+        key_bytes = generate_key("AES-256");
+        assert_not_null(key_bytes, "generate_key should return non-null");
+        assert_equals(32, key_bytes.length, "AES-256 key should be 32 bytes");
+        
+        // Test AES-128
+        key_128 = generate_key("AES-128");
+        assert_equals(16, key_128.length, "AES-128 key should be 16 bytes");
+    });
 
-// Test 5: Encryption and decryption
-plaintext = "This is a secret message!";
-encryption_key = generate_key("AES-256");
+    test("encryption and decryption", $() => {
+        plaintext = "This is a secret message!";
+        encryption_key = generate_key("AES-256");
+        
+        // Encrypt
+        encrypted = encrypt(plaintext, encryption_key, "AES-256-GCM");
+        assert_not_null(encrypted, "encrypt should return non-null");
+        assert_not_null(encrypted["ciphertext"], "encrypted should have ciphertext");
+        assert_not_null(encrypted["nonce"], "encrypted should have nonce");
+        assert_true(encrypted["ciphertext"].length > 0, "ciphertext should not be empty");
+        assert_true(encrypted["nonce"].length > 0, "nonce should not be empty");
+        
+        // Decrypt
+        decrypted_bytes = decrypt(encrypted, encryption_key);
+        assert_not_null(decrypted_bytes, "decrypt should return non-null");
+        assert_equals(plaintext.length, decrypted_bytes.length, "Decrypted length should match original");
+    });
 
-// Encrypt
-encrypted = encrypt(plaintext, encryption_key, "AES-256-GCM");
-print("\nEncryption test:");
-print("Original: " + plaintext);
-print("Ciphertext length: " + encrypted["ciphertext"].length);
-print("Nonce length: " + encrypted["nonce"].length);
+    test("base64 encoding and decoding", $() => {
+        original = "Hello, Base64!";
+        encoded = base64_encode(original);
+        
+        assert_not_null(encoded, "base64_encode should return non-null");
+        assert_equals("SGVsbG8sIEJhc2U2NCE=", encoded, "Base64 encoding should match expected");
+        
+        decoded_bytes = base64_decode(encoded);
+        assert_not_null(decoded_bytes, "base64_decode should return non-null");
+        assert_equals(original.length, decoded_bytes.length, "Decoded length should match original");
+        
+        // Test URL-safe base64
+        url_encoded = base64url_encode("Hello/World+Test");
+        assert_not_null(url_encoded, "base64url_encode should return non-null");
+        assert_true(!url_encoded.includes("+"), "URL-safe encoding should not contain +");
+        assert_true(!url_encoded.includes("/"), "URL-safe encoding should not contain /");
+    });
 
-// Decrypt
-decrypted_bytes = decrypt(encrypted, encryption_key);
-// For now, just check the length matches
-print("Decrypted bytes length: " + decrypted_bytes.length);
-print("Decryption successful: " + (decrypted_bytes.length == plaintext.length));
+    test("hex encoding and decoding", $() => {
+        original_hex = "Hello Hex!";
+        hex_encoded = hex_encode(original_hex);
+        
+        assert_not_null(hex_encoded, "hex_encode should return non-null");
+        assert_equals("48656c6c6f2048657821", hex_encoded, "Hex encoding should match expected");
+        
+        hex_decoded_bytes = hex_decode(hex_encoded);
+        assert_not_null(hex_decoded_bytes, "hex_decode should return non-null");
+        assert_equals(original_hex.length, hex_decoded_bytes.length, "Decoded length should match original");
+    });
 
-// Test 6: Base64 encoding/decoding
-original = "Hello, Base64!";
-encoded = base64_encode(original);
-decoded_bytes = base64_decode(encoded);
-print("\nBase64 encoding:");
-print("Original: " + original);
-print("Encoded: " + encoded);
-print("Decoded bytes length: " + decoded_bytes.length);
-print("Decode successful: " + (decoded_bytes.length == original.length));
+    test("secure random generation", $() => {
+        random_bytes_16 = random_bytes(16);
+        assert_not_null(random_bytes_16, "random_bytes should return non-null");
+        assert_equals(16, random_bytes_16.length, "Should generate exactly 16 bytes");
+        
+        random_token_24 = random_token(24);
+        assert_not_null(random_token_24, "random_token should return non-null");
+        assert_equals(24, random_token_24.length, "Token should be exactly 24 characters");
+        
+        // Verify tokens are different (with very high probability)
+        random_token_24_2 = random_token(24);
+        assert_true(random_token_24 != random_token_24_2, "Random tokens should be different");
+    });
 
-// Test URL-safe base64
-url_encoded = base64url_encode("Hello/World+Test");
-print("URL-safe Base64: " + url_encoded);
+    test("salt generation", $() => {
+        salt = generate_salt(16);
+        assert_not_null(salt, "generate_salt should return non-null");
+        assert_equals(16, salt.length, "Salt should be exactly 16 bytes");
+        
+        // Verify salts are different
+        salt2 = generate_salt(16);
+        different = false;
+        for (i = 0; i < salt.length; i = i + 1) {
+            if (salt[i] != salt2[i]) {
+                different = true;
+            }
+        }
+        assert_true(different, "Generated salts should be different");
+    });
 
-// Test 7: Hex encoding/decoding
-original_hex = "Hello Hex!";
-hex_encoded = hex_encode(original_hex);
-hex_decoded_bytes = hex_decode(hex_encoded);
-print("\nHex encoding:");
-print("Original: " + original_hex);
-print("Encoded: " + hex_encoded);
-print("Decoded bytes length: " + hex_decoded_bytes.length);
-print("Decode successful: " + (hex_decoded_bytes.length == original_hex.length));
+    test("constant-time comparison", $() => {
+        bytes1 = [72, 101, 108, 108, 111];  // "Hello"
+        bytes2 = [72, 101, 108, 108, 111];  // "Hello"
+        bytes3 = [72, 101, 108, 108, 112];  // "Hellp"
+        
+        assert_true(compare_digest(bytes1, bytes2), "Identical byte arrays should match");
+        assert_false(compare_digest(bytes1, bytes3), "Different byte arrays should not match");
+        
+        // Test with string comparison
+        assert_true(compare_digest("test", "test"), "Identical strings should match");
+        assert_false(compare_digest("test", "best"), "Different strings should not match");
+        
+        // Test with different lengths
+        assert_false(compare_digest("short", "longer string"), "Different length strings should not match");
+    });
+});
 
-// Test 8: Secure random generation
-random_bytes = random_bytes(16);
-print("\nSecure random bytes (16): " + random_bytes.length + " bytes generated");
-
-random_token = random_token(24);
-print("Random token (24 chars): " + random_token);
-print("Token length: " + random_token.length);
-
-// Test 9: Salt generation
-salt = generate_salt(16);
-print("\nGenerated salt length: " + salt.length + " bytes");
-
-// Test 10: Constant-time comparison
-bytes1 = [72, 101, 108, 108, 111];  // "Hello"
-bytes2 = [72, 101, 108, 108, 111];  // "Hello"
-bytes3 = [72, 101, 108, 108, 112];  // "Hellp"
-
-print("\nConstant-time comparison:");
-print("'Hello' == 'Hello': " + compare_digest(bytes1, bytes2));
-print("'Hello' == 'Hellp': " + compare_digest(bytes1, bytes3));
-
-// Test with string comparison
-print("String comparison: " + compare_digest("test", "test"));
-print("String comparison (diff): " + compare_digest("test", "best"));
-
-print("\n✅ Crypto module tests completed!");
+run_all();

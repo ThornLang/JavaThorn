@@ -45,6 +45,12 @@ class Parser {
             if (match(DOLLAR)) return function("function");
             if (match(AT)) return varDeclaration(true);
             
+            // Check for type alias: % IDENTIFIER = 
+            if (check(PERCENT) && checkAhead(IDENTIFIER)) {
+                advance(); // consume %
+                return typeAliasDeclaration();
+            }
+            
             // Check for typed variable declaration: identifier : type = value
             if (check(IDENTIFIER) && checkAhead(COLON)) {
                 return varDeclaration(false);
@@ -163,10 +169,19 @@ class Parser {
         
         return new Stmt.Var(name, type, initializer, isImmutable);
     }
+    
+    private Stmt typeAliasDeclaration() {
+        Token name = consume(IDENTIFIER, "Expected type alias name.");
+        consume(EQUAL, "Expected '=' after type alias name.");
+        Expr type = parseType();
+        consume(SEMICOLON, "Expected ';' after type alias declaration.");
+        return new Stmt.TypeAlias(name, type);
+    }
 
     private Stmt statement() {
         if (match(IF)) return ifStatement();
         if (match(RETURN)) return returnStatement();
+        if (match(THROW)) return throwStatement();
         if (match(WHILE)) return whileStatement();
         if (match(FOR)) return forStatement();
         if (match(TRY)) return tryCatchStatement();
@@ -199,6 +214,17 @@ class Parser {
 
         consume(SEMICOLON, "Expected ';' after return value.");
         return new Stmt.Return(keyword, value);
+    }
+
+    private Stmt throwStatement() {
+        Token keyword = previous();
+        Expr value = null;
+        if (!check(SEMICOLON)) {
+            value = expression();
+        }
+
+        consume(SEMICOLON, "Expected ';' after throw value.");
+        return new Stmt.Throw(keyword, value);
     }
 
     private Stmt whileStatement() {
@@ -491,10 +517,26 @@ class Parser {
                 }
 
                 consume(ARROW, "Expected '=>' after pattern.");
-                Expr value = expression();
-                consume(COMMA, "Expected ',' after case value.");
-
-                cases.add(new Expr.Match.Case(pattern, guard, value));
+                
+                // Check if this is a block case or expression case
+                if (check(LEFT_BRACE)) {
+                    // Block case
+                    advance(); // consume '{'
+                    List<Stmt> stmts = new ArrayList<>();
+                    while (!check(RIGHT_BRACE) && !isAtEnd()) {
+                        stmts.add(declaration());
+                    }
+                    consume(RIGHT_BRACE, "Expected '}' after match case block.");
+                    consume(COMMA, "Expected ',' after case block.");
+                    
+                    cases.add(new Expr.Match.Case(pattern, guard, stmts));
+                } else {
+                    // Expression case
+                    Expr value = expression();
+                    consume(COMMA, "Expected ',' after case value.");
+                    
+                    cases.add(new Expr.Match.Case(pattern, guard, value));
+                }
             }
 
             consume(RIGHT_BRACE, "Expected '}' after match cases.");
@@ -826,6 +868,16 @@ class Parser {
             Expr elementType = parseType();
             consume(RIGHT_BRACKET, "Expected ']' after array element type.");
             return new Expr.GenericType(arrayToken, java.util.Arrays.asList(elementType));
+        }
+        
+        if (match(DICT_TYPE)) {
+            Token dictToken = previous();
+            consume(LEFT_BRACKET, "Expected '[' after 'Dict'.");
+            Expr keyType = parseType();
+            consume(COMMA, "Expected ',' between key and value types.");
+            Expr valueType = parseType();
+            consume(RIGHT_BRACKET, "Expected ']' after dict value type.");
+            return new Expr.GenericType(dictToken, java.util.Arrays.asList(keyType, valueType));
         }
         
         if (match(FUNCTION_TYPE)) {

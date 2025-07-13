@@ -1,0 +1,26 @@
+// Test edge cases for string indexing
+
+// Test numeric conversion
+str = "Hello";
+index = 2.0;  // Double value
+print("Index 2 with double: " + str[index]);
+
+index = 2.7;  // Should truncate to 2
+print("Index 2.7 (truncated): " + str[index]);
+
+// Test with variables
+message = "World";
+i = 0;
+print("First char via variable: " + message[i]);
+
+// Test with expressions
+text = "Expression";
+print("Using expression index: " + text[1 + 1]);
+
+// Test mixed with other indexing
+array = ["a", "b", "c"];
+word = "def";
+print("Array[0]: " + array[0]);
+print("String[0]: " + word[0]);
+
+print("✅ Edge cases test passed");

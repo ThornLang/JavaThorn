@@ -195,6 +195,11 @@ public class LoopOptimizationPass extends OptimizationPass {
                 }
                 
                 @Override
+                public Stmt visitThrowStmt(Stmt.Throw stmt) {
+                    return stmt;
+                }
+                
+                @Override
                 public Stmt visitImportStmt(Stmt.Import stmt) {
                     return stmt;
                 }
@@ -214,9 +219,10 @@ public class LoopOptimizationPass extends OptimizationPass {
                 public Stmt visitTryCatchStmt(Stmt.TryCatch stmt) {
                     return stmt;
                 }
-
+                
                 @Override
-                public Stmt visitThrowStmt(Stmt.Throw stmt) {
+                public Stmt visitTypeAliasStmt(Stmt.TypeAlias stmt) {
+                    // Type aliases are compile-time only, no optimization needed
                     return stmt;
                 }
             });
@@ -304,6 +310,15 @@ public class LoopOptimizationPass extends OptimizationPass {
                 }
                 
                 @Override
+                public Stmt visitThrowStmt(Stmt.Throw stmt) {
+                    if (stmt.value != null) {
+                        Expr reducedValue = reduceStrength(stmt.value);
+                        return new Stmt.Throw(stmt.keyword, reducedValue);
+                    }
+                    return stmt;
+                }
+                
+                @Override
                 public Stmt visitFunctionStmt(Stmt.Function stmt) {
                     return stmt;
                 }
@@ -332,9 +347,10 @@ public class LoopOptimizationPass extends OptimizationPass {
                 public Stmt visitTryCatchStmt(Stmt.TryCatch stmt) {
                     return stmt;
                 }
-
+                
                 @Override
-                public Stmt visitThrowStmt(Stmt.Throw stmt) {
+                public Stmt visitTypeAliasStmt(Stmt.TypeAlias stmt) {
+                    // Type aliases are compile-time only, no optimization needed
                     return stmt;
                 }
             });
@@ -555,6 +571,11 @@ public class LoopOptimizationPass extends OptimizationPass {
                 }
                 
                 @Override
+                public Stmt visitThrowStmt(Stmt.Throw stmt) {
+                    return invariants.contains(stmt) ? null : stmt;
+                }
+                
+                @Override
                 public Stmt visitFunctionStmt(Stmt.Function stmt) {
                     return stmt;
                 }
@@ -583,9 +604,10 @@ public class LoopOptimizationPass extends OptimizationPass {
                 public Stmt visitTryCatchStmt(Stmt.TryCatch stmt) {
                     return stmt;
                 }
-
+                
                 @Override
-                public Stmt visitThrowStmt(Stmt.Throw stmt) {
+                public Stmt visitTypeAliasStmt(Stmt.TypeAlias stmt) {
+                    // Type aliases are compile-time only, no optimization needed
                     return stmt;
                 }
             });
@@ -672,6 +694,7 @@ public class LoopOptimizationPass extends OptimizationPass {
                     
                     // Other statements don't modify variables
                     @Override public Void visitReturnStmt(Stmt.Return stmt) { return null; }
+                    @Override public Void visitThrowStmt(Stmt.Throw stmt) { return null; }
                     @Override public Void visitFunctionStmt(Stmt.Function stmt) { return null; }
                     @Override public Void visitClassStmt(Stmt.Class stmt) { return null; }
                     @Override public Void visitImportStmt(Stmt.Import stmt) { return null; }
@@ -682,7 +705,7 @@ public class LoopOptimizationPass extends OptimizationPass {
                         identifyLoopVariables(stmt.catchBlock);
                         return null; 
                     }
-                    @Override public Void visitThrowStmt(Stmt.Throw stmt) { return null; }
+                    @Override public Void visitTypeAliasStmt(Stmt.TypeAlias stmt) { return null; }
                 });
             }
             
@@ -730,13 +753,14 @@ public class LoopOptimizationPass extends OptimizationPass {
                     @Override public Void visitWhileStmt(Stmt.While stmt) { return null; }
                     @Override public Void visitForStmt(Stmt.For stmt) { return null; }
                     @Override public Void visitReturnStmt(Stmt.Return stmt) { return null; }
+                    @Override public Void visitThrowStmt(Stmt.Throw stmt) { return null; }
                     @Override public Void visitFunctionStmt(Stmt.Function stmt) { return null; }
                     @Override public Void visitClassStmt(Stmt.Class stmt) { return null; }
                     @Override public Void visitImportStmt(Stmt.Import stmt) { return null; }
                     @Override public Void visitExportStmt(Stmt.Export stmt) { return null; }
                     @Override public Void visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) { return null; }
                     @Override public Void visitTryCatchStmt(Stmt.TryCatch stmt) { return null; }
-                    @Override public Void visitThrowStmt(Stmt.Throw stmt) { return null; }
+                    @Override public Void visitTypeAliasStmt(Stmt.TypeAlias stmt) { return null; }
                 });
             }
             

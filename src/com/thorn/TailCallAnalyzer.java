@@ -59,6 +59,11 @@ public class TailCallAnalyzer {
             }
             
             @Override
+            public Boolean visitThrowStmt(Stmt.Throw stmt) {
+                return false; // Throw statements don't contain tail calls
+            }
+            
+            @Override
             public Boolean visitIfStmt(Stmt.If stmt) {
                 boolean thenHasTail = containsTailCall(stmt.thenBranch, currentFunction);
                 boolean elseHasTail = stmt.elseBranch != null && 
@@ -104,7 +109,7 @@ public class TailCallAnalyzer {
                        containsTailCall(stmt.catchBlock, currentFunction); 
             }
             @Override
-            public Boolean visitThrowStmt(Stmt.Throw stmt) { return false; }
+            public Boolean visitTypeAliasStmt(Stmt.TypeAlias stmt) { return false; }
         });
     }
     
@@ -161,6 +166,11 @@ public class TailCallAnalyzer {
             }
             
             @Override
+            public Void visitThrowStmt(Stmt.Throw stmt) {
+                return null; // Throw statements don't contain tail calls
+            }
+            
+            @Override
             public Void visitIfStmt(Stmt.If stmt) {
                 collectTailCallsFromStatement(stmt.thenBranch, functionName, tailCalls);
                 if (stmt.elseBranch != null) {
@@ -205,9 +215,7 @@ public class TailCallAnalyzer {
                 return null; 
             }
             @Override
-            public Void visitThrowStmt(Stmt.Throw stmt) { 
-                return null; 
-            }
+            public Void visitTypeAliasStmt(Stmt.TypeAlias stmt) { return null; }
         });
     }
 

@@ -154,6 +154,8 @@ public class SimpleCompiler {
             compileTryCatchStatement((Stmt.TryCatch) stmt);
         } else if (stmt instanceof Stmt.Throw) {
             compileThrowStatement((Stmt.Throw) stmt);
+        } else if (stmt instanceof Stmt.TypeAlias) {
+            compileTypeAliasStatement((Stmt.TypeAlias) stmt);
         } else {
             System.err.println("Warning: Unsupported statement type: " + stmt.getClass().getSimpleName());
         }
@@ -1051,6 +1053,13 @@ public class SimpleCompiler {
         
         // Free the register (though execution won't continue here)
         freeRegister(valueReg);
+    }
+    
+    private void compileTypeAliasStatement(Stmt.TypeAlias typeAliasStmt) {
+        // Type aliases are compile-time only - they don't generate runtime code
+        // The type system would handle the aliasing at the type-checking phase
+        // For now, this is a no-op since we don't have static type checking
+        // In the future, this would update a type alias table in the compiler
     }
     
     private Integer compileThisExpression(Expr.This thisExpr) {

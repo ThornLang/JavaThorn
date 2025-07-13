@@ -134,6 +134,14 @@ public class ConstantFoldingPass extends OptimizationPass {
                 }
                 
                 @Override
+                public Stmt visitThrowStmt(Stmt.Throw stmt) {
+                    return new Stmt.Throw(
+                        stmt.keyword,
+                        stmt.value != null ? foldExpression(stmt.value) : null
+                    );
+                }
+                
+                @Override
                 public Stmt visitFunctionStmt(Stmt.Function stmt) {
                     return new Stmt.Function(
                         stmt.name,
@@ -177,8 +185,9 @@ public class ConstantFoldingPass extends OptimizationPass {
                 }
                 
                 @Override
-                public Stmt visitThrowStmt(Stmt.Throw stmt) {
-                    return new Stmt.Throw(stmt.keyword, foldExpression(stmt.value));
+                public Stmt visitTypeAliasStmt(Stmt.TypeAlias stmt) {
+                    // Type aliases are compile-time only, no optimization needed
+                    return stmt;
                 }
             });
         }

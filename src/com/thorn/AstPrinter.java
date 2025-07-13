@@ -71,6 +71,12 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
     }
 
     @Override
+    public String visitThrowStmt(Stmt.Throw stmt) {
+        if (stmt.value == null) return "(throw)";
+        return "(throw " + print(stmt.value) + ")";
+    }
+
+    @Override
     public String visitVarStmt(Stmt.Var stmt) {
         String result = "(var " + stmt.name.lexeme;
         if (stmt.isImmutable) result = "(immut-var " + stmt.name.lexeme;
@@ -311,5 +317,10 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
         }
         builder.append(")");
         return builder.toString();
+    }
+    
+    @Override
+    public String visitTypeAliasStmt(Stmt.TypeAlias stmt) {
+        return "(type-alias " + stmt.name.lexeme + " = " + print(stmt.type) + ")";
     }
 }

@@ -76,4 +76,34 @@ jobs:
           java com.thorn.Thorn "$file" --vm
         done
     
+    - name: Run stdlib tests
+      if: always()
+      run: |
+        echo "Running stdlib tests..."
+        if [ -d "tests/stdlib" ]; then
+          for test_file in tests/stdlib/*.thorn; do
+            if [ -f "$test_file" ]; then
+              echo "Testing $(basename $test_file)..."
+              if java com.thorn.Thorn "$test_file" > test_output.tmp 2>&1; then
+                if grep -q "All tests passed!" test_output.tmp; then
+                  echo "  ✅ PASSED"
+                elif grep -q "Failed tests:" test_output.tmp; then
+                  echo "  ❌ FAILED"
+                  grep -A 5 "Failed tests:" test_output.tmp
+                  exit 1
+                else
+                  echo "  ✅ PASSED (no test framework)"
+                fi
+              else
+                echo "  ❌ FAILED (runtime error)"
+                cat test_output.tmp
+                exit 1
+              fi
+              rm -f test_output.tmp
+            fi
+          done
+        else
+          echo "No stdlib tests found"
+        fi
+    
     # Test files are stored in version control, no cleanup needed

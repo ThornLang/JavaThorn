@@ -1,59 +1,97 @@
+import { assert_equals, test, suite, run_all } from "test";
+
 // Test: Pattern matching with Result types
 // Expected: Ok(value) and Error(error) patterns work, variables are bound correctly
 
-// Test basic pattern matching
-ok_result = Ok(42);
-error_result = Error("test error");
+suite("Result Type Pattern Matching", $() => {
+    test("basic Ok pattern matching", $() => {
+        ok_result = Ok(42);
+        
+        ok_match = match (ok_result) {
+            Ok(value) => "Got value: " + value,
+            Error(error) => "Got error: " + error,
+        };
+        
+        assert_equals("Got value: 42", ok_match, "Ok pattern should match and bind value");
+    });
 
-// Test Ok pattern matching
-ok_match = match (ok_result) {
-    Ok(value) => "Got value: " + value,
-    Error(error) => "Got error: " + error,
-};
-print("Ok match result: " + ok_match);
+    test("basic Error pattern matching", $() => {
+        error_result = Error("test error");
+        
+        error_match = match (error_result) {
+            Ok(value) => "Got value: " + value,
+            Error(error) => "Got error: " + error,
+        };
+        
+        assert_equals("Got error: test error", error_match, "Error pattern should match and bind error");
+    });
 
-// Test Error pattern matching
-error_match = match (error_result) {
-    Ok(value) => "Got value: " + value,
-    Error(error) => "Got error: " + error,
-};
-print("Error match result: " + error_match);
+    test("pattern matching with different types", $() => {
+        string_ok = Ok("hello");
+        number_error = Error(404);
+        
+        string_match = match (string_ok) {
+            Ok(value) => "String: " + value,
+            Error(error) => "Error: " + error,
+        };
+        assert_equals("String: hello", string_match, "String Ok should match correctly");
+        
+        number_match = match (number_error) {
+            Ok(value) => "Value: " + value,
+            Error(error) => "Number error: " + error,
+        };
+        assert_equals("Number error: 404", number_match, "Number Error should match correctly");
+    });
 
-// Test pattern matching with different types
-string_ok = Ok("hello");
-number_error = Error(404);
+    test("pattern matching with guards", $() => {
+        // Test value > 50
+        large_result = Ok(100);
+        large_match = match (large_result) {
+            Ok(value) if value > 50 => "Large: " + value,
+            Ok(value) if value > 0 => "Small positive: " + value,
+            Ok(value) => "Zero or negative: " + value,
+            Error(err) => "Error: " + err,
+        };
+        assert_equals("Large: 100", large_match, "Large value should match first guard");
+        
+        // Test 0 < value <= 50
+        small_result = Ok(42);
+        small_match = match (small_result) {
+            Ok(value) if value > 50 => "Large: " + value,
+            Ok(value) if value > 0 => "Small positive: " + value,
+            Ok(value) => "Zero or negative: " + value,
+            Error(err) => "Error: " + err,
+        };
+        assert_equals("Small positive: 42", small_match, "Small positive value should match second guard");
+        
+        // Test value <= 0
+        negative_result = Ok(-5);
+        negative_match = match (negative_result) {
+            Ok(value) if value > 50 => "Large: " + value,
+            Ok(value) if value > 0 => "Small positive: " + value,
+            Ok(value) => "Zero or negative: " + value,
+            Error(err) => "Error: " + err,
+        };
+        assert_equals("Zero or negative: -5", negative_match, "Negative value should match default case");
+    });
 
-string_match = match (string_ok) {
-    Ok(value) => "String: " + value,
-    Error(error) => "Error: " + error,
-};
-print("String match: " + string_match);
+    test("nested Result values", $() => {
+        // Test with null values
+        null_ok = Ok(null);
+        null_match = match (null_ok) {
+            Ok(value) => "Got null: " + (value == null),
+            Error(error) => "Error: " + error,
+        };
+        assert_equals("Got null: true", null_match, "Should handle null Ok values");
+        
+        // Test with array values
+        array_ok = Ok([1, 2, 3]);
+        array_match = match (array_ok) {
+            Ok(value) => "Array length: " + value.length,
+            Error(error) => "Error: " + error,
+        };
+        assert_equals("Array length: 3", array_match, "Should handle array Ok values");
+    });
+});
 
-number_match = match (number_error) {
-    Ok(value) => "Value: " + value,
-    Error(error) => "Number error: " + error,
-};
-print("Number match: " + number_match);
-
-// Test with guards
-numeric_result = Ok(42);
-guard_result = match (numeric_result) {
-    Ok(value) if value > 50 => "Large: " + value,
-    Ok(value) if value > 0 => "Small positive: " + value,
-    Ok(value) => "Zero or negative: " + value,
-    Error(err) => "Error: " + err,
-};
-print("Guard result: " + guard_result);
-
-// Verify pattern matching works
-if (ok_match == "Got value: 42") {
-    print("✅ Ok pattern matching works");
-} else {
-    print("❌ Ok pattern matching failed");
-}
-
-if (error_match == "Got error: test error") {
-    print("✅ Error pattern matching works");
-} else {
-    print("❌ Error pattern matching failed");
-}
+run_all();

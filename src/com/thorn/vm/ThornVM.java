@@ -404,13 +404,26 @@ public class ThornVM {
                                     "Available array methods: length, push, pop, shift, unshift, includes, indexOf, slice");
                         }
                     } else if (obj instanceof String) {
+                        String str = (String) obj;
                         switch (propName) {
                             case "length":
-                                currentFrame.setRegister(a, (double) ((String) obj).length());
+                                currentFrame.setRegister(a, (double) str.length());
+                                break;
+                            case "includes":
+                                currentFrame.setRegister(a, new StringMethod("includes", str));
+                                break;
+                            case "startsWith":
+                                currentFrame.setRegister(a, new StringMethod("startsWith", str));
+                                break;
+                            case "endsWith":
+                                currentFrame.setRegister(a, new StringMethod("endsWith", str));
+                                break;
+                            case "slice":
+                                currentFrame.setRegister(a, new StringMethod("slice", str));
                                 break;
                             default:
-                                throwRuntimeError("String property '" + propName + "' is not defined.\n" +
-                                    "Available string properties: length");
+                                throwRuntimeError("String method '" + propName + "' is not defined.\n" +
+                                    "Available string methods: length, includes, startsWith, endsWith, slice");
                         }
                     } else if (obj instanceof Double || obj instanceof Boolean) {
                         String typeName = obj instanceof Double ? "number" : "boolean";
@@ -630,7 +643,7 @@ public class ThornVM {
             }
             
             // No handler found, re-throw as runtime error
-            throw new RuntimeException("Uncaught exception: " + stringify(throwEx.value));
+            throwRuntimeError("Uncaught exception: " + stringify(throwEx.value));
         }
     }
     
@@ -846,6 +859,12 @@ public class ThornVM {
             return method.call(callerFrame, argCount, functionRegister);
         }
         
+        // Handle string methods
+        if (function instanceof StringMethod) {
+            StringMethod method = (StringMethod) function;
+            return method.call(callerFrame, argCount, functionRegister);
+        }
+        
         throwRuntimeError("Not a function: " + function);
         return null; // unreachable
     }
@@ -1056,6 +1075,90 @@ public class ThornVM {
                     throwRuntimeError("Unknown dictionary method: " + methodName);
                     return null; // unreachable
             }
+        }
+    }
+    
+    // Inner class for string methods
+    private class StringMethod {
+        private final String methodName;
+        private final String str;
+        
+        StringMethod(String methodName, String str) {
+            this.methodName = methodName;
+            this.str = str;
+        }
+        
+        Object call(CallFrame frame, int argCount, int functionRegister) {
+            switch (methodName) {
+                case "includes":
+                    if (argCount != 1) {
+                        throwRuntimeError("includes() expects 1 argument");
+                    }
+                    Object arg = frame.getRegister(functionRegister + 1);
+                    if (!(arg instanceof String)) {
+                        throwRuntimeError("includes() expects a string argument");
+                    }
+                    return str.contains((String) arg);
+                    
+                case "startsWith":
+                    if (argCount != 1) {
+                        throwRuntimeError("startsWith() expects 1 argument");
+                    }
+                    Object prefixArg = frame.getRegister(functionRegister + 1);
+                    if (!(prefixArg instanceof String)) {
+                        throwRuntimeError("startsWith() expects a string argument");
+                    }
+                    return str.startsWith((String) prefixArg);
+                    
+                case "endsWith":
+                    if (argCount != 1) {
+                        throwRuntimeError("endsWith() expects 1 argument");
+                    }
+                    Object suffixArg = frame.getRegister(functionRegister + 1);
+                    if (!(suffixArg instanceof String)) {
+                        throwRuntimeError("endsWith() expects a string argument");
+                    }
+                    return str.endsWith((String) suffixArg);
+                    
+                case "slice":
+                    if (argCount < 1 || argCount > 2) {
+                        throwRuntimeError("slice() expects 1 or 2 arguments");
+                    }
+                    Object startArg = frame.getRegister(functionRegister + 1);
+                    if (!(startArg instanceof Double)) {
+                        throwRuntimeError("slice() start index must be a number");
+                    }
+                    
+                    int start = ((Double) startArg).intValue();
+                    int end = str.length();
+                    
+                    if (argCount == 2) {
+                        Object endArg = frame.getRegister(functionRegister + 2);
+                        if (!(endArg instanceof Double)) {
+                            throwRuntimeError("slice() end index must be a number");
+                        }
+                        end = ((Double) endArg).intValue();
+                    }
+                    
+                    // Handle negative indices
+                    if (start < 0) start = Math.max(0, str.length() + start);
+                    if (end < 0) end = Math.max(0, str.length() + end);
+                    
+                    // Clamp to valid range
+                    start = Math.max(0, Math.min(start, str.length()));
+                    end = Math.max(start, Math.min(end, str.length()));
+                    
+                    return str.substring(start, end);
+                    
+                default:
+                    throwRuntimeError("Unknown string method: " + methodName);
+                    return null; // unreachable
+            }
+        }
+        
+        @Override
+        public String toString() {
+            return "<string method: " + methodName + ">";
         }
     }
 }

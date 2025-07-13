@@ -1,0 +1,22 @@
+import { test, suite, run_all } from "test";
+
+// Test improved error messages for strings
+
+suite("String Error Messages", $() => {
+    test("string method access should give helpful error", $() => {
+        // This test documents expected runtime error behavior
+        // Once Thorn has try-catch or Result-based error handling for runtime errors,
+        // this test should be updated to verify the error message
+        
+        text = "hello world";
+        
+        // The following line would throw a runtime error:
+        // upper = text.toUpperCase();
+        // Expected error: "Cannot access property 'toUpperCase' on primitive type 'string'"
+        
+        print("Note: Cannot test runtime errors with current assert_throws implementation");
+        print("Expected: Cannot access property 'toUpperCase' on primitive type 'string'");
+    });
+});
+
+run_all();

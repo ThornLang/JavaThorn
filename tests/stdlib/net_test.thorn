@@ -1,88 +1,127 @@
 import "net";
+import { assert_equals, assert_not_null, assert_true, assert_greater_than, test, suite, run_all } from "test";
 
 // Test: Network module functionality
 // Tests HTTP requests, URL parsing, and basic socket operations
 
-// Test 1: URL parsing and building
-url = "https://example.com:8080/path/to/resource?key=value&foo=bar#section";
-parsed = parse_url(url);
-print("Parsed URL:");
-print("  Scheme: " + parsed["scheme"]);
-print("  Host: " + parsed["host"]);
-print("  Port: " + parsed["port"]);
-print("  Path: " + parsed["path"]);
-print("  Query: " + parsed["query"]);
-print("  Fragment: " + parsed["fragment"]);
-print("  Params: " + parsed["params"].keys().length + " parameters");
+suite("Network Module Tests", $() => {
+    test("URL parsing", $() => {
+        url = "https://example.com:8080/path/to/resource?key=value&foo=bar#section";
+        parsed = parse_url(url);
+        
+        assert_not_null(parsed, "parse_url should return non-null");
+        assert_equals("https", parsed["scheme"], "Scheme should be https");
+        assert_equals("example.com", parsed["host"], "Host should be example.com");
+        assert_equals(8080, parsed["port"], "Port should be 8080");
+        assert_equals("/path/to/resource", parsed["path"], "Path should match");
+        assert_equals("key=value&foo=bar", parsed["query"], "Query string should match");
+        assert_equals("section", parsed["fragment"], "Fragment should be section");
+        assert_not_null(parsed["params"], "Params should not be null");
+        assert_equals(2, parsed["params"].keys().length, "Should have 2 parameters");
+        assert_equals("value", parsed["params"]["key"], "key parameter should be 'value'");
+        assert_equals("bar", parsed["params"]["foo"], "foo parameter should be 'bar'");
+    });
 
-// Test 2: URL building
-components = {
-    "scheme": "https",
-    "host": "api.example.com",
-    "port": 443,
-    "path": "/v1/users",
-    "params": {
-        "limit": "10",
-        "offset": "20"
-    }
-};
-built_url = build_url(components);
-print("\nBuilt URL: " + built_url);
+    test("URL building", $() => {
+        components = {
+            "scheme": "https",
+            "host": "api.example.com", 
+            "port": 443,
+            "path": "/v1/users",
+            "params": {
+                "limit": "10",
+                "offset": "20"
+            }
+        };
+        
+        built_url = build_url(components);
+        assert_not_null(built_url, "build_url should return non-null");
+        assert_true(built_url.includes("https://"), "URL should start with https://");
+        assert_true(built_url.includes("api.example.com"), "URL should contain host");
+        assert_true(built_url.includes("/v1/users"), "URL should contain path");
+        assert_true(built_url.includes("limit=10"), "URL should contain limit param");
+        assert_true(built_url.includes("offset=20"), "URL should contain offset param");
+    });
 
-// Test 3: URL encoding/decoding
-original = "Hello World! Special chars: &=?#";
-encoded = url_encode(original);
-decoded = url_decode(encoded);
-print("\nURL Encoding:");
-print("  Original: " + original);
-print("  Encoded: " + encoded);
-print("  Decoded: " + decoded);
-print("  Round-trip success: " + (original == decoded));
+    test("URL encoding/decoding", $() => {
+        original = "Hello World! Special chars: &=?#";
+        encoded = url_encode(original);
+        
+        assert_not_null(encoded, "url_encode should return non-null");
+        assert_true(!encoded.includes(" "), "Encoded URL should not contain spaces");
+        assert_true(!encoded.includes("&"), "Encoded URL should not contain raw &");
+        assert_true(!encoded.includes("="), "Encoded URL should not contain raw =");
+        assert_true(!encoded.includes("?"), "Encoded URL should not contain raw ?");
+        assert_true(!encoded.includes("#"), "Encoded URL should not contain raw #");
+        
+        decoded = url_decode(encoded);
+        assert_equals(original, decoded, "URL encoding round-trip should preserve content");
+    });
 
-// Test 4: HTTP GET request (using a reliable test endpoint)
-print("\nHTTP GET test:");
-try_http = false; // Set to true to test with real HTTP endpoint
-if (try_http) {
-    // Using httpbin.org for testing
-    response = get("https://httpbin.org/get");
-    print("  Status: " + response["status"]);
-    print("  Headers count: " + response["headers"].keys().length);
-    print("  Has body: " + (response["body"] != null));
-} else {
-    print("  Skipping HTTP test (set try_http to true to enable)");
-}
+    test("local IP addresses", $() => {
+        local_ips = get_local_ips();
+        
+        assert_not_null(local_ips, "get_local_ips should return non-null");
+        assert_greater_than(local_ips.length, 0, "Should have at least one local IP");
+        
+        // Verify each IP is a non-empty string
+        for (ip in local_ips) {
+            assert_not_null(ip, "IP address should not be null");
+            assert_greater_than(ip.length, 0, "IP address should not be empty");
+            assert_true(ip.includes(".") || ip.includes(":"), "IP should contain . (IPv4) or : (IPv6)");
+        }
+    });
 
-// Test 5: Local IP addresses
-local_ips = get_local_ips();
-print("\nLocal IP addresses: " + local_ips.length + " found");
-for (ip in local_ips) {
-    print("  - " + ip);
-}
+    test("hostname resolution", $() => {
+        hostname = "localhost";
+        ip = get_ip_address(hostname);
+        
+        assert_not_null(ip, "get_ip_address should return non-null for localhost");
+        assert_greater_than(ip.length, 0, "IP address should not be empty");
+        // localhost should resolve to either 127.0.0.1 or ::1
+        assert_true(ip == "127.0.0.1" || ip == "::1" || ip.startsWith("127."), 
+                   "localhost should resolve to loopback address");
+    });
 
-// Test 6: Hostname/IP resolution
-hostname = "localhost";
-ip = get_ip_address(hostname);
-print("\nDNS Resolution:");
-print("  " + hostname + " -> " + ip);
+    test("UDP socket operations", $() => {
+        udp = udp_socket();
+        assert_not_null(udp, "udp_socket should return non-null");
+        
+        port = udp.get_port();
+        assert_greater_than(port, 0, "UDP socket should have valid port");
+        assert_true(port <= 65535, "Port should be in valid range");
+        
+        // Test closing
+        udp.close();
+        // After close, operations might fail but we can't easily test that
+    });
 
-// Test 7: UDP socket creation and port binding
-udp = udp_socket();
-port = udp.get_port();
-print("\nUDP socket created on port: " + port);
-udp.close();
-
-// Test 8: TCP socket test (local only)
-test_tcp = false; // Set to true to test TCP sockets
-if (test_tcp) {
-    // Create server
-    server = tcp_listen(0); // Random port
-    server_port = server.get_port();
-    print("\nTCP server listening on port: " + server_port);
+    test("TCP socket creation", $() => {
+        // Create server on random port
+        server = tcp_listen(0);
+        assert_not_null(server, "tcp_listen should return non-null");
+        
+        server_port = server.get_port();
+        assert_greater_than(server_port, 0, "TCP server should have valid port");
+        assert_true(server_port <= 65535, "Port should be in valid range");
+        
+        // Clean up
+        server.close();
+    });
     
-    // Would need threading to properly test client/server
-    server.close();
-} else {
-    print("\nSkipping TCP test (set test_tcp to true to enable)");
-}
+    // Skip HTTP tests by default as they require network access
+    // These could be enabled with a flag or in integration tests
+    /*
+    test("HTTP GET request", $() => {
+        // Using httpbin.org for testing
+        response = get("https://httpbin.org/get");
+        
+        assert_not_null(response, "HTTP GET should return non-null");
+        assert_equals(200, response["status"], "Should get 200 OK");
+        assert_not_null(response["headers"], "Response should have headers");
+        assert_not_null(response["body"], "Response should have body");
+    });
+    */
+});
 
-print("\n✅ Net module tests completed!");
+run_all();

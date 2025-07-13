@@ -247,6 +247,14 @@ public class DeadCodeEliminationPass extends OptimizationPass {
                 }
                 
                 @Override
+                public Void visitThrowStmt(Stmt.Throw stmt) {
+                    if (stmt.value != null) {
+                        collectUsageFromExpression(stmt.value);
+                    }
+                    return null;
+                }
+                
+                @Override
                 public Void visitFunctionStmt(Stmt.Function stmt) {
                     collectUsage(stmt.body);
                     return null;
@@ -284,8 +292,8 @@ public class DeadCodeEliminationPass extends OptimizationPass {
                 }
                 
                 @Override
-                public Void visitThrowStmt(Stmt.Throw stmt) {
-                    collectUsageFromExpression(stmt.value);
+                public Void visitTypeAliasStmt(Stmt.TypeAlias stmt) {
+                    // Type aliases are compile-time only, no optimization needed
                     return null;
                 }
             });

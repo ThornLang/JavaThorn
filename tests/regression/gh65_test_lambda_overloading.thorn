@@ -1,0 +1,100 @@
+import { assert_equals, test, suite, run_all } from "test";
+
+// Test lambda function overloading
+
+suite("Lambda Function Overloading", $() => {
+    test("lambda reassignment overwrites", $() => {
+        // Assigning multiple lambdas to the same variable (should overwrite, not overload)
+        handler = $(x) => x * 2;
+        handler = $(x, y) => x + y;
+
+        // Only the last assignment should be active
+        result: number = handler(3, 4);
+        assert_equals(7, result, "Lambda reassignment should use last assignment");
+        
+        // First lambda was overwritten, so handler(5) would fail
+    });
+
+    test("lambdas in function groups", $() => {
+        $ callWithOne(fn: Function[(number), number]) {
+            return fn(1);
+        }
+
+        $ callWithTwo(fn: Function[(number, number), number]) {
+            return fn(2, 3);
+        }
+
+        lambda1: Function[(number), number] = $(x) => x * 10;
+        lambda2: Function[(number, number), number] = $(x, y) => x + y;
+
+        result1: number = callWithOne(lambda1);
+        assert_equals(10, result1, "Lambda with one param should work");
+
+        result2: number = callWithTwo(lambda2);
+        assert_equals(5, result2, "Lambda with two params should work");
+    });
+
+    test("lambda type annotations", $() => {
+        typedLambda: Function[(string), string] = $(s) => s + "!";
+        untypedLambda = $(s) => s + "?";
+
+        result1: string = typedLambda("Hello");
+        assert_equals("Hello!", result1, "Typed lambda should work");
+
+        result2: string = untypedLambda("World");
+        assert_equals("World?", result2, "Untyped lambda should work");
+    });
+
+    test("lambda in overloaded function parameters", $() => {
+        // Alternative test using arity-based overloading
+        $ processLambda(fn) {
+            return "Got function: " + fn(10);
+        }
+
+        $ processLambda(fn, x) {
+            return "Applied " + x + ": " + fn(x);
+        }
+
+        simpleLambda = $(x) => x * 3;
+        
+        result1: string = processLambda(simpleLambda);
+        assert_equals("Got function: 30", result1, "Single param overload should work");
+
+        result2: string = processLambda(simpleLambda, 5);
+        assert_equals("Applied 5: 15", result2, "Two param overload should work");
+    });
+
+    test("complex lambda scenarios", $() => {
+        $ createProcessor(type: string) {
+            if (type == "double") {
+                return $(x) => x * 2;
+            } else if (type == "triple") {
+                return $(x) => x * 3;
+            } else {
+                return $(x) => x;
+            }
+        }
+
+        doubler = createProcessor("double");
+        tripler = createProcessor("triple");
+        identity = createProcessor("identity");
+
+        assert_equals(20, doubler(10), "Dynamic lambda double should work");
+        assert_equals(30, tripler(10), "Dynamic lambda triple should work");
+        assert_equals(10, identity(10), "Dynamic lambda identity should work");
+    });
+
+    test("lambda with closure", $() => {
+        $ makeAdder(x: number) {
+            return $(y) => x + y;
+        }
+
+        add5 = makeAdder(5);
+        add10 = makeAdder(10);
+
+        assert_equals(15, add5(10), "Closure with 5 should work");
+        assert_equals(25, add10(15), "Closure with 10 should work");
+    });
+});
+
+run_all();

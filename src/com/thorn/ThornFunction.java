@@ -101,6 +101,21 @@ class ThornFunction implements ThornCallable {
         return new ThornFunction(name, params, body, environment, returnType);
     }
 
+    public boolean hasTypeAnnotations() {
+        // Check if any parameters have type annotations
+        for (Stmt.Parameter param : params) {
+            if (param.type != null) {
+                return true;
+            }
+        }
+        // Also check if return type is specified
+        return returnType != null;
+    }
+    
+    public List<Stmt.Parameter> getParameters() {
+        return params;
+    }
+
     @Override
     public String toString() {
         if (name == null) return "<lambda>";

@@ -324,7 +324,6 @@ class Parser {
         return new Stmt.TryCatch(tryBlock, catchVariable, catchBlock);
     }
 
-
     private Stmt function(String kind) {
         Token name = consume(IDENTIFIER, "Expected " + kind + " name.");
         

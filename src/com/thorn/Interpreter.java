@@ -1172,6 +1172,13 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return null;
     }
 
+    @Override
+    public Void visitThrowStmt(Stmt.Throw stmt) {
+        Object value = null;
+        if (stmt.value != null) value = evaluate(stmt.value);
+
+        throw new ThornThrowException(value);
+    }
 
     @Override
     public Void visitVarStmt(Stmt.Var stmt) {
@@ -1552,11 +1559,5 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             tryDepth--;
         }
         return null;
-    }
-
-    @Override
-    public Void visitThrowStmt(Stmt.Throw stmt) {
-        Object value = evaluate(stmt.value);
-        throw new ThornThrowException(value);
     }
 }

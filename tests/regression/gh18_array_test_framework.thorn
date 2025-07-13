@@ -1,4 +1,4 @@
-import { assert_throws, test, suite, run_all } from "test";
+nimport { assert_throws, test, suite, run_all } from "test";
 
 // Test improved error messages for arrays
 

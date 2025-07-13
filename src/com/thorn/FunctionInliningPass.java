@@ -179,6 +179,12 @@ public class FunctionInliningPass extends OptimizationPass {
                     return null;
                 }
                 
+                @Override public Void visitTryCatchStmt(Stmt.TryCatch stmt) {
+                    analyzeFunctionDefinitions(stmt.tryBlock);
+                    analyzeFunctionDefinitions(stmt.catchBlock);
+                    return null;
+                }
+                
                 @Override public Void visitTypeAliasStmt(Stmt.TypeAlias stmt) {
                     // Type aliases are compile-time only, no optimization needed
                     return null;
@@ -392,6 +398,15 @@ public class FunctionInliningPass extends OptimizationPass {
                 @Override
                 public Stmt visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
                     return stmt;
+                }
+                
+                @Override
+                public Stmt visitTryCatchStmt(Stmt.TryCatch stmt) {
+                    return new Stmt.TryCatch(
+                        transformStatement(stmt.tryBlock),
+                        stmt.catchVariable,
+                        transformStatement(stmt.catchBlock)
+                    );
                 }
                 
                 @Override
@@ -736,6 +751,13 @@ public class FunctionInliningPass extends OptimizationPass {
                     }
                     
                     @Override
+                    public Void visitTryCatchStmt(Stmt.TryCatch stmt) {
+                        calculateStatementSize(stmt.tryBlock);
+                        calculateStatementSize(stmt.catchBlock);
+                        return null;
+                    }
+                    
+                    @Override
                     public Void visitTypeAliasStmt(Stmt.TypeAlias stmt) {
                         // Type aliases are compile-time only, no optimization needed
                         return null;
@@ -836,6 +858,11 @@ public class FunctionInliningPass extends OptimizationPass {
                     @Override
                     public Boolean visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
                         return false;
+                    }
+                    
+                    @Override
+                    public Boolean visitTryCatchStmt(Stmt.TryCatch stmt) {
+                        return checkStatement(stmt.tryBlock) || checkStatement(stmt.catchBlock);
                     }
                     
                     @Override
@@ -1008,6 +1035,13 @@ public class FunctionInliningPass extends OptimizationPass {
                     
                     @Override
                     public Void visitExportIdentifierStmt(Stmt.ExportIdentifier stmt) {
+                        return null;
+                    }
+                    
+                    @Override
+                    public Void visitTryCatchStmt(Stmt.TryCatch stmt) {
+                        countCalls(stmt.tryBlock);
+                        countCalls(stmt.catchBlock);
                         return null;
                     }
                     
@@ -1190,6 +1224,15 @@ public class FunctionInliningPass extends OptimizationPass {
                     }
                     
                     @Override
+                    public Stmt visitTryCatchStmt(Stmt.TryCatch stmt) {
+                        return new Stmt.TryCatch(
+                            inlineStatement(stmt.tryBlock),
+                            stmt.catchVariable,
+                            inlineStatement(stmt.catchBlock)
+                        );
+                    }
+                    
+                    @Override
                     public Stmt visitTypeAliasStmt(Stmt.TypeAlias stmt) {
                         // Type aliases are compile-time only, no optimization needed
                         return stmt;
@@ -1354,3 +1397,5 @@ public class FunctionInliningPass extends OptimizationPass {
         }
     }
 }
+// Stub methods for try-catch support - added by script
+// These should be properly implemented when optimization support is needed

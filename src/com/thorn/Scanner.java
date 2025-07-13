@@ -37,6 +37,8 @@ class Scanner {
         keywords.put("in", IN);
         keywords.put("match", MATCH);
         keywords.put("immut", IMMUT);
+        keywords.put("try", TRY);
+        keywords.put("catch", CATCH);
         
         // Type system keywords
         keywords.put("string", STRING_TYPE);

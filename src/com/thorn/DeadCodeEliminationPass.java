@@ -285,6 +285,13 @@ public class DeadCodeEliminationPass extends OptimizationPass {
                 }
                 
                 @Override
+                public Void visitTryCatchStmt(Stmt.TryCatch stmt) {
+                    collectUsageFromStatement(stmt.tryBlock);
+                    collectUsageFromStatement(stmt.catchBlock);
+                    return null;
+                }
+                
+                @Override
                 public Void visitTypeAliasStmt(Stmt.TypeAlias stmt) {
                     // Type aliases are compile-time only, no optimization needed
                     return null;

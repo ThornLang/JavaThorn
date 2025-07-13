@@ -1,0 +1,29 @@
+import { assert_throws, test, run_all } from "test";
+
+// Test improved error messages for strings
+
+test("string method should give helpful error", $() => {
+    text = "hello world";
+    
+    assert_throws(
+        $() => {
+            upper = text.toUpperCase();
+        },
+        "String method 'toUpperCase' is not defined.\nAvailable string methods: length, includes, startsWith, endsWith, slice",
+        "undefined string method"
+    );
+});
+
+test("string property access should list available properties", $() => {
+    str = "test";
+    
+    assert_throws(
+        $() => {
+            result = str.toLowerCase();
+        },
+        "String method 'toLowerCase' is not defined.\nAvailable string methods: length, includes, startsWith, endsWith, slice",
+        "undefined string property"
+    );
+});
+
+run_all();

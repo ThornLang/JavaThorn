@@ -222,6 +222,16 @@ public class BranchOptimizationPass extends OptimizationPass {
                 }
                 
                 @Override
+                public Stmt visitTryCatchStmt(Stmt.TryCatch stmt) {
+                    return new Stmt.TryCatch(
+                        optimizeStatement(stmt.tryBlock),
+                        stmt.catchVariable,
+                        optimizeStatement(stmt.catchBlock)
+                    );
+                }
+                
+                
+                @Override
                 public Stmt visitTypeAliasStmt(Stmt.TypeAlias stmt) {
                     // Type aliases are compile-time only, no optimization needed
                     return stmt;

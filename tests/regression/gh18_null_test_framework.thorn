@@ -1,0 +1,32 @@
+import { assert_throws, test, suite, run_all } from "test";
+
+// Test improved error messages for null
+
+suite("Null Error Messages", $() => {
+    test("null property access should give helpful error", $() => {
+        value = null;
+        
+        // Now we can test runtime errors with try-catch
+        assert_throws(
+            $() => {
+                result = value.property;
+            },
+            "Cannot access property 'property' on null.",
+            "null property access"
+        );
+    });
+    
+    test("null method call should give helpful error", $() => {
+        obj = null;
+        
+        assert_throws(
+            $() => {
+                obj.doSomething();
+            },
+            "Cannot access property 'doSomething' on null.",
+            "null method call"
+        );
+    });
+});
+
+run_all();

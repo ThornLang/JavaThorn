@@ -62,15 +62,18 @@ public enum OpCode {
     CALL(35),            // Call function at A with B args
     RETURN(36),          // Return A
     TAIL_CALL(37),       // Tail call optimization
+    TRY_BEGIN(38),       // Begin try block - push exception handler
+    THROW(39),           // Throw exception with value A
+    TRY_END(40),         // End try block - pop exception handler
     
-    // Object Operations (40-47)
-    NEW_OBJECT(40),      // A = new Object()
-    GET_PROPERTY(41),    // A = B.constants[C]
-    SET_PROPERTY(42),    // B.constants[A] = C
-    GET_INDEX(43),       // A = B[C]
-    SET_INDEX(44),       // B[A] = C
-    NEW_ARRAY(45),       // A = new Array(B elements from stack)
-    NEW_DICT(46),        // A = new Dict(B pairs from stack)
+    // Object Operations (41-48)
+    NEW_OBJECT(41),      // A = new Object()
+    GET_PROPERTY(42),    // A = B.constants[C]
+    SET_PROPERTY(43),    // B.constants[A] = C
+    GET_INDEX(44),       // A = B[C]
+    SET_INDEX(45),       // B[A] = C
+    NEW_ARRAY(46),       // A = new Array(B elements from stack)
+    NEW_DICT(47),        // A = new Dict(B pairs from stack)
     
     // Function Operations (48-51)
     MAKE_CLOSURE(48),    // A = closure(constants[B], C upvalues)

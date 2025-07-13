@@ -18,6 +18,40 @@ public class ThornVM {
     // Track if we're in a Result context for division by zero handling
     private boolean inResultContext = false;
     
+    // Exception handling
+    private final java.util.Stack<ExceptionHandler> exceptionHandlers = new java.util.Stack<>();
+    
+    // Exception class for VM throws
+    static class ThornThrowException extends RuntimeException {
+        final Object value;
+        
+        ThornThrowException(Object value) {
+            super(null, null, false, false);
+            this.value = value;
+        }
+    }
+    
+    // Exception handler for try-catch blocks
+    static class ExceptionHandler {
+        final int frameIndex;
+        final int catchAddress;
+        final int catchRegister; // -1 if no catch variable
+        
+        ExceptionHandler(int frameIndex, int catchAddress, int catchRegister) {
+            this.frameIndex = frameIndex;
+            this.catchAddress = catchAddress;
+            this.catchRegister = catchRegister;
+        }
+    }
+    
+    // Helper method to throw runtime errors as catchable exceptions when inside try blocks
+    private void throwRuntimeError(String message) {
+        if (!exceptionHandlers.isEmpty()) {
+            throw new ThornThrowException(message);
+        }
+        throw new RuntimeException(message);
+    }
+    
     public ThornVM() {
         this.callStack = new CallFrame[MAX_CALL_STACK];
         this.globals = new HashMap<>();
@@ -38,8 +72,9 @@ public class ThornVM {
     }
     
     private Object run() {
-        while (!halted && frameCount > 0) {
-            CallFrame currentFrame = getCurrentFrame();
+        try {
+            while (!halted && frameCount > 0) {
+                CallFrame currentFrame = getCurrentFrame();
             
             if (!currentFrame.hasMoreInstructions()) {
                 // Function ended without explicit return - return null
@@ -252,6 +287,24 @@ public class ThornVM {
                     getCurrentFrame().setRegister(0, returnValue);
                     break;
                     
+                case TRY_BEGIN:
+                    // Push exception handler onto stack
+                    int catchAddress = OpCode.getBValue(instruction);
+                    int catchRegister = OpCode.getCValue(instruction); // -1 if no catch variable
+                    exceptionHandlers.push(new ExceptionHandler(frameCount - 1, catchAddress, catchRegister));
+                    break;
+                    
+                case TRY_END:
+                    // Pop exception handler when exiting try block normally
+                    if (!exceptionHandlers.isEmpty()) {
+                        exceptionHandlers.pop();
+                    }
+                    break;
+                    
+                case THROW:
+                    Object throwValue = currentFrame.getRegister(a);
+                    throw new ThornThrowException(throwValue);
+                    
                 // Built-in operations
                 case PRINT:
                     System.out.println(stringify(currentFrame.getRegister(a)));
@@ -347,7 +400,7 @@ public class ThornVM {
                                 currentFrame.setRegister(a, new ArrayMethod("slice", list));
                                 break;
                             default:
-                                throw new RuntimeException("Array method '" + propName + "' is not defined.\n" +
+                                throwRuntimeError("Array method '" + propName + "' is not defined.\n" +
                                     "Available array methods: length, push, pop, shift, unshift, includes, indexOf, slice");
                         }
                     } else if (obj instanceof String) {
@@ -369,19 +422,19 @@ public class ThornVM {
                                 currentFrame.setRegister(a, new StringMethod("slice", str));
                                 break;
                             default:
-                                throw new RuntimeException("String method '" + propName + "' is not defined.\n" +
+                                throwRuntimeError("String method '" + propName + "' is not defined.\n" +
                                     "Available string methods: length, includes, startsWith, endsWith, slice");
                         }
                     } else if (obj instanceof Double || obj instanceof Boolean) {
                         String typeName = obj instanceof Double ? "number" : "boolean";
-                        throw new RuntimeException("Cannot access property '" + propName + "' on primitive type '" + typeName + "'.");
+                        throwRuntimeError("Cannot access property '" + propName + "' on primitive type '" + typeName + "'.");
                     } else if (obj == null) {
-                        throw new RuntimeException("Cannot access property '" + propName + "' on null.");
+                        throwRuntimeError("Cannot access property '" + propName + "' on null.");
                     } else if (obj instanceof java.util.Map) {
-                        throw new RuntimeException("Dictionary method '" + propName + "' is not defined.\n" +
+                        throwRuntimeError("Dictionary method '" + propName + "' is not defined.\n" +
                             "Available dictionary methods: keys, values, has, size, remove, get, set");
                     } else {
-                        throw new RuntimeException("Property '" + propName + "' is not defined on object.");
+                        throwRuntimeError("Property '" + propName + "' is not defined on object.");
                     }
                     break;
                     
@@ -395,7 +448,7 @@ public class ThornVM {
                         java.util.Map<String, Object> setMap = (java.util.Map<String, Object>) setObj;
                         setMap.put(setPropName, setValue);
                     } else {
-                        throw new RuntimeException("Cannot set property on non-object");
+                        throwRuntimeError("Cannot set property on non-object");
                     }
                     break;
                     
@@ -408,7 +461,7 @@ public class ThornVM {
                     } else if (arrayObj instanceof String) {
                         currentFrame.setRegister(a, (double) ((String) arrayObj).length());
                     } else {
-                        throw new RuntimeException("Cannot get length of non-array/string");
+                        throwRuntimeError("Cannot get length of non-array/string");
                     }
                     break;
                     
@@ -422,7 +475,7 @@ public class ThornVM {
                         if (idx >= 0 && idx < list.size()) {
                             currentFrame.setRegister(a, list.get(idx));
                         } else {
-                            throw new RuntimeException("List index out of bounds: " + idx);
+                            throwRuntimeError("List index out of bounds: " + idx);
                         }
                     } else if (indexable instanceof String && index instanceof Double) {
                         String str = (String) indexable;
@@ -430,7 +483,7 @@ public class ThornVM {
                         if (idx >= 0 && idx < str.length()) {
                             currentFrame.setRegister(a, String.valueOf(str.charAt(idx)));
                         } else {
-                            throw new RuntimeException("String index out of bounds: " + idx);
+                            throwRuntimeError("String index out of bounds: " + idx);
                         }
                     } else if (indexable instanceof java.util.Map) {
                         @SuppressWarnings("unchecked")
@@ -438,7 +491,7 @@ public class ThornVM {
                         Object value = map.get(index);
                         currentFrame.setRegister(a, value);
                     } else {
-                        throw new RuntimeException("Invalid index operation on type: " + 
+                        throwRuntimeError("Invalid index operation on type: " + 
                                                  (indexable != null ? indexable.getClass().getSimpleName() : "null"));
                     }
                     break;
@@ -455,14 +508,14 @@ public class ThornVM {
                         if (idx >= 0 && idx < list.size()) {
                             list.set(idx, setIndexValue);
                         } else {
-                            throw new RuntimeException("List index out of bounds: " + idx);
+                            throwRuntimeError("List index out of bounds: " + idx);
                         }
                     } else if (setIndexable instanceof java.util.Map) {
                         @SuppressWarnings("unchecked")
                         java.util.Map<Object, Object> map = (java.util.Map<Object, Object>) setIndexable;
                         map.put(setIndex, setIndexValue);
                     } else {
-                        throw new RuntimeException("Cannot set index on non-indexable type: " + 
+                        throwRuntimeError("Cannot set index on non-indexable type: " + 
                                                  (setIndexable != null ? setIndexable.getClass().getSimpleName() : "null"));
                     }
                     break;
@@ -476,7 +529,7 @@ public class ThornVM {
                         java.util.List<Object> list = (java.util.List<Object>) arrayToPush;
                         list.add(valueToPush);
                     } else {
-                        throw new RuntimeException("Cannot push to non-list");
+                        throwRuntimeError("Cannot push to non-list");
                     }
                     break;
                     
@@ -537,7 +590,7 @@ public class ThornVM {
                     if (toIncrement instanceof Double) {
                         currentFrame.setRegister(a, (Double)toIncrement + 1.0);
                     } else {
-                        throw new RuntimeException("Cannot increment non-numeric value");
+                        throwRuntimeError("Cannot increment non-numeric value");
                     }
                     break;
                     
@@ -563,11 +616,36 @@ public class ThornVM {
                     break;
                     
                 default:
-                    throw new RuntimeException("Unimplemented opcode: " + opcode);
+                    throwRuntimeError("Unimplemented opcode: " + opcode);
             }
         }
         
         return null;
+        } catch (ThornThrowException throwEx) {
+            // Handle thrown exceptions by finding the nearest exception handler
+            while (!exceptionHandlers.isEmpty()) {
+                ExceptionHandler handler = exceptionHandlers.pop();
+                
+                // Only handle if the exception was thrown from this frame or a deeper one
+                if (handler.frameIndex <= frameCount - 1) {
+                    // Jump to catch block
+                    CallFrame currentFrame = getCurrentFrame();
+                    currentFrame.setPc(handler.catchAddress);
+                    
+                    // Set catch variable if present
+                    if (handler.catchRegister >= 0) {
+                        currentFrame.setRegister(handler.catchRegister, throwEx.value);
+                    }
+                    
+                    // Continue execution from catch block
+                    return run();
+                }
+            }
+            
+            // No handler found, re-throw as runtime error
+            throwRuntimeError("Uncaught exception: " + stringify(throwEx.value));
+            return null; // unreachable
+        }
     }
     
     // Helper methods for operations
@@ -579,7 +657,8 @@ public class ThornVM {
         if (left instanceof String || right instanceof String) {
             return stringify(left) + stringify(right);
         }
-        throw new RuntimeException("Invalid operands for +");
+        throwRuntimeError("Invalid operands for +");
+        return null; // unreachable
     }
     
     private Object subtract(Object left, Object right) {
@@ -600,7 +679,7 @@ public class ThornVM {
             if (inResultContext) {
                 return ((Number) left).doubleValue() / rightVal; // Returns Infinity
             }
-            throw new RuntimeException("Division by zero");
+            throwRuntimeError("Division by zero");
         }
         return ((Number) left).doubleValue() / rightVal;
     }
@@ -654,13 +733,13 @@ public class ThornVM {
     
     private void checkNumberOperand(Object operand) {
         if (!(operand instanceof Number)) {
-            throw new RuntimeException("Operand must be a number");
+            throwRuntimeError("Operand must be a number");
         }
     }
     
     private void checkNumberOperands(Object left, Object right) {
         if (!(left instanceof Number) || !(right instanceof Number)) {
-            throw new RuntimeException("Operands must be numbers");
+            throwRuntimeError("Operands must be numbers");
         }
     }
     
@@ -787,7 +866,8 @@ public class ThornVM {
             return method.call(callerFrame, argCount, functionRegister);
         }
         
-        throw new RuntimeException("Not a function: " + function);
+        throwRuntimeError("Not a function: " + function);
+        return null; // unreachable
     }
     
     private void initializeBuiltins() {
@@ -820,7 +900,7 @@ public class ThornVM {
             switch (methodName) {
                 case "push":
                     if (argCount != 1) {
-                        throw new RuntimeException("push() expects 1 argument");
+                        throwRuntimeError("push() expects 1 argument");
                     }
                     // Use consistent calling convention - arguments start at register 1
                     list.add(frame.getRegister(1));
@@ -828,7 +908,7 @@ public class ThornVM {
                     
                 case "pop":
                     if (argCount != 0) {
-                        throw new RuntimeException("pop() expects 0 arguments");
+                        throwRuntimeError("pop() expects 0 arguments");
                     }
                     if (list.isEmpty()) {
                         return null;
@@ -837,7 +917,7 @@ public class ThornVM {
                     
                 case "shift":
                     if (argCount != 0) {
-                        throw new RuntimeException("shift() expects 0 arguments");
+                        throwRuntimeError("shift() expects 0 arguments");
                     }
                     if (list.isEmpty()) {
                         return null;
@@ -846,14 +926,14 @@ public class ThornVM {
                     
                 case "unshift":
                     if (argCount != 1) {
-                        throw new RuntimeException("unshift() expects 1 argument");
+                        throwRuntimeError("unshift() expects 1 argument");
                     }
                     list.add(0, frame.getRegister(functionRegister + 1));
                     return (double) list.size();
                     
                 case "includes":
                     if (argCount != 1) {
-                        throw new RuntimeException("includes() expects 1 argument");
+                        throwRuntimeError("includes() expects 1 argument");
                     }
                     Object searchValue = frame.getRegister(functionRegister + 1);
                     for (Object element : list) {
@@ -865,7 +945,7 @@ public class ThornVM {
                     
                 case "indexOf":
                     if (argCount != 1) {
-                        throw new RuntimeException("indexOf() expects 1 argument");
+                        throwRuntimeError("indexOf() expects 1 argument");
                     }
                     Object indexOfValue = frame.getRegister(functionRegister + 1);
                     for (int i = 0; i < list.size(); i++) {
@@ -883,7 +963,7 @@ public class ThornVM {
                     if (argCount >= 1) {
                         Object startObj = frame.getRegister(functionRegister + 1);
                         if (!(startObj instanceof Double)) {
-                            throw new RuntimeException("Slice start index must be a number (got: " + 
+                            throwRuntimeError("Slice start index must be a number (got: " + 
                                 (startObj == null ? "null" : startObj.getClass().getSimpleName()) + 
                                 " from register " + (functionRegister + 1) + ")");
                         }
@@ -898,7 +978,7 @@ public class ThornVM {
                     if (argCount >= 2) {
                         Object endObj = frame.getRegister(functionRegister + 2);
                         if (!(endObj instanceof Double)) {
-                            throw new RuntimeException("Slice end index must be a number (got: " + 
+                            throwRuntimeError("Slice end index must be a number (got: " + 
                                 (endObj == null ? "null" : endObj.getClass().getSimpleName()) + 
                                 " from register " + (functionRegister + 2) + ")");
                         }
@@ -917,7 +997,8 @@ public class ThornVM {
                     return new ArrayList<>(list.subList(start, end));
                     
                 default:
-                    throw new RuntimeException("Unknown array method: " + methodName);
+                    throwRuntimeError("Unknown array method: " + methodName);
+                    return null; // unreachable
             }
         }
         
@@ -941,39 +1022,39 @@ public class ThornVM {
             switch (methodName) {
                 case "keys":
                     if (argCount != 0) {
-                        throw new RuntimeException("keys() expects 0 arguments");
+                        throwRuntimeError("keys() expects 0 arguments");
                     }
                     return new java.util.ArrayList<>(map.keySet());
                     
                 case "values":
                     if (argCount != 0) {
-                        throw new RuntimeException("values() expects 0 arguments");
+                        throwRuntimeError("values() expects 0 arguments");
                     }
                     return new java.util.ArrayList<>(map.values());
                     
                 case "has":
                     if (argCount != 1) {
-                        throw new RuntimeException("has() expects 1 argument");
+                        throwRuntimeError("has() expects 1 argument");
                     }
                     Object key = frame.getRegister(functionRegister + 1);
                     return map.containsKey(key);
                     
                 case "size":
                     if (argCount != 0) {
-                        throw new RuntimeException("size() expects 0 arguments");
+                        throwRuntimeError("size() expects 0 arguments");
                     }
                     return (double) map.size();
                     
                 case "remove":
                     if (argCount != 1) {
-                        throw new RuntimeException("remove() expects 1 argument");
+                        throwRuntimeError("remove() expects 1 argument");
                     }
                     Object removeKey = frame.getRegister(functionRegister + 1);
                     return map.remove(removeKey);
                     
                 case "get":
                     if (argCount < 1 || argCount > 2) {
-                        throw new RuntimeException("get() expects 1 or 2 arguments (key, optional default)");
+                        throwRuntimeError("get() expects 1 or 2 arguments (key, optional default)");
                     }
                     Object getKey = frame.getRegister(functionRegister + 1);
                     Object result = map.get(getKey);
@@ -984,7 +1065,7 @@ public class ThornVM {
                     
                 case "set":
                     if (argCount != 2) {
-                        throw new RuntimeException("set() expects 2 arguments (key, value)");
+                        throwRuntimeError("set() expects 2 arguments (key, value)");
                     }
                     Object setKey = frame.getRegister(functionRegister + 1);
                     Object setValue = frame.getRegister(functionRegister + 2);
@@ -992,7 +1073,8 @@ public class ThornVM {
                     return map; // Return the map for method chaining
                     
                 default:
-                    throw new RuntimeException("Unknown dictionary method: " + methodName);
+                    throwRuntimeError("Unknown dictionary method: " + methodName);
+                    return null; // unreachable
             }
         }
     }
@@ -1011,41 +1093,41 @@ public class ThornVM {
             switch (methodName) {
                 case "includes":
                     if (argCount != 1) {
-                        throw new RuntimeException("includes() expects 1 argument");
+                        throwRuntimeError("includes() expects 1 argument");
                     }
                     Object arg = frame.getRegister(functionRegister + 1);
                     if (!(arg instanceof String)) {
-                        throw new RuntimeException("includes() expects a string argument");
+                        throwRuntimeError("includes() expects a string argument");
                     }
                     return str.contains((String) arg);
                     
                 case "startsWith":
                     if (argCount != 1) {
-                        throw new RuntimeException("startsWith() expects 1 argument");
+                        throwRuntimeError("startsWith() expects 1 argument");
                     }
                     Object prefixArg = frame.getRegister(functionRegister + 1);
                     if (!(prefixArg instanceof String)) {
-                        throw new RuntimeException("startsWith() expects a string argument");
+                        throwRuntimeError("startsWith() expects a string argument");
                     }
                     return str.startsWith((String) prefixArg);
                     
                 case "endsWith":
                     if (argCount != 1) {
-                        throw new RuntimeException("endsWith() expects 1 argument");
+                        throwRuntimeError("endsWith() expects 1 argument");
                     }
                     Object suffixArg = frame.getRegister(functionRegister + 1);
                     if (!(suffixArg instanceof String)) {
-                        throw new RuntimeException("endsWith() expects a string argument");
+                        throwRuntimeError("endsWith() expects a string argument");
                     }
                     return str.endsWith((String) suffixArg);
                     
                 case "slice":
                     if (argCount < 1 || argCount > 2) {
-                        throw new RuntimeException("slice() expects 1 or 2 arguments");
+                        throwRuntimeError("slice() expects 1 or 2 arguments");
                     }
                     Object startArg = frame.getRegister(functionRegister + 1);
                     if (!(startArg instanceof Double)) {
-                        throw new RuntimeException("slice() start index must be a number");
+                        throwRuntimeError("slice() start index must be a number");
                     }
                     
                     int start = ((Double) startArg).intValue();
@@ -1054,7 +1136,7 @@ public class ThornVM {
                     if (argCount == 2) {
                         Object endArg = frame.getRegister(functionRegister + 2);
                         if (!(endArg instanceof Double)) {
-                            throw new RuntimeException("slice() end index must be a number");
+                            throwRuntimeError("slice() end index must be a number");
                         }
                         end = ((Double) endArg).intValue();
                     }
@@ -1070,7 +1152,8 @@ public class ThornVM {
                     return str.substring(start, end);
                     
                 default:
-                    throw new RuntimeException("Unknown string method: " + methodName);
+                    throwRuntimeError("Unknown string method: " + methodName);
+                    return null; // unreachable
             }
         }
         

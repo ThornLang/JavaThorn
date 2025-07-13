@@ -176,6 +176,15 @@ public class ConstantFoldingPass extends OptimizationPass {
                 }
                 
                 @Override
+                public Stmt visitTryCatchStmt(Stmt.TryCatch stmt) {
+                    return new Stmt.TryCatch(
+                        foldStatement(stmt.tryBlock),
+                        stmt.catchVariable,
+                        foldStatement(stmt.catchBlock)
+                    );
+                }
+                
+                @Override
                 public Stmt visitTypeAliasStmt(Stmt.TypeAlias stmt) {
                     // Type aliases are compile-time only, no optimization needed
                     return stmt;

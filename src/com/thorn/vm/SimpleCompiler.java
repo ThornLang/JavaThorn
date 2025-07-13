@@ -150,6 +150,10 @@ public class SimpleCompiler {
             compileExportStatement((Stmt.Export) stmt);
         } else if (stmt instanceof Stmt.Import) {
             compileImportStatement((Stmt.Import) stmt);
+        } else if (stmt instanceof Stmt.TryCatch) {
+            compileTryCatchStatement((Stmt.TryCatch) stmt);
+        } else if (stmt instanceof Stmt.Throw) {
+            compileThrowStatement((Stmt.Throw) stmt);
         } else if (stmt instanceof Stmt.TypeAlias) {
             compileTypeAliasStatement((Stmt.TypeAlias) stmt);
         } else {
@@ -1003,6 +1007,52 @@ public class SimpleCompiler {
         // TODO: Implement proper module import system
         // The VM would need to load and execute the module file
         System.err.println("Warning: Import statements not yet fully implemented in VM");
+    }
+    
+    private void compileTryCatchStatement(Stmt.TryCatch tryCatchStmt) {
+        // Jump to catch block location
+        int catchJump = bytecode.size();
+        
+        // Determine catch register (-1 if no variable)
+        int catchRegister = -1;
+        if (tryCatchStmt.catchVariable != null) {
+            catchRegister = getLocalRegister(tryCatchStmt.catchVariable.lexeme);
+        }
+        
+        // Emit TRY_BEGIN with placeholder for catch address
+        emit(Instruction.create(OpCode.TRY_BEGIN, 0, 0, catchRegister));
+        
+        // Compile try block
+        compileStatement(tryCatchStmt.tryBlock);
+        
+        // Pop exception handler (normal execution path)
+        emit(Instruction.create(OpCode.TRY_END));
+        
+        // Jump over catch block
+        int jumpOverCatch = bytecode.size();
+        emit(Instruction.createJump(OpCode.JUMP, 0));
+        
+        // Patch TRY_BEGIN with actual catch address
+        int catchAddress = bytecode.size();
+        bytecode.set(catchJump, Instruction.create(OpCode.TRY_BEGIN, 0, catchAddress, catchRegister));
+        
+        // Compile catch block
+        compileStatement(tryCatchStmt.catchBlock);
+        
+        // Patch jump over catch
+        int endAddress = bytecode.size();
+        patchJump(jumpOverCatch, endAddress);
+    }
+    
+    private void compileThrowStatement(Stmt.Throw throwStmt) {
+        // Compile the throw value
+        Integer valueReg = compileExpression(throwStmt.value);
+        
+        // Emit THROW instruction
+        emit(Instruction.create(OpCode.THROW, valueReg));
+        
+        // Free the register (though execution won't continue here)
+        freeRegister(valueReg);
     }
     
     private void compileTypeAliasStatement(Stmt.TypeAlias typeAliasStmt) {

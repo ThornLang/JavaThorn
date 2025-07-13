@@ -1,0 +1,41 @@
+import { assert_throws, test, run_all } from "test";
+
+// Test improved error messages for primitives
+
+test("number property access should give helpful error", $() => {
+    num = 42;
+    
+    assert_throws(
+        $() => {
+            prop = num.someProperty;
+        },
+        "Cannot access property 'someProperty' on primitive type 'number'.",
+        "number property access"
+    );
+});
+
+test("boolean method call should give helpful error", $() => {
+    bool = true;
+    
+    assert_throws(
+        $() => {
+            method = bool.toString();
+        },
+        "Cannot access property 'toString' on primitive type 'boolean'.",
+        "boolean method call"
+    );
+});
+
+test("number method call should give helpful error", $() => {
+    value = 3.14;
+    
+    assert_throws(
+        $() => {
+            result = value.toFixed(2);
+        },
+        "Cannot access property 'toFixed' on primitive type 'number'.",
+        "number method call"
+    );
+});
+
+run_all();

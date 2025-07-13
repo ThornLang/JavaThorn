@@ -312,7 +312,33 @@ $ assert_size[T](collection: Array[T], expected_size: number): void {
 
 // ==================== Exception Assertions ====================
 
-$ assert_throws(function: Function[(), Result[Any, Any]], expected_message: string): void {
+// New try-catch based assert_throws
+$ assert_throws(function: Function[(), void], expected_message: string, test_name: string): void {
+    try {
+        function();
+        _fail("Expected function to throw but it didn't: " + test_name);
+    } catch (error) {
+        if (expected_message != null) {
+            error_str: string = "" + error;
+            if (error_str != expected_message) {
+                _fail("Expected error \"" + expected_message + 
+                     "\" but got \"" + error_str + "\" in: " + test_name);
+            }
+        }
+        // Test passes - function threw as expected
+    }
+}
+
+$ assert_throws(function: Function[(), void], expected_message: string): void {
+    assert_throws(function, expected_message, "");
+}
+
+$ assert_throws(function: Function[(), void]): void {
+    assert_throws(function, null, "");
+}
+
+// Legacy Result-based assert_throws (for compatibility)
+$ assert_throws_result(function: Function[(), Result[Any, Any]], expected_message: string): void {
     result = function();
     
     match (result) {
@@ -345,7 +371,17 @@ $ assert_throws(function: Function[(), Result[Any, Any]]): void {
     };
 }
 
-$ assert_no_throw(function: Function[(), Result[Any, Any]]): void {
+$ assert_no_throw(function: Function[(), void]): void {
+    try {
+        function();
+        // Test passes - function didn't throw
+    } catch (error) {
+        _fail("Expected no exception but got: " + error);
+    }
+}
+
+// Legacy Result-based assert_no_throw (for compatibility)
+$ assert_no_throw_result(function: Function[(), Result[Any, Any]]): void {
     result = function();
     
     match (result) {
@@ -475,9 +511,13 @@ $ _run_test(test_case: TestCase, suite: TestSuite): void {
     test_function: Function[(), void] = test_case["function"];
     
     // Wrap the test execution to catch any errors
-    // For now, we'll execute the test directly and handle failures through the assertion mechanism
-    test_function();
-    passed = true;
+    try {
+        test_function();
+        passed = true;
+    } catch (exception) {
+        passed = false;
+        error = "" + exception;
+    }
     
     _current_test = null;
     

@@ -1,0 +1,74 @@
+// Comprehensive try-catch tests for issue #96
+
+print("=== Basic Try-Catch Tests ===");
+
+// Test 1: Basic throw and catch
+try {
+    print("Throwing string error");
+    throw "Basic error message";
+    print("This should not execute");
+} catch (e) {
+    print("Caught: " + e);
+}
+
+// Test 2: Try-catch without variable
+try {
+    throw "Error without variable";
+} catch {
+    print("Caught error without accessing value");
+}
+
+// Test 3: Nested try-catch
+try {
+    print("Outer try block");
+    try {
+        print("Inner try block");
+        throw "Inner error";
+        print("This should not execute");
+    } catch (inner_e) {
+        print("Inner catch: " + inner_e);
+        throw "Outer error from inner catch";
+    }
+    print("This should not execute");
+} catch (outer_e) {
+    print("Outer catch: " + outer_e);
+}
+
+// Test 4: Try block with no error
+try {
+    print("No error in this try block");
+    value = 5 + 5;
+    print("Calculated value: " + value);
+} catch (e) {
+    print("This catch should not execute");
+}
+
+// Test 5: Function with try-catch
+$ test_function_with_try_catch(should_throw: boolean): string {
+    try {
+        if (should_throw) {
+            throw "Function error";
+        }
+        return "Success";
+    } catch (e) {
+        return "Caught in function: " + e;
+    }
+}
+
+print("Function test 1: " + test_function_with_try_catch(false));
+print("Function test 2: " + test_function_with_try_catch(true));
+
+// Test 6: Different data types in throw
+try {
+    throw 42;
+} catch (e) {
+    print("Caught number: " + e);
+}
+
+try {
+    throw true;
+} catch (e) {
+    print("Caught boolean: " + e);
+}
+
+print("=== All try-catch tests completed successfully ===");

@@ -154,18 +154,11 @@ public class Thorn {
         // Create and configure the optimization pipeline
         OptimizationPipeline pipeline = new OptimizationPipeline(printAst);
         
+        // Temporarily disable ALL optimization passes until try-catch visitor methods are fully implemented
         // Register available optimization passes
-        pipeline.registerPass(new DeadCodeEliminationPass());
-        pipeline.registerPass(new ConstantFoldingPass());
-        pipeline.registerPass(new BranchOptimizationPass());
-        pipeline.registerPass(new CopyPropagationPass());
-        pipeline.registerPass(new DeadStoreEliminationPass());
-        pipeline.registerPass(new ControlFlowAnalysisPass());
-        pipeline.registerPass(new UnreachableCodeEliminationPass());
-        pipeline.registerPass(new CommonSubexpressionEliminationPass());
-        pipeline.registerPass(new LoopOptimizationPass());
-        pipeline.registerPass(new FunctionInliningPass());
-        pipeline.registerPass(new TailCallOptimizationPass());
+        // pipeline.registerPass(new DeadCodeEliminationPass());
+        // pipeline.registerPass(new ConstantFoldingPass());
+        // pipeline.registerPass(new BranchOptimizationPass());
         
         // Create optimization context
         OptimizationContext context = new OptimizationContext(level, printAst, printAst);

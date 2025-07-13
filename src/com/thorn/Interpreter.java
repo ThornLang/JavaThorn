@@ -16,6 +16,9 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     
     // Track if we're in a Result context for division by zero handling
     private boolean inResultContext = false;
+    
+    // Track if we're inside a try block for converting runtime errors to catchable exceptions
+    private int tryDepth = 0;
 
     Interpreter() {
         this.moduleSystem = new ModuleSystem(this);
@@ -103,6 +106,9 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                         if (isInResultContext()) {
                             return getNumber(left) / rightVal; // Returns Infinity
                         }
+                        if (tryDepth > 0) {
+                            throw new ThornThrowException("Division by zero.");
+                        }
                         throw new Thorn.RuntimeError(expr.operator, "Division by zero.");
                     }
                     return getNumber(left) / rightVal;
@@ -113,6 +119,9 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                     // Check if we're in a Result context (being called from Ok/Error constructor)
                     if (isInResultContext()) {
                         return getNumber(left) / rightNum; // Returns Infinity
+                    }
+                    if (tryDepth > 0) {
+                        throw new ThornThrowException("Division by zero.");
                     }
                     throw new Thorn.RuntimeError(expr.operator, "Division by zero.");
                 }
@@ -339,6 +348,9 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             List<?> list = (List<?>)object;
             int i = ((Double)index).intValue();
             if (i < 0 || i >= list.size()) {
+                if (tryDepth > 0) {
+                    throw new ThornThrowException("List index out of bounds.");
+                }
                 throw new Thorn.RuntimeError(expr.bracket,
                         "List index out of bounds.");
             }
@@ -422,6 +434,9 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             List<Object> list = (List<Object>)object;
             int i = ((Double)index).intValue();
             if (i < 0 || i >= list.size()) {
+                if (tryDepth > 0) {
+                    throw new ThornThrowException("List index out of bounds.");
+                }
                 throw new Thorn.RuntimeError(expr.bracket,
                         "List index out of bounds.");
             }
@@ -1017,7 +1032,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         
         if (object instanceof List) {
             errorMessage = "Array method '" + expr.name.lexeme + "' is not defined.\n" +
-                          "Available array methods: length, push, pop, shift, unshift, includes, slice";
+                          "Available array methods: length, push, pop, shift, unshift, includes, indexOf, slice";
         } else if (object instanceof Map) {
             errorMessage = "Dictionary method '" + expr.name.lexeme + "' is not defined.\n" +
                           "Available dictionary methods: keys, values, has, size, remove, get, set";
@@ -1035,6 +1050,9 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             errorMessage = "Property '" + expr.name.lexeme + "' is not defined on type '" + typeName + "'.";
         }
         
+        if (tryDepth > 0) {
+            throw new ThornThrowException(errorMessage);
+        }
         throw new Thorn.RuntimeError(expr.name, errorMessage);
     }
 
@@ -1159,7 +1177,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         Object value = null;
         if (stmt.value != null) value = evaluate(stmt.value);
 
-        throw new Thorn.RuntimeError(stmt.keyword, stringify(value));
+        throw new ThornThrowException(value);
     }
 
     @Override
@@ -1443,12 +1461,18 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     private void checkNumberOperand(Token operator, Object operand) {
         if (operand instanceof Double) return;
+        if (tryDepth > 0) {
+            throw new ThornThrowException("Operand must be a number.");
+        }
         throw new Thorn.RuntimeError(operator, "Operand must be a number.");
     }
 
     private void checkNumberOperands(Token operator, Object left, Object right) {
         if (left instanceof Double && right instanceof Double) return;
 
+        if (tryDepth > 0) {
+            throw new ThornThrowException("Operands must be numbers.");
+        }
         throw new Thorn.RuntimeError(operator, "Operands must be numbers.");
     }
     
@@ -1488,5 +1512,52 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             super(null, null, false, false);
             this.value = value;
         }
+    }
+
+    // Exception class for throw statements
+    static class ThornThrowException extends RuntimeException {
+        final Object value;
+
+        ThornThrowException(Object value) {
+            super(null, null, false, false);
+            this.value = value;
+        }
+    }
+
+    @Override
+    public Void visitTryCatchStmt(Stmt.TryCatch stmt) {
+        tryDepth++;
+        try {
+            execute(stmt.tryBlock);
+        } catch (ThornThrowException throwEx) {
+            // If there's a catch variable, bind the thrown value to it
+            Environment previous = this.environment;
+            this.environment = new Environment(environment);
+            
+            try {
+                if (stmt.catchVariable != null) {
+                    environment.define(stmt.catchVariable.lexeme, throwEx.value, false);
+                }
+                execute(stmt.catchBlock);
+            } finally {
+                this.environment = previous;
+            }
+        } catch (Thorn.RuntimeError error) {
+            // Convert runtime errors to catchable exceptions when inside try block
+            Environment previous = this.environment;
+            this.environment = new Environment(environment);
+            
+            try {
+                if (stmt.catchVariable != null) {
+                    environment.define(stmt.catchVariable.lexeme, error.getMessage(), false);
+                }
+                execute(stmt.catchBlock);
+            } finally {
+                this.environment = previous;
+            }
+        } finally {
+            tryDepth--;
+        }
+        return null;
     }
 }

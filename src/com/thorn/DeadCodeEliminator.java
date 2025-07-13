@@ -139,10 +139,6 @@ public class DeadCodeEliminator {
                 return null;
             }
             
-            @Override
-            public Void visitThrowStmt(Stmt.Throw stmt) {
-                return null;
-            }
             
             @Override
             public Void visitBlockStmt(Stmt.Block stmt) {

@@ -1,0 +1,9 @@
+// Quick test to see the actual error message
+
+numbers = [1, 2, 3];
+
+try {
+    result = numbers.map($(x) => x * 2);
+} catch (e) {
+    print("Actual error message: [" + e + "]");
+}

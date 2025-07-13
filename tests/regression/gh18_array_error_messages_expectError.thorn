@@ -1,14 +1,31 @@
+import { assert_throws, test, run_all } from "test";
+
 // Test improved error messages for arrays
 
-numbers = [1, 2, 3];
-print("Testing array error messages...");
+test("array map method should give helpful error", $() => {
+    numbers = [1, 2, 3];
+    
+    // Now we can properly test runtime errors with assert_throws and try-catch
+    assert_throws(
+        $() => {
+            result = numbers.map($(x) => x * 2);
+        },
+        "Array method 'map' is not defined.\nAvailable array methods: length, push, pop, shift, unshift, includes, indexOf, slice",
+        "undefined array method map"
+    );
+});
 
-// This should give a helpful error message - map() doesn't exist
-try {
-    result = numbers.map($(x) => x * 2);
-    print("ERROR: Expected exception but none was thrown");
-} catch (e) {
-    print("Successfully caught error: " + e);
-    // Simply print the error to see what methods are available
-    print("PASS: Caught expected error for undefined array method");
-}
+test("array forEach method should give helpful error", $() => {
+    arr = [1, 2, 3];
+    
+    // Test that error message includes available methods
+    assert_throws(
+        $() => {
+            arr.forEach($(x) => print(x));
+        },
+        "Array method 'forEach' is not defined.\nAvailable array methods: length, push, pop, shift, unshift, includes, indexOf, slice",
+        "undefined array method forEach"
+    );
+});
+
+run_all();

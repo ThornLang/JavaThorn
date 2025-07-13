@@ -230,10 +230,6 @@ public class BranchOptimizationPass extends OptimizationPass {
                     );
                 }
                 
-                @Override
-                public Stmt visitThrowStmt(Stmt.Throw stmt) {
-                    return stmt;
-                }
                 
                 @Override
                 public Stmt visitTypeAliasStmt(Stmt.TypeAlias stmt) {

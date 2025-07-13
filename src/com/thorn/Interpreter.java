@@ -1032,7 +1032,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         
         if (object instanceof List) {
             errorMessage = "Array method '" + expr.name.lexeme + "' is not defined.\n" +
-                          "Available array methods: length, push, pop, shift, unshift, includes, slice";
+                          "Available array methods: length, push, pop, shift, unshift, includes, indexOf, slice";
         } else if (object instanceof Map) {
             errorMessage = "Dictionary method '" + expr.name.lexeme + "' is not defined.\n" +
                           "Available dictionary methods: keys, values, has, size, remove, get, set";
@@ -1172,13 +1172,6 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return null;
     }
 
-    @Override
-    public Void visitThrowStmt(Stmt.Throw stmt) {
-        Object value = null;
-        if (stmt.value != null) value = evaluate(stmt.value);
-
-        throw new Thorn.RuntimeError(stmt.keyword, stringify(value));
-    }
 
     @Override
     public Void visitVarStmt(Stmt.Var stmt) {

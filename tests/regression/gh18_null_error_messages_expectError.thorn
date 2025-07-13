@@ -1,18 +1,30 @@
+import { assert_throws, test, run_all } from "test";
+
 // Test improved error messages for null
 
-value = null;
-print("Testing null error messages...");
+test("null property access should give helpful error", $() => {
+    value = null;
+    
+    // Now we can test runtime errors with try-catch
+    assert_throws(
+        $() => {
+            result = value.property;
+        },
+        "Cannot access property 'property' on null.",
+        "null property access"
+    );
+});
 
-// This should give a helpful error message
-try {
-    result = value.property;
-    print("ERROR: Expected exception but none was thrown");
-} catch (e) {
-    print("Successfully caught error: " + e);
-    // Simply verify we got the expected error message
-    if (e == "Cannot access property 'property' on null.") {
-        print("PASS: Error message correctly describes null access");
-    } else {
-        print("FAIL: Expected exact error message");
-    }
-}
+test("null method call should give helpful error", $() => {
+    obj = null;
+    
+    assert_throws(
+        $() => {
+            obj.doSomething();
+        },
+        "Cannot access property 'doSomething' on null.",
+        "null method call"
+    );
+});
+
+run_all();

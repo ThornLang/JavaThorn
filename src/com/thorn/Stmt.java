@@ -250,21 +250,6 @@ public abstract class Stmt {
         public final Token catchVariable;  // can be null for catch without variable
         public final Stmt catchBlock;
     }
-
-    public static class Throw extends Stmt {
-        Throw(Token keyword, Expr value) {
-            this.keyword = keyword;
-            this.value = value;
-        }
-
-        @Override
-        <R> R accept(Visitor<R> visitor) {
-            return visitor.visitThrowStmt(this);
-        }
-
-        public final Token keyword;
-        public final Expr value;
-    }
     
     // Parameter class for typed function parameters
     public static class Parameter {

@@ -644,6 +644,7 @@ public class ThornVM {
             
             // No handler found, re-throw as runtime error
             throwRuntimeError("Uncaught exception: " + stringify(throwEx.value));
+            return null; // unreachable
         }
     }
     

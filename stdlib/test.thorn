@@ -337,7 +337,7 @@ $ assert_throws(function: Function[(), void]): void {
     assert_throws(function, null, "");
 }
 
-// Legacy Result-based assert_throws (deprecated)
+// Legacy Result-based assert_throws (for compatibility)
 $ assert_throws_result(function: Function[(), Result[Any, Any]], expected_message: string): void {
     result = function();
     
@@ -358,6 +358,19 @@ $ assert_throws_result(function: Function[(), Result[Any, Any]], expected_messag
     };
 }
 
+$ assert_throws(function: Function[(), Result[Any, Any]]): void {
+    result = function();
+    
+    match (result) {
+        Ok(value) => {
+            _fail("Expected function to throw but it returned: " + _format_value(value));
+        },
+        Error(error) => {
+            // Test passes - function threw as expected
+        },
+    };
+}
+
 $ assert_no_throw(function: Function[(), void]): void {
     try {
         function();
@@ -367,7 +380,7 @@ $ assert_no_throw(function: Function[(), void]): void {
     }
 }
 
-// Legacy Result-based assert_no_throw (deprecated)  
+// Legacy Result-based assert_no_throw (for compatibility)
 $ assert_no_throw_result(function: Function[(), Result[Any, Any]]): void {
     result = function();
     
@@ -498,9 +511,13 @@ $ _run_test(test_case: TestCase, suite: TestSuite): void {
     test_function: Function[(), void] = test_case["function"];
     
     // Wrap the test execution to catch any errors
-    // For now, we'll execute the test directly and handle failures through the assertion mechanism
-    test_function();
-    passed = true;
+    try {
+        test_function();
+        passed = true;
+    } catch (exception) {
+        passed = false;
+        error = "" + exception;
+    }
     
     _current_test = null;
     

@@ -133,10 +133,6 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
         return result;
     }
 
-    @Override
-    public String visitThrowStmt(Stmt.Throw stmt) {
-        return "(throw " + print(stmt.value) + ")";
-    }
 
     @Override
     public String visitBinaryExpr(Expr.Binary expr) {
